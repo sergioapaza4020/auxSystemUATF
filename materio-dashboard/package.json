@@ -15,6 +15,7 @@
     "build:icons": "tsx src/assets/iconify-icons/bundle-icons-css.ts",
     "postinstall": "npm run build:icons",
     "test": "vitest run",
+    "test:ci": "vitest run --coverage --reporter=default",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
   },

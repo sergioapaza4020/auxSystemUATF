@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: aux_system_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB:  aux_system_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend-nest
+      dockerfile: dockerfile.dev
+    container_name: aux_system_backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend-nest:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aux_system_db
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./materio-dashboard
+      dockerfile: dockerfile.dev
+    container_name: aux_system_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./materio-dashboard:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

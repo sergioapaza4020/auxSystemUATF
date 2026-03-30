@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install -r
+
+      - name: Lint frontend
+        run: pnpm --filter aux-system-uatf-frontend lint
+
+      - name: Lint backend
+        run: pnpm --filter aux-system-uatf-backend lint
+
+      - name: Test frontend (Vitest)
+        run: pnpm --filter aux-system-uatf-frontend test:ci
+
+      - name: Test backend (Jest)
+        run: pnpm --filter aux-system-uatf-backend test
+
+      - name: Build frontend
+        run: pnpm --filter aux-system-uatf-frontend build
+
+      - name: Build backend
+        run: pnpm --filter aux-system-uatf-backend build
