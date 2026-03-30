@@ -5,6 +5,11 @@ on:
     branches: ["main", "dev", "test"]
   pull_request:
 
+permissions:
+  contents: write
+  issues: write
+  pull_requests: write
+
 env:
   NODE_VERSION: 22
   PNPM_VERSION: 10.33.0
@@ -77,4 +82,4 @@ jobs:
       - name: Release
         run: npx semantic-release
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
