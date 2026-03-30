@@ -30,19 +30,13 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install -r
+        run: pnpm install
 
-      - name: Lint frontend
-        run: pnpm --filter aux-system-uatf-frontend lint
+      - name: Run Lint
+        run: pnpm lint
 
-      - name: Lint backend
-        run: pnpm --filter aux-system-uatf-backend lint
-
-      - name: Test frontend (Vitest)
-        run: pnpm --filter aux-system-uatf-frontend test:ci
-
-      - name: Test backend (Jest)
-        run: pnpm --filter aux-system-uatf-backend test
+      - name: Run Test
+        run: pnpm test
 
   build:
     name: Build Apps
@@ -65,6 +59,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
+<<<<<<< HEAD
         run: pnpm install -r
 
       - name: Build frontend
@@ -72,3 +67,11 @@ jobs:
 
       - name: Build backend
         run: pnpm --filter aux-system-uatf-backend build
+=======
+        run: pnpm install
+
+      - name: Build frontend
+        run: pnpm build
+
+      - name: Build backend
+        run: pnpm build

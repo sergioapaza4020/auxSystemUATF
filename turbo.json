@@ -16,6 +16,16 @@
     "dev": {
       "cache": false,
       "persistent": true
-    }
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "outputs": ["coverage/**"],
+      "cache": false,
+      "persistent": true
+     },
+     "clean": {
+       "cache": false,
+       "persistent": true
+     }
   }
 }
