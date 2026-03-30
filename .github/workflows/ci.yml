@@ -9,7 +9,6 @@ env:
   NODE_VERSION: 22
 
 jobs:
-
   quality-checks:
     name: Lint & Tests
     runs-on: ubuntu-latest
