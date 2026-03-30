@@ -2,15 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
 
+env:
+  NODE_VERSION: 22
+
 jobs:
-  test-build:
+
+  quality-checks:
+    name: Lint & Tests
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v3
@@ -20,7 +26,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
       - name: Install dependencies
@@ -37,6 +43,29 @@ jobs:
 
       - name: Test backend (Jest)
         run: pnpm --filter aux-system-uatf-backend test
+
+  build:
+    name: Build Apps
+    runs-on: ubuntu-latest
+    needs: quality-checks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install -r
 
       - name: Build frontend
         run: pnpm --filter aux-system-uatf-frontend build
