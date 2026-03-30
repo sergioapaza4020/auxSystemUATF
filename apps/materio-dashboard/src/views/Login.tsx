@@ -99,7 +99,7 @@ const Login = ({ mode }: { mode: Mode }) => {
               </Button>
               <div className='flex justify-center items-center flex-wrap gap-2'>
                 <Typography>New on our platform?</Typography>
-                <Link href=''>
+                <Link href='/register'>
                   <Typography color='primary'>Create an account</Typography>
                 </Link>
               </div>
