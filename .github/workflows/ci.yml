@@ -59,19 +59,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-<<<<<<< HEAD
-        run: pnpm install -r
-
-      - name: Build frontend
-        run: pnpm --filter aux-system-uatf-frontend build
-
-      - name: Build backend
-        run: pnpm --filter aux-system-uatf-backend build
-=======
         run: pnpm install
 
-      - name: Build frontend
-        run: pnpm build
-
-      - name: Build backend
+      - name: Build system
         run: pnpm build
