@@ -9,17 +9,19 @@
     "check-types": "turbo run check-types",
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "precommit": "lint-staged && pnpm lint",
+    "prepush": "pnpm build && pnpm test"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "pnpm turbo run lint --filter=...[HEAD]"
+      "prettier --write"
     ]
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "husky": "^9.1.7",
+    "husky": "^8.0.0",
     "lint-staged": "^16.4.0",
     "prettier": "^3.7.4",
     "turbo": "^2.9.0",

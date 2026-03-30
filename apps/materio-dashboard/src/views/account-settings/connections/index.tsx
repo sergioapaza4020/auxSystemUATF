@@ -131,9 +131,9 @@ const Connections = () => {
                       {item.title}
                     </Typography>
                     {item.isConnected ? (
-                      <Typography color='primary' component={Link} href={item.href || '/'} target='_blank'>
-                        {item.username}
-                      </Typography>
+                      <Link href={item.href || '/'} target='_blank'>
+                        <Typography color='primary'>{item.username}</Typography>
+                      </Link>
                     ) : (
                       <Typography variant='body2'>Not Connected</Typography>
                     )}

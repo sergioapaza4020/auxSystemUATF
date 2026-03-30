@@ -89,9 +89,9 @@ const Register = ({ mode }: { mode: Mode }) => {
               </Button>
               <div className='flex justify-center items-center flex-wrap gap-2'>
                 <Typography>Already have an account?</Typography>
-                <Typography component={Link} href='/login' color='primary'>
-                  Sign in instead
-                </Typography>
+                <Link href='/login'>
+                  <Typography color='primary'>Sign in instead</Typography>
+                </Link>
               </div>
               <Divider className='gap-3'>Or</Divider>
               <div className='flex justify-center items-center gap-2'>
