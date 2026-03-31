@@ -4,44 +4,51 @@ services:
 
   postgres:
     image: postgres:18-alpine
-    container_name: aux_system_db
+    container_name: aux_system_uatf_db
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB:  aux_system_db
+      POSTGRES_DB: aux_system_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  pnpm-install:
+    image: node:24-alpine
+    working_dir: /workspace
+    command: sh -c "corepack enable && corepack prepare pnpm@10.33.0 --activate && pnpm install"
+    volumes:
+      - .:/workspace
+
   backend:
     build:
-      context: ./backend-nest
-      dockerfile: dockerfile.dev
-    container_name: aux_system_backend
+      context: .
+      dockerfile: apps/backend-nest/Dockerfile.dev
+    container_name: aux_system_uatf_backend
     ports:
       - "3001:3001"
     volumes:
-      - ./backend-nest:/app
-      - /app/node_modules
+      - .:/app
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aux_system_db
     depends_on:
       - postgres
+      - pnpm-install
 
   frontend:
     build:
-      context: ./materio-dashboard
-      dockerfile: dockerfile.dev
-    container_name: aux_system_frontend
+      context: .
+      dockerfile: apps/materio-dashboard/Dockerfile.dev
+    container_name: aux_system_uatf_frontend
     ports:
       - "3000:3000"
     volumes:
-      - ./materio-dashboard:/app
-      - /app/node_modules
+      - .:/app
     depends_on:
       - backend
+      - pnpm-install
 
 volumes:
   postgres_data:

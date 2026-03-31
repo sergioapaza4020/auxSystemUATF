@@ -1,14 +1,14 @@
-FROM node:22-alpine
-
+FROM node:24-alpine AS base
 WORKDIR /app
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
-COPY package.json pnpm-lock.yaml* ./
+COPY ../../package.json ../../pnpm-lock.yaml ../../pnpm-workspace.yaml ./
+COPY ../../apps ./apps
+
 RUN pnpm install --frozen-lockfile
 
-COPY . .
+WORKDIR /app/apps/materio-dashboard
 RUN pnpm build
 
 EXPOSE 3000
-
 CMD ["pnpm","start"]
