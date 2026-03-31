@@ -24,6 +24,7 @@ services:
       - "3001:3001"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aux_system_db
+      CI: "true"
     depends_on:
       - postgres
 
