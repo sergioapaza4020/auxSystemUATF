@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   postgres:
@@ -25,7 +23,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/backend-nest/Dockerfile.dev
+      dockerfile: apps/backend-nest/dockerfile.dev
     container_name: aux_system_uatf_backend
     ports:
       - "3001:3001"
@@ -40,7 +38,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/materio-dashboard/Dockerfile.dev
+      dockerfile: apps/materio-dashboard/dockerfile.dev
     container_name: aux_system_uatf_frontend
     ports:
       - "3000:3000"
