@@ -23,7 +23,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/backend-nest/dockerfile.dev
+      dockerfile: apps/backend-nest/dockerfile
     container_name: aux_system_uatf_backend
     ports:
       - "3001:3001"
@@ -38,7 +38,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/materio-dashboard/dockerfile.dev
+      dockerfile: apps/materio-dashboard/dockerfile
     container_name: aux_system_uatf_frontend
     ports:
       - "3000:3000"

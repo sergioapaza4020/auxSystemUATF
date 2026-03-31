@@ -1,6 +1,0 @@
-FROM node:24-alpine
-WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
-
-EXPOSE 3001
-CMD ["pnpm","dev","--filter","aux-system-uatf-backend"]
