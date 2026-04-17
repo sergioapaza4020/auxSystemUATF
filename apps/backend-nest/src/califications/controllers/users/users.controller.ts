@@ -1,5 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserCreateDto } from 'src/califications/dtos/users/users.dto';
 import { UsersService } from 'src/califications/services/users/users.service';
 
@@ -8,9 +18,16 @@ import { UsersService } from 'src/califications/services/users/users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('jwt'))
   @Get()
   async getAll() {
     return this.usersService.getAll();
+  }
+
+  @Post()
+  async create(@Body() userCreateDto: UserCreateDto) {
+    return this.usersService.create(userCreateDto);
   }
 
   @Get('email/:email')
@@ -28,13 +45,13 @@ export class UsersController {
     return this.usersService.getOneById(idUser);
   }
 
-  @Post()
-  async create(@Body() userCreateDto: UserCreateDto) {
-    return this.usersService.create(userCreateDto);
-  }
-
   @Delete(':idUser')
   async delete(@Param('idUser') idUser: number) {
     return this.usersService.delete(idUser);
+  }
+
+  @Patch('reactivate/:idUser')
+  async reactivate(@Param('idUser') idUser: number) {
+    return this.usersService.reactivate(idUser);
   }
 }

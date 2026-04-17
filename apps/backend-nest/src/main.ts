@@ -12,6 +12,15 @@ async function bootstrap() {
     )
     .setContact('MushuDev', '#', 'sergio.apaza1432@gmail.com')
     .setVersion('0.1')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Ingrese únicamente el token JWT sin el prefijo "Bearer "',
+      },
+      'access-token',
+    )
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);

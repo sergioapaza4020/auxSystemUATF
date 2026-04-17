@@ -46,11 +46,22 @@ export class UsersService {
 
   async delete(idUser: number) {
     const user = await this.userRepository.findOne({
-      where: { idUser: idUser },
+      where: { idUser: idUser, isActive: true },
     });
     if (!user) throw new BadRequestException('User not found');
     user.updatedAt = new Date();
     user.deletedAt = new Date();
+    user.isActive = false;
+    return this.userRepository.save(user);
+  }
+
+  async reactivate(idUser: number) {
+    const user = await this.userRepository.findOne({
+      where: { idUser: idUser, isActive: false },
+    });
+    if (!user) throw new BadRequestException('User not found');
+    user.updatedAt = new Date();
+    user.isActive = true;
     return this.userRepository.save(user);
   }
 }
