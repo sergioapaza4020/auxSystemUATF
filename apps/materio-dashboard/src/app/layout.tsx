@@ -11,7 +11,7 @@ import '@/app/globals.css'
 import '@assets/iconify-icons/generated-icons.css'
 
 export const metadata = {
-  title: 'Demo: Materio - NextJS Dashboard Free',
+  title: 'Aux System U.A.T.F.',
   description:
     'Develop next-level web apps with Materio Dashboard Free - NextJS. Now, updated with lightning-fast routing powered by MUI and App router.'
 }

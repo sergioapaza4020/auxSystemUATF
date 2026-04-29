@@ -18,7 +18,8 @@ import InputAdornment from '@mui/material/InputAdornment'
 import Checkbox from '@mui/material/Checkbox'
 import Button from '@mui/material/Button'
 import FormControlLabel from '@mui/material/FormControlLabel'
-import Divider from '@mui/material/Divider'
+
+import { Login as ApiLogin } from '../api/auth.service'
 
 // Type Imports
 import type { Mode } from '@core/types'
@@ -26,9 +27,6 @@ import type { Mode } from '@core/types'
 // Component Imports
 import Logo from '@components/layout/shared/Logo'
 import Illustrations from '@components/Illustrations'
-
-// Config Imports
-import themeConfig from '@configs/themeConfig'
 
 // Hook Imports
 import { useImageVariant } from '@core/hooks/useImageVariant'
@@ -47,9 +45,21 @@ const Login = ({ mode }: { mode: Mode }) => {
 
   const handleClickShowPassword = () => setIsPasswordShown(show => !show)
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    router.push('/')
+    const data = new FormData(e.currentTarget)
+
+    try {
+      await ApiLogin({
+        username: data.get('username') as string,
+        password: data.get('password') as string
+      })
+      router.push('/dashboard')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : (error as any).data?.message || 'An error occurred'
+
+      alert(errorMessage)
+    }
   }
 
   return (
@@ -60,16 +70,13 @@ const Login = ({ mode }: { mode: Mode }) => {
             <Logo />
           </Link>
           <div className='flex flex-col gap-5'>
-            <div>
-              <Typography variant='h4'>{`Welcome to ${themeConfig.templateName}!👋🏻`}</Typography>
-              <Typography className='mbs-1'>Please sign-in to your account and start the adventure</Typography>
-            </div>
             <form noValidate autoComplete='off' onSubmit={handleSubmit} className='flex flex-col gap-5'>
-              <TextField autoFocus fullWidth label='Email' />
+              <TextField autoFocus fullWidth id='username' label='Usuario' name='username' />
               <TextField
                 fullWidth
-                label='Password'
-                id='outlined-adornment-password'
+                label='Contraseña'
+                id='password'
+                name='password'
                 type={isPasswordShown ? 'text' : 'password'}
                 InputProps={{
                   endAdornment: (
@@ -87,36 +94,16 @@ const Login = ({ mode }: { mode: Mode }) => {
                 }}
               />
               <div className='flex justify-between items-center gap-x-3 gap-y-1 flex-wrap'>
-                <FormControlLabel control={<Checkbox />} label='Remember me' />
-                <Link href='/forgot-password'>
-                  <Typography className='text-end' color='primary'>
-                    Forgot password?
-                  </Typography>
-                </Link>
+                <FormControlLabel control={<Checkbox />} label='Recordarme' />
               </div>
               <Button fullWidth variant='contained' type='submit'>
-                Log In
+                Iniciar Sesión
               </Button>
               <div className='flex justify-center items-center flex-wrap gap-2'>
-                <Typography>New on our platform?</Typography>
+                <Typography>¿Estás registrado?</Typography>
                 <Link href='/register'>
-                  <Typography color='primary'>Create an account</Typography>
+                  <Typography color='primary'>Verifica aquí</Typography>
                 </Link>
-              </div>
-              <Divider className='gap-3'>or</Divider>
-              <div className='flex justify-center items-center gap-2'>
-                <IconButton size='small' className='text-facebook'>
-                  <i className='ri-facebook-fill' />
-                </IconButton>
-                <IconButton size='small' className='text-twitter'>
-                  <i className='ri-twitter-fill' />
-                </IconButton>
-                <IconButton size='small' className='text-github'>
-                  <i className='ri-github-fill' />
-                </IconButton>
-                <IconButton size='small' className='text-googlePlus'>
-                  <i className='ri-google-fill' />
-                </IconButton>
               </div>
             </form>
           </div>

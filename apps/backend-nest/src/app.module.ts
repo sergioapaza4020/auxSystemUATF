@@ -18,12 +18,6 @@ import { join } from 'path';
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
       synchronize: true,
-      extra: {
-        ssl:
-          process.env.POSTGRES_SSL == 'verify-full'
-            ? { rejectUnauthorized: false }
-            : null,
-      },
     }),
     UsersModule,
     AuthModule,

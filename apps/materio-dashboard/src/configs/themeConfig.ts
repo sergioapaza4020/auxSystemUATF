@@ -23,7 +23,7 @@ export type Config = {
 }
 
 const themeConfig: Config = {
-  templateName: 'Materio',
+  templateName: 'Sistema de Auxiliares UATF',
   settingsCookieName: 'materio-mui-next-free-demo',
   mode: 'light', // 'light', 'dark'
   layoutPadding: 24, // Common padding for header, content, footer layout components (in px)

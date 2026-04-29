@@ -5,7 +5,6 @@ import { LoginDto } from 'src/califications/dtos/auth/login.dto';
 
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from 'src/types/jwt-payload.type';
-import { AuthResponse } from 'src/types/auth-response.type';
 import { User } from 'src/califications/entities/users/users.entity';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class AuthService {
     return user;
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
+  async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto);
 
     const payload: JwtPayload = {
@@ -36,14 +35,11 @@ export class AuthService {
       email: user.email,
     };
 
-    const token = this.jwtService.sign(payload, { expiresIn: '30m' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '4h' });
 
     return {
-      idUser: user.idUser,
-      username: user.username,
-      email: user.email,
-      access_token: token,
-      expiredAt: Date.now() + 30 * 60 * 1000,
+      user,
+      accessToken,
     };
   }
 
