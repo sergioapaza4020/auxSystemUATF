@@ -4,22 +4,24 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/califications/decorators/public/public.decorator';
+import { Roles } from 'src/califications/decorators/roles/roles.decorator';
+import { UsersAssignRolesDto } from 'src/califications/dtos/users/users-assign-roles.dto';
 import { UserCreateDto } from 'src/califications/dtos/users/users.dto';
 import { UsersService } from 'src/califications/services/users/users.service';
 
+@ApiBearerAuth('access-token')
 @Controller('users')
 @ApiTags('Users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('jwt'))
+  @Roles('ADMIN')
   @Get()
   async getAll() {
     return this.usersService.getAll();
@@ -35,23 +37,34 @@ export class UsersController {
     return this.usersService.getOneByEmail(email);
   }
 
+  @Roles('YUI')
   @Get('username/:username')
   async getOneByUsername(@Param('username') username: string) {
     return this.usersService.getOneByUsername(username);
   }
 
+  @Roles('TEST')
   @Get('id/:idUser')
   async getOneById(@Param('idUser') idUser: number) {
     return this.usersService.getOneById(idUser);
   }
 
+  @Public()
+  @Patch('assign-roles/:idUser')
+  async assignRoles(
+    @Param('idUser', ParseIntPipe) idUser: number,
+    @Body() usersAssignRolesDto: UsersAssignRolesDto,
+  ) {
+    return this.usersService.assignRoles(idUser, usersAssignRolesDto.roleNames);
+  }
+
   @Delete(':idUser')
-  async delete(@Param('idUser') idUser: number) {
+  async delete(@Param('idUser', ParseIntPipe) idUser: number) {
     return this.usersService.delete(idUser);
   }
 
   @Patch('reactivate/:idUser')
-  async reactivate(@Param('idUser') idUser: number) {
+  async reactivate(@Param('idUser', ParseIntPipe) idUser: number) {
     return this.usersService.reactivate(idUser);
   }
 }

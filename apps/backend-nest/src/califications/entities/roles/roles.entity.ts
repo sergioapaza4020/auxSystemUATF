@@ -6,46 +6,22 @@ import {
   ManyToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Role } from '../roles/roles.entity';
+import { Permission } from '../permissions/permissions.entity';
 
-@Entity('users')
-export class User {
+@Entity('roles')
+export class Role {
   @PrimaryGeneratedColumn()
-  idUser: number;
+  idRole: number;
 
-  @Column({ nullable: true })
-  idCourse: number;
-
-  @Column({ default: 0 })
-  idCareer: number;
-
-  @Column()
-  email: string;
-
-  @Column()
-  password: string;
-
-  @Column({ nullable: true })
-  avatar: string;
-
-  @Column()
-  username: string;
-
-  @Column()
+  @Column({ unique: true })
   name: string;
 
   @Column()
-  lastname: string;
+  description: string;
 
-  @Column()
-  ci: string;
-
-  @Column()
-  ru: string;
-
-  @ManyToMany(() => Role)
-  @JoinTable({ name: 'user_role' })
-  roles: Role[];
+  @ManyToMany(() => Permission, (permission) => permission.roles)
+  @JoinTable({ name: 'role_permission' })
+  permissions: Permission[];
 
   @Column({ default: true })
   isActive: boolean;
@@ -68,7 +44,7 @@ export class User {
   })
   updatedAt: Date;
 
-  @CreateDateColumn({
+  @Column({
     name: 'deleted_at',
     type: 'timestamp',
     nullable: true,

@@ -1,14 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersService } from './users.service';
+import { RolesService } from './roles.service';
 
-describe('UsersService', () => {
-  let service: UsersService;
+describe('RolesService', () => {
+  let service: RolesService;
 
-  const mockUserRepository = {
-    find: jest.fn(),
-    findOne: jest.fn(),
+  const mockRolesService = {
+    getAll: jest.fn(),
+    getOneById: jest.fn(),
     create: jest.fn(),
-    save: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   };
@@ -16,12 +15,12 @@ describe('UsersService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UsersService,
-        { provide: UsersService, useValue: mockUserRepository },
+        RolesService,
+        { provide: RolesService, useValue: mockRolesService },
       ],
     }).compile();
 
-    service = module.get<UsersService>(UsersService);
+    service = module.get<RolesService>(RolesService);
   });
 
   it('should be defined', () => {

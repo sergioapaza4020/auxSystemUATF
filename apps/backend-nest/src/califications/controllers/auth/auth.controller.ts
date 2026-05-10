@@ -1,7 +1,9 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/califications/decorators/current-user/current-user.decorator';
+import { Public } from 'src/califications/decorators/public/public.decorator';
 import { LoginDto } from 'src/califications/dtos/auth/login.dto';
+import { User } from 'src/califications/entities/users/users.entity';
 import { AuthService } from 'src/califications/services/auth/auth.service';
 
 @Controller('auth')
@@ -9,32 +11,26 @@ import { AuthService } from 'src/califications/services/auth/auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('login')
-  async login(
-    @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async login(@Body() loginDto: LoginDto) {
     const { user, accessToken } = await this.authService.login(loginDto);
-
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 4,
-    });
 
     return {
       message: 'Login successful',
-      idUser: user.idUser,
-      username: user.username,
+      id: user.idUser,
       email: user.email,
+      username: user.username,
+      accessToken,
     };
   }
 
-  @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
-
-    return { message: 'Logout successful' };
+  @ApiBearerAuth('access-token')
+  @Get('me')
+  getProfile(@CurrentUser() user: User) {
+    return {
+      message: 'User session active',
+      user,
+    };
   }
 }
