@@ -10,7 +10,7 @@ import { RolesModule } from './califications/modules/roles/roles.module';
 import { PermissionsModule } from './califications/modules/permissions/permissions.module';
 import { JwtAuthGuard } from './califications/guards/auth/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './califications/guards/roles/roles.guard';
+import { PermissionsGuard } from './califications/guards/permissions/permissions.guard';
 
 @Module({
   imports: [
@@ -38,7 +38,7 @@ import { RolesGuard } from './califications/guards/roles/roles.guard';
     },
     {
       provide: APP_GUARD,
-      useClass: RolesGuard,
+      useClass: PermissionsGuard,
     },
   ],
 })

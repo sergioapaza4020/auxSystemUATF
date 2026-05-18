@@ -29,8 +29,6 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto);
 
-    const roles = user.roles.map((r) => r.name);
-
     const permissions = [
       ...new Set(user.roles.flatMap((r) => r.permissions.map((p) => p.name))),
     ];
@@ -39,7 +37,6 @@ export class AuthService {
       idUser: user.idUser,
       username: user.username,
       email: user.email,
-      roles,
       permissions,
     };
 

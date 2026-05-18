@@ -9,8 +9,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Public } from 'src/califications/decorators/public/public.decorator';
-import { Roles } from 'src/califications/decorators/roles/roles.decorator';
+import { Permissions } from 'src/califications/decorators/permissions/permissions.decorator';
 import { UsersAssignRolesDto } from 'src/califications/dtos/users/users-assign-roles.dto';
 import { UserCreateDto } from 'src/califications/dtos/users/users.dto';
 import { UsersService } from 'src/califications/services/users/users.service';
@@ -21,35 +20,37 @@ import { UsersService } from 'src/califications/services/users/users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Roles('ADMIN')
+  @Permissions('user.get-all')
   @Get()
   async getAll() {
     return this.usersService.getAll();
   }
 
+  @Permissions('user.create')
   @Post()
   async create(@Body() userCreateDto: UserCreateDto) {
     return this.usersService.create(userCreateDto);
   }
 
+  @Permissions('user.get-one-by-email')
   @Get('email/:email')
   async getOneByEmail(@Param('email') email: string) {
     return this.usersService.getOneByEmail(email);
   }
 
-  @Roles('YUI')
+  @Permissions('user.get-one-by-username')
   @Get('username/:username')
   async getOneByUsername(@Param('username') username: string) {
     return this.usersService.getOneByUsername(username);
   }
 
-  @Roles('TEST')
+  @Permissions('user.get-one-by-id')
   @Get('id/:idUser')
   async getOneById(@Param('idUser') idUser: number) {
     return this.usersService.getOneById(idUser);
   }
 
-  @Public()
+  @Permissions('user.assign-roles')
   @Patch('assign-roles/:idUser')
   async assignRoles(
     @Param('idUser', ParseIntPipe) idUser: number,
@@ -58,11 +59,13 @@ export class UsersController {
     return this.usersService.assignRoles(idUser, usersAssignRolesDto.roleNames);
   }
 
+  @Permissions('user.delete')
   @Delete(':idUser')
   async delete(@Param('idUser', ParseIntPipe) idUser: number) {
     return this.usersService.delete(idUser);
   }
 
+  @Permissions('user.reactivate')
   @Patch('reactivate/:idUser')
   async reactivate(@Param('idUser', ParseIntPipe) idUser: number) {
     return this.usersService.reactivate(idUser);

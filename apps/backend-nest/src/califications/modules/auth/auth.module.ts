@@ -9,15 +9,15 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    UsersModule,
-    PassportModule,
-    ConfigModule,
     JwtModule.registerAsync({
       useFactory: () => ({
         secret: process.env.JWT_SECRET,
         signOptions: { expiresIn: '30m' },
       }),
     }),
+    UsersModule,
+    PassportModule,
+    ConfigModule,
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],

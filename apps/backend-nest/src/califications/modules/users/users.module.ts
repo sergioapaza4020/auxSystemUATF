@@ -6,7 +6,7 @@ import { UsersService } from 'src/califications/services/users/users.service';
 import { RolesModule } from '../roles/roles.module';
 
 @Module({
-  imports: [RolesModule, TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([User]), RolesModule],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],

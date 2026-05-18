@@ -3,55 +3,88 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RoleCreateDto } from 'src/califications/dtos/roles/roles.dto';
 import { Role } from 'src/califications/entities/roles/roles.entity';
 import { Repository } from 'typeorm';
+import { PermissionsService } from '../permissions/permissions.service';
 
 @Injectable()
 export class RolesService {
   constructor(
     @InjectRepository(Role) private readonly roleRepository: Repository<Role>,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async create(roleCreateDto: RoleCreateDto): Promise<Role> {
     const role = await this.getOneByName(roleCreateDto.name);
     if (role) throw new BadRequestException('Role already exists');
 
-    const userCreated = this.roleRepository.create(roleCreateDto);
-    userCreated.authorId = 0;
-    userCreated.createdAt = new Date();
-    userCreated.updatedAt = new Date();
-    userCreated.name = roleCreateDto.name.toUpperCase();
-    return this.roleRepository.save(userCreated);
+    const roleCreated = this.roleRepository.create(roleCreateDto);
+    roleCreated.authorId = 0;
+    roleCreated.createdAt = new Date();
+    roleCreated.updatedAt = new Date();
+    roleCreated.name = roleCreateDto.name
+      .toUpperCase()
+      .trim()
+      .replace(/\s+/g, ' ');
+    return this.roleRepository.save(roleCreated);
   }
 
   async getAll(): Promise<Role[]> {
-    return this.roleRepository.find({ where: { isActive: true } });
+    return this.roleRepository.find({
+      where: { isActive: true },
+    });
   }
 
   async getOneByName(name: string) {
-    return this.roleRepository.findOne({ where: { name } });
+    return this.roleRepository.findOne({
+      where: { name, isActive: true },
+    });
   }
 
   async getOneById(idRole: number) {
-    return this.roleRepository.findOne({ where: { idRole } });
+    return this.roleRepository.findOne({
+      where: { idRole, isActive: true },
+    });
+  }
+
+  async assignPermissions(idRole: number, permissionNames: string[]) {
+    const role = await this.roleRepository.findOne({
+      where: { idRole, isActive: true },
+      relations: ['permissions'],
+    });
+    if (!role) throw new BadRequestException('Role not found');
+    for (const pn of permissionNames) {
+      const permission = await this.permissionsService.getOneByName(pn);
+      if (!permission)
+        throw new BadRequestException(`Permission not found: ${pn}`);
+
+      const alreadyAssigned = role.permissions?.some((p) => p.name === pn);
+      if (alreadyAssigned)
+        throw new BadRequestException(`Permission already assigned: ${pn}`);
+
+      role.permissions?.push(permission);
+    }
+
+    role.updatedAt = new Date();
+    return this.roleRepository.save(role);
   }
 
   async delete(idRole: number) {
-    const user = await this.roleRepository.findOne({
-      where: { idRole: idRole, isActive: true },
+    const role = await this.roleRepository.findOne({
+      where: { idRole, isActive: true },
     });
-    if (!user) throw new BadRequestException('Role not found');
-    user.updatedAt = new Date();
-    user.deletedAt = new Date();
-    user.isActive = false;
-    return this.roleRepository.save(user);
+    if (!role) throw new BadRequestException('Role not found');
+    role.updatedAt = new Date();
+    role.deletedAt = new Date();
+    role.isActive = false;
+    return this.roleRepository.save(role);
   }
 
   async reactivate(idRole: number) {
-    const user = await this.roleRepository.findOne({
-      where: { idRole: idRole, isActive: false },
+    const role = await this.roleRepository.findOne({
+      where: { idRole, isActive: false },
     });
-    if (!user) throw new BadRequestException('Role not found');
-    user.updatedAt = new Date();
-    user.isActive = true;
-    return this.roleRepository.save(user);
+    if (!role) throw new BadRequestException('Role not found');
+    role.updatedAt = new Date();
+    role.isActive = true;
+    return this.roleRepository.save(role);
   }
 }

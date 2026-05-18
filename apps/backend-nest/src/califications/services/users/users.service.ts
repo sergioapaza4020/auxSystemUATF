@@ -78,7 +78,7 @@ export class UsersService {
 
   async assignRoles(idUser: number, roleNames: string[]) {
     const user = await this.userRepository.findOne({
-      where: { idUser },
+      where: { idUser, isActive: true },
       relations: ['roles'],
     });
     if (!user) throw new BadRequestException('User not found');
