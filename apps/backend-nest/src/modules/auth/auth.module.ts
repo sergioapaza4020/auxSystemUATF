@@ -11,8 +11,12 @@ import { ConfigModule } from '@nestjs/config';
   imports: [
     JwtModule.registerAsync({
       useFactory: () => ({
-        secret: process.env.JWT_SECRET,
-        signOptions: { expiresIn: '30m' },
+        secret: process.env.JWT_ACCESS_SECRET,
+        signOptions: {
+          expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as
+            | number
+            | undefined,
+        },
       }),
     }),
     UsersModule,

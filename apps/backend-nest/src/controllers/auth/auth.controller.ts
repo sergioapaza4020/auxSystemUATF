@@ -5,6 +5,7 @@ import { Public } from '@core/decorators/public/public.decorator';
 import { LoginDto } from 'src/dtos/auth/login.dto';
 import { User } from 'src/entities/users/users.entity';
 import { AuthService } from 'src/services/auth/auth.service';
+import { RefreshTokenDto } from 'src/dtos/auth/refresh-token.dto';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -14,20 +15,38 @@ export class AuthController {
   @Public()
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    const { accessToken } = await this.authService.login(loginDto);
+    const { accessToken, refreshToken, session } =
+      await this.authService.login(loginDto);
 
     return {
       message: 'Login successful',
       accessToken,
+      refreshToken,
+      session,
     };
   }
 
   @ApiBearerAuth('access-token')
   @Get('me')
-  getProfile(@CurrentUser() user: User) {
+  async getProfile(@CurrentUser() user: User) {
+    const session = await this.authService.getSession(user.idUser);
+
     return {
       message: 'User session active',
-      user,
+      data: session,
+    };
+  }
+
+  @Public()
+  @Post('refresh')
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    const tokens = await this.authService.refreshToken(
+      refreshTokenDto.refreshToken,
+    );
+
+    return {
+      message: 'Token refreshed successfully',
+      data: tokens,
     };
   }
 }
