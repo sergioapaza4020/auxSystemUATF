@@ -1,15 +1,15 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from '../roles/roles.entity';
+import { BaseEntity } from '@common/entities/base.entity';
 
 @Entity('users')
-export class User {
+export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   idUser: number;
 
@@ -46,33 +46,4 @@ export class User {
   @ManyToMany(() => Role)
   @JoinTable({ name: 'user_role' })
   roles: Role[];
-
-  @Column({ default: true })
-  isActive: boolean;
-
-  @Column()
-  authorId: number;
-
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createdAt: Date;
-
-  @CreateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt: Date;
-
-  @CreateDateColumn({
-    name: 'deleted_at',
-    type: 'timestamp',
-    nullable: true,
-    default: null,
-  })
-  deletedAt: Date;
 }
