@@ -6,10 +6,10 @@ import {
 } from 'typeorm';
 
 export abstract class BaseEntity {
-  @Column({ default: true })
+  @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
-  @Column()
+  @Column({ name: 'author_id' })
   authorId: number;
 
   @CreateDateColumn({

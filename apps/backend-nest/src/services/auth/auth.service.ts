@@ -6,22 +6,25 @@ import { LoginDto } from 'src/dtos/auth/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from 'src/common/types/jwt-payload.type';
 import { User } from 'src/entities/users/users.entity';
+import { SessionsService } from '../sessions/sessions.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly userService: UsersService,
+    private readonly sessionService: SessionsService,
   ) {}
 
   async validateUser(loginDto: LoginDto): Promise<User> {
     const { username, password } = loginDto;
 
     const user = await this.userService.getOneByUsername(username);
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
 
     const checkPassword = await bcrypt.compare(password, user.password);
-    if (!checkPassword) throw new UnauthorizedException('Wrong password');
+    if (!checkPassword)
+      throw new UnauthorizedException('Contraseña incorrecta');
 
     return user;
   }
@@ -45,10 +48,16 @@ export class AuthService {
           | undefined,
       },
     );
+
+    const userSession = this.sessionService.createSession({
+      user,
+      refreshToken,
+    });
+
     return {
-      session,
       accessToken,
       refreshToken,
+      userSession,
     };
   }
 
@@ -77,7 +86,7 @@ export class AuthService {
 
   async getSession(userId: number) {
     const user = await this.userService.getOneById(userId);
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
 
     return this.buildSessionPayload(user);
   }
@@ -88,9 +97,16 @@ export class AuthService {
         secret: process.env.JWT_ACCESS_REFRESH,
       });
 
-      const session = await this.getSession(payload.idUser);
+      const session = await this.sessionService.validateRefreshToken(token);
 
-      const newAccessToken = this.jwtService.sign(session, {
+      if (session.user.idUser !== payload.idUser)
+        throw new UnauthorizedException('Sesión inválida');
+
+      await this.sessionService.updateLastSessionUsed(session);
+
+      const newPayload = this.getSession(payload.idUser);
+
+      const newAccessToken = this.jwtService.sign(newPayload, {
         secret: process.env.JWT_ACCESS_REFRESH,
         expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as
           | number
@@ -100,7 +116,7 @@ export class AuthService {
       return { accessToken: newAccessToken };
     } catch (error) {
       throw new UnauthorizedException(
-        `Invalid refresh token: ${(error as Error).message}`,
+        `Refresh token inválido: ${(error as Error).message}`,
       );
     }
   }

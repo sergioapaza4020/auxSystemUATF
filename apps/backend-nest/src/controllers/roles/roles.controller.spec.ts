@@ -1,17 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RolesController } from './roles.controller';
 import { RolesService } from 'src/services/roles/roles.service';
+import { mockRolesService } from '@common/mocks/roles.mock';
 
 describe('RolesController', () => {
   let controller: RolesController;
-
-  const mockRolesService = {
-    getAll: jest.fn(),
-    getOneById: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

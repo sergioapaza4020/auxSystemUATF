@@ -15,14 +15,11 @@ export class AuthController {
   @Public()
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    const { accessToken, refreshToken, session } =
-      await this.authService.login(loginDto);
+    const tokens = await this.authService.login(loginDto);
 
     return {
-      message: 'Login successful',
-      accessToken,
-      refreshToken,
-      session,
+      message: 'Inicio de sesión exitoso',
+      data: tokens,
     };
   }
 
@@ -32,7 +29,7 @@ export class AuthController {
     const session = await this.authService.getSession(user.idUser);
 
     return {
-      message: 'User session active',
+      message: 'Sesión de usuario activo',
       data: session,
     };
   }
@@ -45,7 +42,7 @@ export class AuthController {
     );
 
     return {
-      message: 'Token refreshed successfully',
+      message: 'Token actualizado exitosamente',
       data: tokens,
     };
   }

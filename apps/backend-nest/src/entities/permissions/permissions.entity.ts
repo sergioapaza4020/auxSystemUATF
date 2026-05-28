@@ -4,13 +4,13 @@ import { BaseEntity } from '@common/entities/base.entity';
 
 @Entity('permissions')
 export class Permission extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'id_permission' })
   idPermission: number;
 
-  @Column({ unique: true })
+  @Column({ unique: true, name: 'name' })
   name: string;
 
-  @Column()
+  @Column({ name: 'description' })
   description: string;
 
   @ManyToMany(() => Role, (role) => role.permissions)

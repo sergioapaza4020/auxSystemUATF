@@ -3,47 +3,52 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from '../roles/roles.entity';
 import { BaseEntity } from '@common/entities/base.entity';
+import { UserSession } from '../user-sessions/user-sessions.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'id_user' })
   idUser: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'id_course' })
   idCourse: number;
 
-  @Column({ default: 0 })
+  @Column({ default: 0, name: 'id_career' })
   idCareer: number;
 
-  @Column()
+  @Column({ unique: true, name: 'email' })
   email: string;
 
-  @Column()
+  @Column({ name: 'password' })
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'avatar' })
   avatar: string;
 
-  @Column()
+  @Column({ unique: true, name: 'username' })
   username: string;
 
-  @Column()
+  @Column({ name: 'name' })
   name: string;
 
-  @Column()
+  @Column({ name: 'lastname' })
   lastname: string;
 
-  @Column()
+  @Column({ unique: true, name: 'ci' })
   ci: string;
 
-  @Column()
+  @Column({ unique: true, name: 'ru' })
   ru: string;
 
   @ManyToMany(() => Role)
   @JoinTable({ name: 'user_role' })
   roles: Role[];
+
+  @OneToMany(() => UserSession, (userSession) => userSession.user)
+  sessions: UserSession[];
 }
