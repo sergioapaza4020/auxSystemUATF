@@ -29,7 +29,7 @@ export class UsersService {
     const user =
       (await this.getOneByEmail(userCreateDto.email)) ||
       (await this.getOneByUsername(userCreateDto.username));
-    if (user) throw new BadRequestException('Usuario ya existente');
+    if (user) throw new BadRequestException('User already exists');
 
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(userCreateDto.password, salt);
@@ -81,14 +81,14 @@ export class UsersService {
       where: { idUser, isActive: true },
       relations: ['roles'],
     });
-    if (!user) throw new BadRequestException('Usuario no encontrado');
+    if (!user) throw new BadRequestException('User not found');
     for (const rn of roleNames) {
       const role = await this.rolesService.getOneByName(rn.toUpperCase());
-      if (!role) throw new BadRequestException(`Rol no encontrado: ${rn}`);
+      if (!role) throw new BadRequestException(`Role not found: ${rn}`);
 
       const alreadyAssigned = user.roles?.some((r) => r.name === rn);
       if (alreadyAssigned)
-        throw new BadRequestException(`Rol ya asignado: ${rn}`);
+        throw new BadRequestException(`Role not found: ${rn}`);
 
       user.roles?.push(role);
     }
@@ -101,7 +101,7 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: { idUser: idUser, isActive: true },
     });
-    if (!user) throw new BadRequestException('Usuario no encontrado');
+    if (!user) throw new BadRequestException('User not found');
     user.updatedAt = new Date();
     user.deletedAt = new Date();
     user.isActive = false;
@@ -112,7 +112,7 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: { idUser: idUser, isActive: false },
     });
-    if (!user) throw new BadRequestException('Usuario no encontrado');
+    if (!user) throw new BadRequestException('User not found');
     user.updatedAt = new Date();
     user.isActive = true;
     return this.userRepository.save(user);

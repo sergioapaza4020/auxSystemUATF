@@ -13,7 +13,7 @@ export class PermissionsService {
 
   async create(permissionCreateDto: PermissionCreateDto): Promise<Permission> {
     const permission = await this.getOneByName(permissionCreateDto.name);
-    if (permission) throw new BadRequestException('Permiso ya existente');
+    if (permission) throw new BadRequestException('Permission already exists');
 
     const permissionCreated =
       this.permissionRepository.create(permissionCreateDto);
@@ -47,7 +47,7 @@ export class PermissionsService {
     const permission = await this.permissionRepository.findOne({
       where: { idPermission, isActive: true },
     });
-    if (!permission) throw new BadRequestException('Permiso no encontrado');
+    if (!permission) throw new BadRequestException('Permission not found');
     permission.updatedAt = new Date();
     permission.deletedAt = new Date();
     permission.isActive = false;
@@ -58,7 +58,7 @@ export class PermissionsService {
     const permission = await this.permissionRepository.findOne({
       where: { idPermission, isActive: false },
     });
-    if (!permission) throw new BadRequestException('Permiso no encontrado');
+    if (!permission) throw new BadRequestException('Permission not found');
     permission.updatedAt = new Date();
     permission.deletedAt = new Date();
     permission.isActive = true;

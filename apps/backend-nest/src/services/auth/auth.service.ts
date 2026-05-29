@@ -20,11 +20,10 @@ export class AuthService {
     const { username, password } = loginDto;
 
     const user = await this.userService.getOneByUsername(username);
-    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+    if (!user) throw new UnauthorizedException('User not found');
 
     const checkPassword = await bcrypt.compare(password, user.password);
-    if (!checkPassword)
-      throw new UnauthorizedException('Contraseña incorrecta');
+    if (!checkPassword) throw new UnauthorizedException('Wrong password');
 
     return user;
   }
@@ -86,7 +85,7 @@ export class AuthService {
 
   async getSession(userId: number) {
     const user = await this.userService.getOneById(userId);
-    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+    if (!user) throw new UnauthorizedException('User not found');
 
     return this.buildSessionPayload(user);
   }
@@ -100,7 +99,7 @@ export class AuthService {
       const session = await this.sessionService.validateRefreshToken(token);
 
       if (session.user.idUser !== payload.idUser)
-        throw new UnauthorizedException('Sesión inválida');
+        throw new UnauthorizedException('Invalid session');
 
       await this.sessionService.updateLastSessionUsed(session);
 
@@ -115,9 +114,7 @@ export class AuthService {
 
       return { accessToken: newAccessToken };
     } catch (error) {
-      throw new UnauthorizedException(
-        `Refresh token inválido: ${(error as Error).message}`,
-      );
+      throw new Error(`Invalid token refresh: ${(error as Error).message}`);
     }
   }
 }

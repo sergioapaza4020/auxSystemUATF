@@ -25,7 +25,7 @@ export class SessionsController {
     const session = await this.sessionsService.revokeSessionById(idSession);
 
     return {
-      message: 'Sesión revocada con éxito',
+      message: 'Session revoked successfully',
       data: session,
     };
   }
@@ -35,7 +35,7 @@ export class SessionsController {
     await this.sessionsService.revokeAllSessions(user.idUser);
 
     return {
-      message: 'Todas las sesiones revocadas con éxito',
+      message: 'All sessions revoked successfully',
     };
   }
 }

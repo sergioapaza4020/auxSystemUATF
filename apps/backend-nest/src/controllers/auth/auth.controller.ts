@@ -18,7 +18,7 @@ export class AuthController {
     const tokens = await this.authService.login(loginDto);
 
     return {
-      message: 'Inicio de sesión exitoso',
+      message: 'Login successfully',
       data: tokens,
     };
   }
@@ -29,7 +29,7 @@ export class AuthController {
     const session = await this.authService.getSession(user.idUser);
 
     return {
-      message: 'Sesión de usuario activo',
+      message: 'User session active',
       data: session,
     };
   }
@@ -42,7 +42,7 @@ export class AuthController {
     );
 
     return {
-      message: 'Token actualizado exitosamente',
+      message: 'Token refreshed successfully',
       data: tokens,
     };
   }

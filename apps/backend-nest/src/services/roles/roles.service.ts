@@ -14,7 +14,7 @@ export class RolesService {
 
   async create(roleCreateDto: RoleCreateDto): Promise<Role> {
     const role = await this.getOneByName(roleCreateDto.name);
-    if (role) throw new BadRequestException('Rol ya existente');
+    if (role) throw new BadRequestException('Role already exists');
 
     const roleCreated = this.roleRepository.create(roleCreateDto);
     roleCreated.authorId = 0;
@@ -50,15 +50,15 @@ export class RolesService {
       where: { idRole, isActive: true },
       relations: ['permissions'],
     });
-    if (!role) throw new BadRequestException('Rol no encontrado');
+    if (!role) throw new BadRequestException('Role not found');
     for (const pn of permissionNames) {
       const permission = await this.permissionsService.getOneByName(pn);
       if (!permission)
-        throw new BadRequestException(`Permiso no encontrado: ${pn}`);
+        throw new BadRequestException(`Permission not found: ${pn}`);
 
       const alreadyAssigned = role.permissions?.some((p) => p.name === pn);
       if (alreadyAssigned)
-        throw new BadRequestException(`Permiso ya asignado: ${pn}`);
+        throw new BadRequestException(`Permission already assigned: ${pn}`);
 
       role.permissions?.push(permission);
     }
@@ -71,7 +71,7 @@ export class RolesService {
     const role = await this.roleRepository.findOne({
       where: { idRole, isActive: true },
     });
-    if (!role) throw new BadRequestException('Rol no encontrado');
+    if (!role) throw new BadRequestException('Role not found');
     role.updatedAt = new Date();
     role.deletedAt = new Date();
     role.isActive = false;
@@ -82,7 +82,7 @@ export class RolesService {
     const role = await this.roleRepository.findOne({
       where: { idRole, isActive: false },
     });
-    if (!role) throw new BadRequestException('Rol no encontrado');
+    if (!role) throw new BadRequestException('Role not found');
     role.updatedAt = new Date();
     role.isActive = true;
     return this.roleRepository.save(role);

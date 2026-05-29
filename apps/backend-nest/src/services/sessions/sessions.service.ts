@@ -45,7 +45,7 @@ export class SessionsService {
         user: { idUser },
         isActive: true,
       },
-      relations: ['users'],
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -56,7 +56,7 @@ export class SessionsService {
         user: { idUser },
         isActive: true,
       },
-      relations: ['users'],
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -66,7 +66,7 @@ export class SessionsService {
       where: {
         isActive: true,
       },
-      relations: ['users'],
+      relations: ['user'],
     });
 
     for (const session of sessions) {
@@ -76,7 +76,7 @@ export class SessionsService {
       }
     }
 
-    throw new UnauthorizedException('Refresh token inválido');
+    throw new UnauthorizedException('Invalid token refresh');
   }
 
   async updateLastSessionUsed(session: UserSession): Promise<UserSession> {
@@ -105,9 +105,9 @@ export class SessionsService {
   ): Promise<UserSession> {
     const session = await this.sessionRepository.findOne({
       where: { idSession },
-      relations: ['users'],
+      relations: ['user'],
     });
-    if (!session) throw new NotFoundException('Sesión no encontrada');
+    if (!session) throw new NotFoundException('Session not found');
 
     session.isActive = false;
     session.revokedAt = new Date();
@@ -124,7 +124,7 @@ export class SessionsService {
         user: { idUser },
         isActive: true,
       },
-      relations: ['users'],
+      relations: ['user'],
     });
 
     for (const session of sessions) {
