@@ -1,3 +1,10 @@
+## [1.2.0-alpha.9](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.2.0-alpha.8...v1.2.0-alpha.9) (2026-05-29)
+
+### Bug Fixes
+
+* add changes ([e9e9600](https://github.com/sergioapaza4020/auxSystemUATF/commit/e9e9600170e597489bdc954ccadec44cdcc1e871))
+* **ci:** fix ci semantic release tags ([e1c231e](https://github.com/sergioapaza4020/auxSystemUATF/commit/e1c231ef9784c242a8d46700934a32682ff006da))
+
 ## [1.2.0-beta.1](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.1.7...v1.2.0-beta.1) (2026-05-29)
 
 ### Features
