@@ -21,11 +21,19 @@ export class UserSession {
   @Column({ name: 'refresh_token' })
   refreshToken: string;
 
-  @Column({ name: 'user_agent' })
-  userAgent: string;
+  @Column({
+    name: 'user_agent',
+    type: 'varchar',
+    nullable: true,
+  })
+  userAgent: string | null;
 
-  @Column({ name: 'ip_address' })
-  ipAddress: string;
+  @Column({
+    name: 'ip_address',
+    type: 'varchar',
+    nullable: true,
+  })
+  ipAddress: string | null;
 
   @CreateDateColumn({
     name: 'created_at',

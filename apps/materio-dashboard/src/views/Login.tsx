@@ -54,7 +54,12 @@ const Login = ({ mode }: { mode: Mode }) => {
         username: data.get('username') as string,
         password: data.get('password') as string
       })
+
+      console.log('estoy vivo wiiiiii')
+      console.log(`username: ${data.get('username')}, password: ${data.get('password')}`)
+      console.log('redireccionando a dashboard...')
       router.push('/dashboard')
+      console.log('ya estoy en dashboard, o ya debería estarlo')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : (error as any).data?.message || 'An error occurred'
 

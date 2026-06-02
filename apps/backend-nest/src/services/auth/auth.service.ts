@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtPayload } from 'src/common/types/jwt-payload.type';
 import { User } from 'src/entities/users/users.entity';
 import { SessionsService } from '../sessions/sessions.service';
+import { Request } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +29,7 @@ export class AuthService {
     return user;
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, request: Request) {
     const user = await this.validateUser(loginDto);
 
     const session = this.buildSessionPayload(user);
@@ -48,9 +49,14 @@ export class AuthService {
       },
     );
 
+    const userAgent = request.headers['user-agent'] || 'Unknown';
+    const ipAddress = request.ip || request.socket.remoteAddress || 'Unknown';
+
     const userSession = this.sessionService.createSession({
       user,
       refreshToken,
+      userAgent,
+      ipAddress,
     });
 
     return {

@@ -137,4 +137,10 @@ export class SessionsService {
       await this.sessionRepository.save(session);
     }
   }
+
+  async logout(refreshToken: string, revokedBy?: User) {
+    const session = await this.validateRefreshToken(refreshToken);
+
+    return this.revokeSession(session, revokedBy);
+  }
 }
