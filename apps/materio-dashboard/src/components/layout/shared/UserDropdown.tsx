@@ -21,6 +21,8 @@ import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 
+import { Logout } from '@/api/auth.service'
+
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
   width: 8,
@@ -46,15 +48,20 @@ const UserDropdown = () => {
   }
 
   const handleDropdownClose = async (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {
-    router.push('/dashboard')
+    if (url === '/login') {
+      await Logout()
+      router.replace(url)
+
+      return
+    }
 
     if (url) {
       router.push(url)
-    }
 
-    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
       return
     }
+
+    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) return
 
     setOpen(false)
   }
@@ -106,19 +113,19 @@ const UserDropdown = () => {
                   <Divider className='mlb-1' />
                   <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
                     <i className='ri-user-3-line' />
-                    <Typography color='text.primary'>My Profile</Typography>
+                    <Typography color='text.primary'>Mi perfil</Typography>
                   </MenuItem>
                   <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
                     <i className='ri-settings-4-line' />
-                    <Typography color='text.primary'>Settings</Typography>
+                    <Typography color='text.primary'>Configuración</Typography>
                   </MenuItem>
                   <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
                     <i className='ri-money-dollar-circle-line' />
-                    <Typography color='text.primary'>Pricing</Typography>
+                    <Typography color='text.primary'>Precios</Typography>
                   </MenuItem>
                   <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
                     <i className='ri-question-line' />
-                    <Typography color='text.primary'>FAQ</Typography>
+                    <Typography color='text.primary'>Preguntas frecuentes</Typography>
                   </MenuItem>
                   <div className='flex items-center plb-2 pli-4'>
                     <Button
@@ -130,7 +137,7 @@ const UserDropdown = () => {
                       onClick={e => handleDropdownClose(e, '/login')}
                       sx={{ '& .MuiButton-endIcon': { marginInlineStart: 1.5 } }}
                     >
-                      Logout
+                      Cerrar sesión
                     </Button>
                   </div>
                 </MenuList>

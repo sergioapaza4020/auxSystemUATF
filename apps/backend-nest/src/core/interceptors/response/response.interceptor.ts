@@ -4,7 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { map, Observable } from 'rxjs';
 
 @Injectable()
@@ -27,7 +27,6 @@ export class ResponseInterceptor implements NestInterceptor {
   }
 
   private getDefaultMessage(statusCode: number, method: string): string {
-    console.log(`method: ${method}, statusCode: ${statusCode}`);
     if (statusCode == 201) return 'Resource created successfully';
 
     if (statusCode == 200) {

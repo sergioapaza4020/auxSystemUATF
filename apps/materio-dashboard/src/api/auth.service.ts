@@ -2,7 +2,7 @@ import { type ILogin } from '@/interfaces/IAuth.interface'
 
 import { instance } from '@/api/config'
 
-import { saveTokens } from '@/utils/auth-cookies'
+import { clearTokens, getRefreshToken, saveTokens } from '@/utils/auth-cookies'
 
 export const Login = async ({ username, password }: ILogin): Promise<any> => {
   try {
@@ -17,4 +17,19 @@ export const Login = async ({ username, password }: ILogin): Promise<any> => {
     console.error('Login failed:', error)
     throw error
   }
+}
+
+export const Logout = async (): Promise<void> => {
+  const refreshToken = getRefreshToken()
+
+  if (refreshToken) {
+    try {
+      await instance.post('/sessions/logout', { refreshToken })
+    } catch (error: any) {
+      console.error('Logout failed:', error)
+      throw error
+    }
+  }
+
+  clearTokens()
 }

@@ -1,8 +1,17 @@
-import { Controller, Get, Patch, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  ParseIntPipe,
+  Post,
+  Body,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { SessionsService } from 'src/services/sessions/sessions.service';
 import { User } from 'src/entities/users/users.entity';
+import { LogoutDto } from 'src/dtos/sessions/logout.dto';
 
 @ApiBearerAuth('access-token')
 @Controller('sessions')
@@ -18,6 +27,13 @@ export class SessionsController {
       message: 'Sesiones recuperadas con éxito',
       data: sessions,
     };
+  }
+
+  @Post('logout')
+  async logout(@Body() logoutDto: LogoutDto, @CurrentUser() user: User) {
+    await this.sessionsService.logout(logoutDto.refreshToken, user);
+
+    return { message: 'Logout successful' };
   }
 
   @Patch('revoke/:idSession')
