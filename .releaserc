@@ -1,14 +1,6 @@
 {
   "branches": [
-    "main",
-    {
-      "name": "test",
-      "prerelease": "beta"
-    },
-    {
-      "name": "dev",
-      "prerelease": "alpha"
-    }
+    "main"
   ],
   "plugins": [
     [
@@ -29,6 +21,11 @@
             "release": "patch"
           },
           {
+            "breaking": true,
+            "release": "major"
+          },
+
+          {
             "type": "refactor",
             "release": false
           },
@@ -47,17 +44,30 @@
           {
             "type": "chore",
             "release": false
+          },
+          {
+            "type": "ci",
+            "release": false
+          },
+          {
+            "type": "build",
+            "release": false
           }
         ]
       }
     ],
+
     [
       "@semantic-release/release-notes-generator",
       {
         "preset": "conventionalcommits"
       }
     ],
+
     "@semantic-release/changelog",
+
+    "@semantic-release/github",
+
     [
       "@semantic-release/git",
       {
