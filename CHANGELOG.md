@@ -1,3 +1,10 @@
+## [1.2.0-alpha.10](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.2.0-alpha.9...v1.2.0-alpha.10) (2026-06-04)
+
+### Bug Fixes
+
+* **auth:** fix login with refresh tokens and sessions table ([cfc31e9](https://github.com/sergioapaza4020/auxSystemUATF/commit/cfc31e938106573dc0d7e5aa62e609ef0978ff5c))
+* **frontend:** add js-cookie types ([c28aaf2](https://github.com/sergioapaza4020/auxSystemUATF/commit/c28aaf266547ebcfe5c46747a1b439b2c1cec0ea))
+
 ## [1.2.0-alpha.9](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.2.0-alpha.8...v1.2.0-alpha.9) (2026-05-29)
 
 ### Bug Fixes
