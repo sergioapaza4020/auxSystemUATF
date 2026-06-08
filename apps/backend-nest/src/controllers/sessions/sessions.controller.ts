@@ -19,6 +19,16 @@ import { LogoutDto } from 'src/dtos/sessions/logout.dto';
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
+  @Get()
+  async getAllSessions() {
+    const sessions = await this.sessionsService.getAllSessions();
+
+    return {
+      message: 'Sesiones recuperadas con éxito',
+      data: sessions,
+    };
+  }
+
   @Get('my-sessions')
   async getMySessions(@CurrentUser() user: User) {
     const sessions = await this.sessionsService.getUserSessions(user.idUser);

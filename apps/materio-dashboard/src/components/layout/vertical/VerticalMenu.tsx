@@ -61,182 +61,58 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-line' /> }}
         menuSectionStyles={menuSectionStyles(theme)}
       >
-        <SubMenu
-          label='Dashboards'
-          icon={<i className='ri-home-smile-line' />}
-          suffix={<Chip label='5' size='small' color='error' />}
-        >
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/dashboards/crm`}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            CRM
+        <MenuSection label='Pruebas'>
+          <MenuItem href='/dashboard/admin/sessions' icon={<i className='ri-admin-line' />}>
+            Sesiones
           </MenuItem>
-          <MenuItem href='/'>Analytics</MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/dashboards/ecommerce`}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            eCommerce
+        </MenuSection>
+        <MenuSection label='Ejemplos'>
+          <MenuItem href='/dashboard/account-settings' icon={<i className='ri-user-settings-line' />}>
+            Configuración de cuenta
           </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/dashboards/academy`}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Academy
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/dashboards/logistics`}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Logistics
-          </MenuItem>
-        </SubMenu>
-        <SubMenu
-          label='Front Pages'
-          icon={<i className='ri-file-copy-line' />}
-          suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-        >
-          <MenuItem href={`${process.env.NEXT_PUBLIC_PRO_URL}/front-pages/landing-page`} target='_blank'>
-            Landing
-          </MenuItem>
-          <MenuItem href={`${process.env.NEXT_PUBLIC_PRO_URL}/front-pages/pricing`} target='_blank'>
-            Pricing
-          </MenuItem>
-          <MenuItem href={`${process.env.NEXT_PUBLIC_PRO_URL}/front-pages/payment`} target='_blank'>
-            Payment
-          </MenuItem>
-          <MenuItem href={`${process.env.NEXT_PUBLIC_PRO_URL}/front-pages/checkout`} target='_blank'>
-            Checkout
-          </MenuItem>
-          <MenuItem href={`${process.env.NEXT_PUBLIC_PRO_URL}/front-pages/help-center`} target='_blank'>
-            Help Center
-          </MenuItem>
-        </SubMenu>
-        <MenuSection label='Apps & Pages'>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/apps/email`}
-            icon={<i className='ri-mail-open-line' />}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Email
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/apps/chat`}
-            icon={<i className='ri-wechat-line' />}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Chat
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/apps/calendar`}
-            icon={<i className='ri-calendar-line' />}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Calendar
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/apps/kanban`}
-            icon={<i className='ri-drag-drop-line' />}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Kanban
-          </MenuItem>
-          <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
-            Account Settings
-          </MenuItem>
-          <SubMenu label='Auth Pages' icon={<i className='ri-shield-keyhole-line' />}>
+          <SubMenu label='Autenticación' icon={<i className='ri-shield-keyhole-line' />}>
             <MenuItem href='/login' target='_blank'>
-              Login
+              Inicio de sesión
             </MenuItem>
             <MenuItem href='/register' target='_blank'>
-              Register
+              Registro de usuario
             </MenuItem>
             <MenuItem href='/forgot-password' target='_blank'>
-              Forgot Password
+              Olvidé mi contraseña
             </MenuItem>
           </SubMenu>
-          <SubMenu label='Miscellaneous' icon={<i className='ri-question-line' />}>
+          <SubMenu label='Miscelánea' icon={<i className='ri-question-line' />}>
             <MenuItem href='/error' target='_blank'>
               Error
             </MenuItem>
             <MenuItem href='/under-maintenance' target='_blank'>
-              Under Maintenance
+              Bajo mantenimiento
             </MenuItem>
           </SubMenu>
-          <MenuItem href='/card-basic' icon={<i className='ri-bar-chart-box-line' />}>
-            Cards
+          <MenuItem href='/dashboard/card-basic' icon={<i className='ri-bar-chart-box-line' />}>
+            Tarjetas
           </MenuItem>
+          <MenuItem href='/dashboard/form-layouts' icon={<i className='ri-layout-4-line' />}>
+            Diseño de formularios
+          </MenuItem>
+          <MenuItem suffix={<Chip label='New' size='small' color='info' />}>Item con chip</MenuItem>
+          <SubMenu label='Niveles de menú'>
+            <MenuItem>Nivel de menú 2</MenuItem>
+            <SubMenu label='Nivel de menú 2'>
+              <MenuItem>Nivel de menú 3</MenuItem>
+              <MenuItem>Nivel de menú 3</MenuItem>
+            </SubMenu>
+          </SubMenu>
+          <MenuItem disabled>Menú deshabilitado</MenuItem>
         </MenuSection>
-        <MenuSection label='Forms & Tables'>
-          <MenuItem href='/form-layouts' icon={<i className='ri-layout-4-line' />}>
-            Form Layouts
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/forms/form-validation`}
-            icon={<i className='ri-checkbox-multiple-line' />}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Form Validation
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/forms/form-wizard`}
-            icon={<i className='ri-git-commit-line' />}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            Form Wizard
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_PRO_URL}/react-table`}
-            icon={<i className='ri-table-alt-line' />}
-            suffix={<Chip label='Pro' size='small' color='primary' variant='tonal' />}
-            target='_blank'
-          >
-            React Table
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_DOCS_URL}/docs/user-interface/form-elements`}
-            icon={<i className='ri-radio-button-line' />}
-            suffix={<i className='ri-external-link-line text-xl' />}
-            target='_blank'
-          >
-            Form Elements
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_DOCS_URL}/docs/user-interface/mui-table`}
-            icon={<i className='ri-table-2' />}
-            suffix={<i className='ri-external-link-line text-xl' />}
-            target='_blank'
-          >
-            MUI Tables
-          </MenuItem>
-        </MenuSection>
-        <MenuSection label='Misc'>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_DOCS_URL}/docs/user-interface/foundation`}
-            icon={<i className='ri-pantone-line' />}
-            suffix={<i className='ri-external-link-line text-xl' />}
-            target='_blank'
-          >
-            Foundation
-          </MenuItem>
+        <MenuSection label='Enlaces'>
           <MenuItem
             href={`${process.env.NEXT_PUBLIC_DOCS_URL}/docs/user-interface/components`}
             icon={<i className='ri-toggle-line' />}
             suffix={<i className='ri-external-link-line text-xl' />}
             target='_blank'
           >
-            Components
+            Componentes
           </MenuItem>
           <MenuItem
             href={`${process.env.NEXT_PUBLIC_DOCS_URL}/docs/menu-examples/overview`}
@@ -244,15 +120,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             suffix={<i className='ri-external-link-line text-xl' />}
             target='_blank'
           >
-            Menu Examples
-          </MenuItem>
-          <MenuItem
-            href={`https://github.com/themeselection/${process.env.NEXT_PUBLIC_REPO_NAME}/issues`}
-            icon={<i className='ri-lifebuoy-line' />}
-            suffix={<i className='ri-external-link-line text-xl' />}
-            target='_blank'
-          >
-            Raise Support
+            Ejemplos de menú
           </MenuItem>
           <MenuItem
             href={process.env.NEXT_PUBLIC_DOCS_URL}
@@ -260,26 +128,8 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             suffix={<i className='ri-external-link-line text-xl' />}
             target='_blank'
           >
-            Documentation
+            Documentación
           </MenuItem>
-          <SubMenu label='Others' icon={<i className='ri-more-line' />}>
-            <MenuItem suffix={<Chip label='New' size='small' color='info' />}>Item With Badge</MenuItem>
-            <MenuItem
-              href='https://themeselection.com'
-              target='_blank'
-              suffix={<i className='ri-external-link-line text-xl' />}
-            >
-              External Link
-            </MenuItem>
-            <SubMenu label='Menu Levels'>
-              <MenuItem>Menu Level 2</MenuItem>
-              <SubMenu label='Menu Level 2'>
-                <MenuItem>Menu Level 3</MenuItem>
-                <MenuItem>Menu Level 3</MenuItem>
-              </SubMenu>
-            </SubMenu>
-            <MenuItem disabled>Disabled Menu</MenuItem>
-          </SubMenu>
         </MenuSection>
       </Menu>
     </ScrollWrapper>

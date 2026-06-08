@@ -36,7 +36,7 @@ export class AuthController {
   }
 
   @Public()
-  @Post('refresh')
+  @Post('refresh-access-token')
   async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     const tokens = await this.authService.refreshToken(
       refreshTokenDto.refreshToken,

@@ -8,6 +8,7 @@ import { JwtPayload } from 'src/common/types/jwt-payload.type';
 import { User } from 'src/entities/users/users.entity';
 import { SessionsService } from '../sessions/sessions.service';
 import { Request } from 'express';
+import { UAParser } from 'ua-parser-js';
 
 @Injectable()
 export class AuthService {
@@ -49,14 +50,25 @@ export class AuthService {
       },
     );
 
-    const userAgent = request.headers['user-agent'] || 'Unknown';
-    const ipAddress = request.ip || request.socket.remoteAddress || 'Unknown';
+    const ipAddress = request.ip || request.socket.remoteAddress;
+    const userAgent = request.headers['user-agent'];
+
+    const parser = new UAParser(userAgent);
+    const browser = parser.getBrowser().name;
+    const os = parser.getOS().name;
+    const device = parser.getDevice().type;
+
+    const lastUsedAt = new Date();
 
     const userSession = this.sessionService.createSession({
       user,
       refreshToken,
-      userAgent,
       ipAddress,
+      userAgent,
+      browser,
+      os,
+      device,
+      lastUsedAt,
     });
 
     return {
@@ -109,14 +121,16 @@ export class AuthService {
 
       await this.sessionService.updateLastSessionUsed(session);
 
-      const newPayload = this.getSession(payload.idUser);
+      const newPayload = await this.getSession(payload.idUser);
 
       const newAccessToken = this.jwtService.sign(newPayload, {
-        secret: process.env.JWT_ACCESS_REFRESH,
+        secret: process.env.JWT_ACCESS_SECRET,
         expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as
           | number
           | undefined,
       });
+
+      await this.sessionService.updateLastSessionUsed(session);
 
       return { accessToken: newAccessToken };
     } catch (error) {

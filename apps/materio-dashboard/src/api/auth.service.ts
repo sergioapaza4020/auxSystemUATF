@@ -1,8 +1,11 @@
-import { type ILogin } from '@/interfaces/IAuth.interface'
+import type { ILogin } from '@/interfaces/auth/auth.interface'
 
-import { instance } from '@/api/config'
+import { instance } from '@/api/config/config'
 
-import { clearTokens, getRefreshToken, saveTokens } from '@/utils/auth-cookies'
+import { getRefreshToken, saveTokens, setAccessToken } from '@/utils/authCookies'
+import type { ApiResponse } from '@/interfaces/api-response.interface'
+import type { ICurrentUser } from '@/interfaces/auth/current-user.interface'
+import { refreshInstance } from './config/refreshInstance'
 
 export const Login = async ({ username, password }: ILogin): Promise<any> => {
   try {
@@ -11,25 +14,36 @@ export const Login = async ({ username, password }: ILogin): Promise<any> => {
     const { accessToken, refreshToken } = response.data.data
 
     saveTokens(accessToken, refreshToken)
-
-    return response.data
   } catch (error: any) {
     console.error('Login failed:', error)
     throw error
   }
 }
 
-export const Logout = async (): Promise<void> => {
-  const refreshToken = getRefreshToken()
+export const getCurrentUser = async () => {
+  try {
+    const response = await instance.get<ApiResponse<ICurrentUser>>('/auth/me')
 
-  if (refreshToken) {
-    try {
-      await instance.post('/sessions/logout', { refreshToken })
-    } catch (error: any) {
-      console.error('Logout failed:', error)
-      throw error
-    }
+    return response.data.data
+  } catch (error: any) {
+    console.error('Get user failed:', error)
+    throw error
   }
+}
 
-  clearTokens()
+export const refreshAccessToken = async () => {
+  try {
+    const refreshToken = getRefreshToken()
+
+    if (!refreshToken) throw new Error('Refresh token not found')
+
+    const response = await refreshInstance.post('/auth/refresh-access-token', { refreshToken })
+
+    setAccessToken(response.data.data.accessToken)
+
+    return response.data.data.accessToken
+  } catch (error: any) {
+    console.error(error)
+    throw error
+  }
 }

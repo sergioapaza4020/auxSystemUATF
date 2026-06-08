@@ -21,7 +21,8 @@ import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 
-import { Logout } from '@/api/auth.service'
+import { Logout } from '@/api/sessions.service'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
@@ -66,6 +67,10 @@ const UserDropdown = () => {
     setOpen(false)
   }
 
+  const { user, loading } = useCurrentUser()
+
+  if (loading) return <div>Cargando...</div>
+
   return (
     <>
       <Badge
@@ -105,9 +110,9 @@ const UserDropdown = () => {
                     <Avatar alt='John Doe' src='/images/avatars/1.png' />
                     <div className='flex items-start flex-col'>
                       <Typography className='font-medium' color='text.primary'>
-                        John Doe
+                        {user?.username}
                       </Typography>
-                      <Typography variant='caption'>Admin</Typography>
+                      <Typography variant='caption'>{user?.roles[0]}</Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />

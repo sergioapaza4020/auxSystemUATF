@@ -20,8 +20,12 @@ export class SessionsService {
   async createSession(params: {
     user: User;
     refreshToken: string;
-    userAgent?: string;
     ipAddress?: string;
+    userAgent?: string;
+    browser?: string;
+    os?: string;
+    device?: string;
+    lastUsedAt: Date;
   }): Promise<UserSession> {
     const hashedRefreshToken = await bcrypt.hash(params.refreshToken, 10);
 
@@ -31,23 +35,35 @@ export class SessionsService {
     const session = this.sessionRepository.create({
       user: params.user,
       refreshToken: hashedRefreshToken,
-      userAgent: params.userAgent,
       ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      browser: params.browser,
+      os: params.os,
+      device: params.device,
+      lastUsedAt: params.lastUsedAt,
       expiresAt,
     });
 
     return this.sessionRepository.save(session);
   }
 
+  async getAllSessions(): Promise<UserSession[]> {
+    return this.sessionRepository
+      .createQueryBuilder('session')
+      .leftJoinAndSelect('session.user', 'user')
+      .orderBy('session.isActive', 'DESC')
+      .addOrderBy('session.lastUsedAt', 'DESC', 'NULLS LAST')
+      .getMany();
+  }
+
   async getUserSessions(idUser: number): Promise<UserSession[]> {
-    return this.sessionRepository.find({
-      where: {
-        user: { idUser },
-        isActive: true,
-      },
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-    });
+    return this.sessionRepository
+      .createQueryBuilder('session')
+      .leftJoinAndSelect('session.user', 'user')
+      .where('user.id_user = :idUser', { idUser })
+      .orderBy('session.isActive', 'DESC')
+      .addOrderBy('session.lastUsedAt', 'DESC', 'NULLS LAST')
+      .getMany();
   }
 
   async findActiveSessionByUser(idUser: number): Promise<UserSession | null> {

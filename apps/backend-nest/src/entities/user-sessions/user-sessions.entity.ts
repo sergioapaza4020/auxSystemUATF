@@ -22,6 +22,13 @@ export class UserSession {
   refreshToken: string;
 
   @Column({
+    name: 'ip_address',
+    type: 'varchar',
+    nullable: true,
+  })
+  ipAddress: string | null;
+
+  @Column({
     name: 'user_agent',
     type: 'varchar',
     nullable: true,
@@ -29,11 +36,25 @@ export class UserSession {
   userAgent: string | null;
 
   @Column({
-    name: 'ip_address',
+    name: 'browser',
     type: 'varchar',
     nullable: true,
   })
-  ipAddress: string | null;
+  browser: string | null;
+
+  @Column({
+    name: 'os',
+    type: 'varchar',
+    nullable: true,
+  })
+  os: string | null;
+
+  @Column({
+    name: 'device',
+    type: 'varchar',
+    nullable: true,
+  })
+  device: string | null;
 
   @CreateDateColumn({
     name: 'created_at',
