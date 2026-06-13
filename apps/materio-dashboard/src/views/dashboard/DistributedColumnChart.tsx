@@ -1,46 +1,46 @@
-'use client'
+'use client';
 
 // Next Imports
-import dynamic from 'next/dynamic'
+import dynamic from 'next/dynamic';
 
 //MUI Imports
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
-import { useTheme } from '@mui/material/styles'
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material/styles';
 
 // Third-party Imports
-import type { ApexOptions } from 'apexcharts'
+import type { ApexOptions } from 'apexcharts';
 
 // Styled Component Imports
-const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
+const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'));
 
 // Vars
 const series = [
   {
     name: '2022',
-    data: [45, 85, 65, 50, 70]
-  }
-]
+    data: [45, 85, 65, 50, 70],
+  },
+];
 
 const DistributedColumnChart = () => {
   // Hooks
-  const theme = useTheme()
+  const theme = useTheme();
 
   // Vars
-  const primaryColor = 'var(--mui-palette-primary-main)'
-  const errorColor = 'var(--mui-palette-error-main)'
-  const trackBgColor = 'var(--mui-palette-customColors-trackBg)'
+  const primaryColor = 'var(--mui-palette-primary-main)';
+  const errorColor = 'var(--mui-palette-error-main)';
+  const trackBgColor = 'var(--mui-palette-customColors-trackBg)';
 
   const options: ApexOptions = {
     chart: {
       type: 'bar',
       stacked: false,
       parentHeightOffset: 0,
-      toolbar: { show: false }
+      toolbar: { show: false },
     },
     tooltip: {
-      x: { show: false }
+      x: { show: false },
     },
     grid: {
       show: false,
@@ -48,8 +48,8 @@ const DistributedColumnChart = () => {
         top: -10,
         left: -3,
         right: -2,
-        bottom: 5
-      }
+        bottom: 5,
+      },
     },
     legend: { show: false },
     dataLabels: { enabled: false },
@@ -64,14 +64,14 @@ const DistributedColumnChart = () => {
         distributed: true,
         colors: {
           backgroundBarRadius: 5,
-          backgroundBarColors: [trackBgColor, trackBgColor, trackBgColor, trackBgColor, trackBgColor]
-        }
-      }
+          backgroundBarColors: [trackBgColor, trackBgColor, trackBgColor, trackBgColor, trackBgColor],
+        },
+      },
     },
     xaxis: {
       labels: { show: false },
       axisTicks: { show: false },
-      axisBorder: { show: false }
+      axisBorder: { show: false },
     },
     yaxis: { show: false },
     responsive: [
@@ -80,23 +80,23 @@ const DistributedColumnChart = () => {
         options: {
           plotOptions: {
             bar: {
-              columnWidth: '18%'
-            }
-          }
-        }
+              columnWidth: '18%',
+            },
+          },
+        },
       },
       {
         breakpoint: theme.breakpoints.values.sm,
         options: {
           plotOptions: {
             bar: {
-              columnWidth: '12%'
-            }
-          }
-        }
-      }
-    ]
-  }
+              columnWidth: '12%',
+            },
+          },
+        },
+      },
+    ],
+  };
 
   return (
     <Card>
@@ -108,7 +108,7 @@ const DistributedColumnChart = () => {
         </Typography>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default DistributedColumnChart
+export default DistributedColumnChart;

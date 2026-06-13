@@ -1,49 +1,49 @@
-import type { HeadCell } from '../interfaces/headCell'
+import type { HeadCell } from '../interfaces/headCell';
 
 export const headCellsData: HeadCell[] = [
   {
     id: 'idSession',
     label: '#',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'user',
     label: 'Usuario',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'browser',
     label: 'Navegador',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'os',
     label: 'Sistema Operativo',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'device',
     label: 'Dispositivo',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'ipAddress',
     label: 'Dirección IP',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'isActive',
     label: 'Estado',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'lastUsedAt',
     label: 'Última vez activo',
-    sortable: true
+    sortable: true,
   },
   {
     id: 'actions',
     label: 'Acciones',
-    sortable: false
-  }
-]
+    sortable: false,
+  },
+];

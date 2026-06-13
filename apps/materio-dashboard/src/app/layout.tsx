@@ -1,25 +1,25 @@
 // Third-party Imports
-import 'react-perfect-scrollbar/dist/css/styles.css'
+import 'react-perfect-scrollbar/dist/css/styles.css';
 
 // Type Imports
-import type { ChildrenType } from '@core/types'
+import type { ChildrenType } from '@core/types';
 
 // Style Imports
-import '@/app/globals.css'
+import '@/app/globals.css';
 
 // Generated Icon CSS Imports
-import '@assets/iconify-icons/generated-icons.css'
-import { AuthProvider } from '@/providers/AuthProvider'
+import '@assets/iconify-icons/generated-icons.css';
+import { AuthProvider } from '@/providers/AuthProvider';
 
 export const metadata = {
   title: 'Aux System U.A.T.F.',
   description:
-    'Develop next-level web apps with Materio Dashboard Free - NextJS. Now, updated with lightning-fast routing powered by MUI and App router.'
-}
+    'Develop next-level web apps with Materio Dashboard Free - NextJS. Now, updated with lightning-fast routing powered by MUI and App router.',
+};
 
 const RootLayout = ({ children }: ChildrenType) => {
   // Vars
-  const direction = 'ltr'
+  const direction = 'ltr';
 
   return (
     <html id='__next' dir={direction}>
@@ -27,7 +27,7 @@ const RootLayout = ({ children }: ChildrenType) => {
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
-  )
-}
+  );
+};
 
-export default RootLayout
+export default RootLayout;

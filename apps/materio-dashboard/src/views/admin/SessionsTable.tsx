@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react';
 
-import DeleteIcon from '@mui/icons-material/Delete'
-import Swal, { type SweetAlertTheme } from 'sweetalert2'
-import Cookies from 'js-cookie'
+import DeleteIcon from '@mui/icons-material/Delete';
+import Swal, { type SweetAlertTheme } from 'sweetalert2';
+import Cookies from 'js-cookie';
 
 import {
   Box,
@@ -18,63 +18,63 @@ import {
   TablePagination,
   TableRow,
   Tooltip,
-  Zoom
-} from '@mui/material'
+  Zoom,
+} from '@mui/material';
 
-import { getAllSessions, revokeSessionById } from '@/api/sessions.service'
-import type { ISession } from '@/interfaces/sessions/session.interface'
-import { useAuth } from '@/hooks/useAuth'
-import { EnhancedTableHead } from '@/components/table/HeaderTable'
-import { headCellsData } from '@/components/table/data/headCells'
-import type { Order } from '@/components/table/types/order'
-import type { SortableColumn } from '@/components/table/types/sortableColumn'
-import { getComparator } from '@/components/table/utils/getComparator'
-import { getSessionActivity } from '@/components/table/utils/getSessionActivity'
+import { getAllSessions, revokeSessionById } from '@/api/sessions.service';
+import type { ISession } from '@/interfaces/sessions/session.interface';
+import { useAuth } from '@/hooks/useAuth';
+import { EnhancedTableHead } from '@/components/table/HeaderTable';
+import { headCellsData } from '@/components/table/data/headCells';
+import type { Order } from '@/components/table/types/order';
+import type { SortableColumn } from '@/components/table/types/sortableColumn';
+import { getComparator } from '@/components/table/utils/getComparator';
+import { getSessionActivity } from '@/components/table/utils/getSessionActivity';
 
 export const SessionsTable = () => {
-  const [sessions, setSessions] = useState<ISession[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
+  const [sessions, setSessions] = useState<ISession[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const [order, setOrder] = useState<Order>('desc')
-  const [orderBy, setOrderBy] = useState<SortableColumn>('idSession')
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [order, setOrder] = useState<Order>('desc');
+  const [orderBy, setOrderBy] = useState<SortableColumn>('idSession');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - sessions.length) : 0
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - sessions.length) : 0;
 
   const visibleRows = useMemo(
     () => [...sessions].sort(getComparator(order, orderBy)).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sessions, order, orderBy, page, rowsPerPage]
-  )
+    [sessions, order, orderBy, page, rowsPerPage],
+  );
 
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadSessions = async () => {
       try {
-        const sessions = await getAllSessions()
+        const sessions = await getAllSessions();
 
-        setSessions(sessions)
+        setSessions(sessions);
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
 
-      setLoading(false)
-    }
+      setLoading(false);
+    };
 
-    void loadSessions()
-  }, [])
+    void loadSessions();
+  }, []);
 
-  if (loading) return <h1>Cargando...</h1>
+  if (loading) return <h1>Cargando...</h1>;
 
   const handleOpenDeleteButton = async (username: string, idSession: number) => {
-    const cookieVal = Cookies.get('materio-mui-next-free-demo')
-    let themeMode: SweetAlertTheme = 'light'
+    const cookieVal = Cookies.get('materio-mui-next-free-demo');
+    let themeMode: SweetAlertTheme = 'light';
 
     if (cookieVal) {
-      const cookieObj = JSON.parse(cookieVal)
+      const cookieObj = JSON.parse(cookieVal);
 
-      themeMode = cookieObj.mode
+      themeMode = cookieObj.mode;
     }
 
     const result = await Swal.fire({
@@ -84,48 +84,48 @@ export const SessionsTable = () => {
       icon: 'warning',
       showDenyButton: true,
       confirmButtonText: 'Si',
-      denyButtonText: 'No'
-    })
+      denyButtonText: 'No',
+    });
 
-    if (!result.isConfirmed) return
+    if (!result.isConfirmed) return;
 
     try {
-      await revokeSessionById(idSession)
+      await revokeSessionById(idSession);
 
-      setSessions(prevSessions =>
-        prevSessions.map(session =>
+      setSessions((prevSessions) =>
+        prevSessions.map((session) =>
           session.idSession === idSession
             ? {
                 ...session,
-                isActive: false
+                isActive: false,
               }
-            : session
-        )
-      )
+            : session,
+        ),
+      );
 
-      await Swal.fire('Sesión eliminada con éxito', '', 'success')
+      await Swal.fire('Sesión eliminada con éxito', '', 'success');
     } catch (error) {
-      console.error(error)
+      console.error(error);
 
-      await Swal.fire('Error al eliminar la sesión', '', 'error')
+      await Swal.fire('Error al eliminar la sesión', '', 'error');
     }
-  }
+  };
 
   const handleRequestSort = (event: React.MouseEvent<unknown>, property: SortableColumn) => {
-    const isAsc = orderBy === property && order === 'asc'
+    const isAsc = orderBy === property && order === 'asc';
 
-    setOrder(isAsc ? 'desc' : 'asc')
-    setOrderBy(property)
-  }
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
 
   const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage)
-  }
+    setPage(newPage);
+  };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10))
-    setPage(0)
-  }
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -178,7 +178,7 @@ export const SessionsTable = () => {
                       </Tooltip>
                     </TableCell>
                   </TableRow>
-                )
+                );
               })}
               {emptyRows > 0 && (
                 <TableRow>
@@ -190,6 +190,7 @@ export const SessionsTable = () => {
         </TableContainer>
         <TablePagination
           labelRowsPerPage='Filas por página:'
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
           rowsPerPageOptions={[5, 10, 25]}
           component='div'
           count={sessions.length}
@@ -200,5 +201,5 @@ export const SessionsTable = () => {
         />
       </Paper>
     </Box>
-  )
-}
+  );
+};

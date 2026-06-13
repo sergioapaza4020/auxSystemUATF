@@ -11,9 +11,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
     super();
   }
 
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -29,8 +27,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
     const token = request.cookies?.access_token as string | undefined;
 
     if (token) {
-      (request.headers as Record<string, string>).authorization =
-        `Bearer ${token}`;
+      (request.headers as Record<string, string>).authorization = `Bearer ${token}`;
     }
 
     return request;

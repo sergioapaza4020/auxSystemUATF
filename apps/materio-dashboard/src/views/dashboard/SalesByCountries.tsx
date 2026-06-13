@@ -1,28 +1,28 @@
 // MUI Imports
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
 
 // Third-party Imports
-import classnames from 'classnames'
+import classnames from 'classnames';
 
 // Type Imports
-import type { ThemeColor } from '@core/types'
+import type { ThemeColor } from '@core/types';
 
 // Components Imports
-import OptionMenu from '@core/components/option-menu'
-import CustomAvatar from '@core/components/mui/Avatar'
+import OptionMenu from '@core/components/option-menu';
+import CustomAvatar from '@core/components/mui/Avatar';
 
 type DataType = {
-  avatarLabel: string
-  avatarColor?: ThemeColor
-  title: string
-  subtitle: string
-  sales: string
-  trend: 'up' | 'down'
-  trendPercentage: string
-}
+  avatarLabel: string;
+  avatarColor?: ThemeColor;
+  title: string;
+  subtitle: string;
+  sales: string;
+  trend: 'up' | 'down';
+  trendPercentage: string;
+};
 
 // Vars
 const data: DataType[] = [
@@ -33,7 +33,7 @@ const data: DataType[] = [
     subtitle: 'United states of america',
     sales: '894k',
     trend: 'up',
-    trendPercentage: '25.8%'
+    trendPercentage: '25.8%',
   },
   {
     avatarLabel: 'UK',
@@ -42,7 +42,7 @@ const data: DataType[] = [
     subtitle: 'United kingdom',
     sales: '645k',
     trend: 'down',
-    trendPercentage: '6.2%'
+    trendPercentage: '6.2%',
   },
   {
     avatarLabel: 'IN',
@@ -51,7 +51,7 @@ const data: DataType[] = [
     subtitle: 'India',
     sales: '148k',
     trend: 'up',
-    trendPercentage: '12.4%'
+    trendPercentage: '12.4%',
   },
   {
     avatarLabel: 'JA',
@@ -60,7 +60,7 @@ const data: DataType[] = [
     subtitle: 'Japan',
     sales: '86k',
     trend: 'down',
-    trendPercentage: '11.9%'
+    trendPercentage: '11.9%',
   },
   {
     avatarLabel: 'KO',
@@ -69,9 +69,9 @@ const data: DataType[] = [
     subtitle: 'Korea',
     sales: '42k',
     trend: 'up',
-    trendPercentage: '16.2%'
-  }
-]
+    trendPercentage: '16.2%',
+  },
+];
 
 const SalesByCountries = () => {
   return (
@@ -96,7 +96,7 @@ const SalesByCountries = () => {
                     <i
                       className={classnames(
                         item.trend === 'up' ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line',
-                        item.trend === 'up' ? 'text-success' : 'text-error'
+                        item.trend === 'up' ? 'text-success' : 'text-error',
                       )}
                     ></i>
                     <Typography color={item.trend === 'up' ? 'success.main' : 'error.main'}>
@@ -119,7 +119,7 @@ const SalesByCountries = () => {
         ))}
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default SalesByCountries
+export default SalesByCountries;

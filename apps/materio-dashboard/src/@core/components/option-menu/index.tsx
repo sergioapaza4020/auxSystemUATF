@@ -1,72 +1,72 @@
-'use client'
+'use client';
 
 // React Imports
-import { useRef, useState } from 'react'
-import type { ReactElement, ReactNode, SyntheticEvent } from 'react'
+import { useRef, useState } from 'react';
+import type { ReactElement, ReactNode, SyntheticEvent } from 'react';
 
 // Next Imports
-import Link from 'next/link'
+import Link from 'next/link';
 
 // MUI Imports
-import Tooltip from '@mui/material/Tooltip'
-import Popper from '@mui/material/Popper'
-import MenuItem from '@mui/material/MenuItem'
-import MenuList from '@mui/material/MenuList'
-import ClickAwayListener from '@mui/material/ClickAwayListener'
-import Fade from '@mui/material/Fade'
-import Paper from '@mui/material/Paper'
-import IconButton from '@mui/material/IconButton'
-import Divider from '@mui/material/Divider'
+import Tooltip from '@mui/material/Tooltip';
+import Popper from '@mui/material/Popper';
+import MenuItem from '@mui/material/MenuItem';
+import MenuList from '@mui/material/MenuList';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import Fade from '@mui/material/Fade';
+import Paper from '@mui/material/Paper';
+import IconButton from '@mui/material/IconButton';
+import Divider from '@mui/material/Divider';
 
 // Third-party Imports
-import classnames from 'classnames'
+import classnames from 'classnames';
 
 // Type Imports
-import type { OptionsMenuType, OptionType, OptionMenuItemType } from './types'
+import type { OptionsMenuType, OptionType, OptionMenuItemType } from './types';
 
 const IconButtonWrapper = (props: Pick<OptionsMenuType, 'tooltipProps'> & { children: ReactElement }) => {
   // Props
-  const { tooltipProps, children } = props
+  const { tooltipProps, children } = props;
 
-  return tooltipProps?.title ? <Tooltip {...tooltipProps}>{children}</Tooltip> : children
-}
+  return tooltipProps?.title ? <Tooltip {...tooltipProps}>{children}</Tooltip> : children;
+};
 
 const MenuItemWrapper = ({ children, option }: { children: ReactNode; option: OptionMenuItemType }) => {
   if (option.href) {
-    const { ...anchorProps } = option.linkProps || {}
-    const { ...htmlProps } = anchorProps as any
+    const { ...anchorProps } = option.linkProps || {};
+    const { ...htmlProps } = anchorProps as any;
 
     return (
       <Link href={option.href} {...htmlProps}>
         {children}
       </Link>
-    )
+    );
   } else {
-    return <>{children}</>
+    return <>{children}</>;
   }
-}
+};
 
 const OptionMenu = (props: OptionsMenuType) => {
   // Props
-  const { tooltipProps, icon, iconClassName, options, leftAlignMenu, iconButtonProps } = props
+  const { tooltipProps, icon, iconClassName, options, leftAlignMenu, iconButtonProps } = props;
 
   // States
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   // Refs
-  const anchorRef = useRef<HTMLButtonElement>(null)
+  const anchorRef = useRef<HTMLButtonElement>(null);
 
   const handleToggle = () => {
-    setOpen(prevOpen => !prevOpen)
-  }
+    setOpen((prevOpen) => !prevOpen);
+  };
 
   const handleClose = (event: Event | SyntheticEvent) => {
     if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
-      return
+      return;
     }
 
-    setOpen(false)
-  }
+    setOpen(false);
+  };
 
   return (
     <>
@@ -100,20 +100,20 @@ const OptionMenu = (props: OptionsMenuType) => {
                         <MenuItem key={index} onClick={handleClose}>
                           {option}
                         </MenuItem>
-                      )
+                      );
                     } else if ('divider' in option) {
-                      return option.divider && <Divider key={index} {...option.dividerProps} />
+                      return option.divider && <Divider key={index} {...option.dividerProps} />;
                     } else {
                       return (
                         <MenuItem
                           key={index}
                           {...option.menuItemProps}
                           {...(option.href && { className: 'p-0' })}
-                          onClick={e => {
-                            handleClose(e)
+                          onClick={(e) => {
+                            handleClose(e);
                             option.menuItemProps && option.menuItemProps.onClick
                               ? option.menuItemProps.onClick(e)
-                              : null
+                              : null;
                           }}
                         >
                           <MenuItemWrapper option={option}>
@@ -121,7 +121,7 @@ const OptionMenu = (props: OptionsMenuType) => {
                             {option.text}
                           </MenuItemWrapper>
                         </MenuItem>
-                      )
+                      );
                     }
                   })}
                 </MenuList>
@@ -131,7 +131,7 @@ const OptionMenu = (props: OptionsMenuType) => {
         )}
       </Popper>
     </>
-  )
-}
+  );
+};
 
-export default OptionMenu
+export default OptionMenu;

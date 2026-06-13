@@ -6,4 +6,4 @@ export type SortableColumn =
   | 'device'
   | 'ipAddress'
   | 'isActive'
-  | 'lastUsedAt'
+  | 'lastUsedAt';

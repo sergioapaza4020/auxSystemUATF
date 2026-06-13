@@ -7,4 +7,4 @@ export type ColumnId =
   | 'ipAddress'
   | 'isActive'
   | 'lastUsedAt'
-  | 'actions'
+  | 'actions';

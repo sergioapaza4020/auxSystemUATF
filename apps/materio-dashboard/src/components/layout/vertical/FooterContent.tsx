@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
 // Third-party Imports
-import classnames from 'classnames'
+import classnames from 'classnames';
 
 // Util Imports
-import { verticalLayoutClasses } from '@layouts/utils/layoutClasses'
+import { verticalLayoutClasses } from '@layouts/utils/layoutClasses';
 
 const FooterContent = () => {
   return (
@@ -18,7 +18,7 @@ const FooterContent = () => {
         ThemeSelection (recuerda cambiar el footer)
       </p>
     </div>
-  )
-}
+  );
+};
 
-export default FooterContent
+export default FooterContent;

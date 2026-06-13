@@ -20,10 +20,7 @@ export class RolesService {
     roleCreated.authorId = 0;
     roleCreated.createdAt = new Date();
     roleCreated.updatedAt = new Date();
-    roleCreated.name = roleCreateDto.name
-      .toUpperCase()
-      .trim()
-      .replace(/\s+/g, ' ');
+    roleCreated.name = roleCreateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
     return this.roleRepository.save(roleCreated);
   }
 
@@ -53,12 +50,10 @@ export class RolesService {
     if (!role) throw new BadRequestException('Role not found');
     for (const pn of permissionNames) {
       const permission = await this.permissionsService.getOneByName(pn);
-      if (!permission)
-        throw new BadRequestException(`Permission not found: ${pn}`);
+      if (!permission) throw new BadRequestException(`Permission not found: ${pn}`);
 
       const alreadyAssigned = role.permissions?.some((p) => p.name === pn);
-      if (alreadyAssigned)
-        throw new BadRequestException(`Permission already assigned: ${pn}`);
+      if (alreadyAssigned) throw new BadRequestException(`Permission already assigned: ${pn}`);
 
       role.permissions?.push(permission);
     }

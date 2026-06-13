@@ -1,23 +1,23 @@
 //MUI Imports
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
-import Grid from '@mui/material/Grid'
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
 
 // Type Imports
-import type { ThemeColor } from '@core/types'
+import type { ThemeColor } from '@core/types';
 
 // Components Imports
-import OptionMenu from '@core/components/option-menu'
-import CustomAvatar from '@core/components/mui/Avatar'
+import OptionMenu from '@core/components/option-menu';
+import CustomAvatar from '@core/components/mui/Avatar';
 
 type DataType = {
-  icon: string
-  stats: string
-  title: string
-  color: ThemeColor
-}
+  icon: string;
+  stats: string;
+  title: string;
+  color: ThemeColor;
+};
 
 // Vars
 const data: DataType[] = [
@@ -25,27 +25,27 @@ const data: DataType[] = [
     stats: '245k',
     title: 'Sales',
     color: 'primary',
-    icon: 'ri-pie-chart-2-line'
+    icon: 'ri-pie-chart-2-line',
   },
   {
     stats: '12.5k',
     title: 'Users',
     color: 'success',
-    icon: 'ri-group-line'
+    icon: 'ri-group-line',
   },
   {
     stats: '1.54k',
     color: 'warning',
     title: 'Products',
-    icon: 'ri-macbook-line'
+    icon: 'ri-macbook-line',
   },
   {
     stats: '$88k',
     color: 'info',
     title: 'Revenue',
-    icon: 'ri-money-dollar-circle-line'
-  }
-]
+    icon: 'ri-money-dollar-circle-line',
+  },
+];
 
 const Transactions = () => {
   return (
@@ -78,7 +78,7 @@ const Transactions = () => {
         </Grid>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default Transactions
+export default Transactions;

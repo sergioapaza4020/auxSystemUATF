@@ -1,26 +1,26 @@
 // MUI Imports
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Avatar from '@mui/material/Avatar'
-import LinearProgress from '@mui/material/LinearProgress'
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import Avatar from '@mui/material/Avatar';
+import LinearProgress from '@mui/material/LinearProgress';
 
-import Typography from '@mui/material/Typography'
+import Typography from '@mui/material/Typography';
 
 // Type Imports
-import type { ThemeColor } from '@core/types'
+import type { ThemeColor } from '@core/types';
 
 // Components Imports
-import OptionMenu from '@core/components/option-menu'
+import OptionMenu from '@core/components/option-menu';
 
 type DataType = {
-  title: string
-  imgSrc: string
-  amount: string
-  progress: number
-  subtitle: string
-  color?: ThemeColor
-}
+  title: string;
+  imgSrc: string;
+  amount: string;
+  progress: number;
+  subtitle: string;
+  color?: ThemeColor;
+};
 
 // Vars
 const data: DataType[] = [
@@ -29,7 +29,7 @@ const data: DataType[] = [
     title: 'Zipcar',
     amount: '$24,895.65',
     subtitle: 'Vuejs, React & HTML',
-    imgSrc: '/images/cards/zipcar.png'
+    imgSrc: '/images/cards/zipcar.png',
   },
   {
     progress: 50,
@@ -37,7 +37,7 @@ const data: DataType[] = [
     title: 'Bitbank',
     amount: '$8,650.20',
     subtitle: 'Sketch, Figma & XD',
-    imgSrc: '/images/cards/bitbank.png'
+    imgSrc: '/images/cards/bitbank.png',
   },
   {
     progress: 20,
@@ -45,9 +45,9 @@ const data: DataType[] = [
     color: 'secondary',
     amount: '$1,245.80',
     subtitle: 'HTML & Angular',
-    imgSrc: '/images/cards/aviato.png'
-  }
-]
+    imgSrc: '/images/cards/aviato.png',
+  },
+];
 
 const TotalEarning = () => {
   return (
@@ -95,7 +95,7 @@ const TotalEarning = () => {
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default TotalEarning
+export default TotalEarning;

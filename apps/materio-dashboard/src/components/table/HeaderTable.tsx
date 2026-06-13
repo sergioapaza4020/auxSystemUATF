@@ -1,22 +1,22 @@
-import { TableCell, TableHead, TableRow, TableSortLabel } from '@mui/material'
+import { TableCell, TableHead, TableRow, TableSortLabel } from '@mui/material';
 
-import type { SortableColumn } from './types/sortableColumn'
-import type { Order } from './types/order'
-import type { HeadCell } from './interfaces/headCell'
+import type { SortableColumn } from './types/sortableColumn';
+import type { Order } from './types/order';
+import type { HeadCell } from './interfaces/headCell';
 
 interface EnhancedTableHeadProps {
-  headCells: HeadCell[]
-  onRequestSort: (event: React.MouseEvent<unknown>, property: SortableColumn) => void
-  order: Order
-  orderBy: string
+  headCells: HeadCell[];
+  onRequestSort: (event: React.MouseEvent<unknown>, property: SortableColumn) => void;
+  order: Order;
+  orderBy: string;
 }
 
 export const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
-  const { headCells, onRequestSort, order, orderBy } = props
+  const { headCells, onRequestSort, order, orderBy } = props;
 
   const createSortHandler = (property: SortableColumn) => (event: React.MouseEvent<unknown>) => {
-    onRequestSort(event, property)
-  }
+    onRequestSort(event, property);
+  };
 
   return (
     <TableHead>
@@ -38,5 +38,5 @@ export const EnhancedTableHead = (props: EnhancedTableHeadProps) => {
         ))}
       </TableRow>
     </TableHead>
-  )
-}
+  );
+};

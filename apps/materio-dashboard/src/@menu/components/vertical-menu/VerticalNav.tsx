@@ -1,44 +1,44 @@
-'use client'
+'use client';
 
 // React Imports
-import { useEffect } from 'react'
-import type { HTMLAttributes } from 'react'
+import { useEffect } from 'react';
+import type { HTMLAttributes } from 'react';
 
 // Third-party Imports
-import classnames from 'classnames'
-import type { CSSObject } from '@emotion/styled'
+import classnames from 'classnames';
+import type { CSSObject } from '@emotion/styled';
 
 // Type Imports
-import type { BreakpointType } from '../../types'
+import type { BreakpointType } from '../../types';
 
 // Context Imports
-import type { VerticalNavState } from '../../contexts/verticalNavContext'
+import type { VerticalNavState } from '../../contexts/verticalNavContext';
 
 // Hook Imports
-import useMediaQuery from '../../hooks/useMediaQuery'
-import useVerticalNav from '../../hooks/useVerticalNav'
+import useMediaQuery from '../../hooks/useMediaQuery';
+import useVerticalNav from '../../hooks/useVerticalNav';
 
 // Util Imports
-import { verticalNavClasses } from '../../utils/menuClasses'
+import { verticalNavClasses } from '../../utils/menuClasses';
 
 // Styled Component Imports
-import StyledBackdrop from '../../styles/StyledBackdrop'
-import StyledVerticalNav from '../../styles/vertical/StyledVerticalNav'
-import StyledVerticalNavContainer from '../../styles/vertical/StyledVerticalNavContainer'
-import StyledVerticalNavBgColorContainer from '../../styles/vertical/StyledVerticalNavBgColorContainer'
+import StyledBackdrop from '../../styles/StyledBackdrop';
+import StyledVerticalNav from '../../styles/vertical/StyledVerticalNav';
+import StyledVerticalNavContainer from '../../styles/vertical/StyledVerticalNavContainer';
+import StyledVerticalNavBgColorContainer from '../../styles/vertical/StyledVerticalNavBgColorContainer';
 
 // Default Config Imports
-import { defaultBreakpoints, verticalNavToggleDuration } from '../../defaultConfigs'
+import { defaultBreakpoints, verticalNavToggleDuration } from '../../defaultConfigs';
 
 export type VerticalNavProps = HTMLAttributes<HTMLHtmlElement> & {
-  width?: VerticalNavState['width']
-  breakpoint?: BreakpointType
-  customBreakpoint?: string
-  breakpoints?: Partial<typeof defaultBreakpoints>
-  transitionDuration?: VerticalNavState['transitionDuration']
-  backdropColor?: string
-  customStyles?: CSSObject
-}
+  width?: VerticalNavState['width'];
+  breakpoint?: BreakpointType;
+  customBreakpoint?: string;
+  breakpoints?: Partial<typeof defaultBreakpoints>;
+  transitionDuration?: VerticalNavState['transitionDuration'];
+  backdropColor?: string;
+  customStyles?: CSSObject;
+};
 
 const VerticalNav = (props: VerticalNavProps) => {
   // Props
@@ -53,10 +53,10 @@ const VerticalNav = (props: VerticalNavProps) => {
     customStyles,
     children,
     ...rest
-  } = props
+  } = props;
 
   // Vars
-  const mergedBreakpoints = { ...defaultBreakpoints, ...breakpoints }
+  const mergedBreakpoints = { ...defaultBreakpoints, ...breakpoints };
 
   // Hooks
   const {
@@ -64,31 +64,33 @@ const VerticalNav = (props: VerticalNavProps) => {
     width: widthContext,
     isBreakpointReached: isBreakpointReachedContext,
     isToggled: isToggledContext,
-    transitionDuration: transitionDurationContext
-  } = useVerticalNav()
+    transitionDuration: transitionDurationContext,
+  } = useVerticalNav();
 
   // Find the breakpoint from which screen size responsive behavior should enable and if its reached or not
-  const breakpointReached = useMediaQuery(customBreakpoint ?? (breakpoint ? mergedBreakpoints[breakpoint] : breakpoint))
+  const breakpointReached = useMediaQuery(
+    customBreakpoint ?? (breakpoint ? mergedBreakpoints[breakpoint] : breakpoint),
+  );
 
   // UseEffect, update verticalNav state to set initial values and update values on change
   useEffect(() => {
     updateVerticalNavState({
       width,
       transitionDuration,
-      isBreakpointReached: breakpointReached
-    })
+      isBreakpointReached: breakpointReached,
+    });
 
     if (!breakpointReached) {
-      updateVerticalNavState({ isToggled: false })
+      updateVerticalNavState({ isToggled: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, breakpointReached, updateVerticalNavState])
+  }, [width, breakpointReached, updateVerticalNavState]);
 
   // Handle Backdrop(Content Overlay) Click
   const handleBackdropClick = () => {
     // Close the verticalNav
-    updateVerticalNavState({ isToggled: false })
-  }
+    updateVerticalNavState({ isToggled: false });
+  };
 
   return (
     <StyledVerticalNav
@@ -100,9 +102,9 @@ const VerticalNav = (props: VerticalNavProps) => {
         verticalNavClasses.root,
         {
           [verticalNavClasses.toggled]: isToggledContext,
-          [verticalNavClasses.breakpointReached]: isBreakpointReachedContext
+          [verticalNavClasses.breakpointReached]: isBreakpointReachedContext,
         },
-        className
+        className,
       )}
       {...rest}
     >
@@ -132,7 +134,7 @@ const VerticalNav = (props: VerticalNavProps) => {
         />
       )}
     </StyledVerticalNav>
-  )
-}
+  );
+};
 
-export default VerticalNav
+export default VerticalNav;

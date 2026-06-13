@@ -1,10 +1,10 @@
-import plugin from 'tailwindcss/plugin'
+import plugin from 'tailwindcss/plugin';
 
 module.exports = plugin(function () {}, {
   theme: {
     borderColor: ({ theme }) => ({
       ...theme('colors'),
-      DEFAULT: 'var(--border-color, currentColor)'
+      DEFAULT: 'var(--border-color, currentColor)',
     }),
     borderRadius: {
       none: '0px',
@@ -17,14 +17,14 @@ module.exports = plugin(function () {}, {
       '2xl': '0.75rem',
       '3xl': '1rem',
       '4xl': '1.5rem',
-      full: '9999px'
+      full: '9999px',
     },
     screens: {
       sm: '600px',
       md: '900px',
       lg: '1200px',
       xl: '1536px',
-      '2xl': '1920px'
+      '2xl': '1920px',
     },
     extend: {
       boxShadow: {
@@ -33,7 +33,7 @@ module.exports = plugin(function () {}, {
         DEFAULT: 'var(--mui-customShadows-md)',
         md: 'var(--mui-customShadows-md)',
         lg: 'var(--mui-customShadows-lg)',
-        xl: 'var(--mui-customShadows-xl)'
+        xl: 'var(--mui-customShadows-xl)',
       },
       colors: {
         primary: 'var(--primary-color)',
@@ -60,15 +60,15 @@ module.exports = plugin(function () {}, {
         facebook: '#497ce2',
         twitter: '#1da1f2',
         github: '#272727',
-        googlePlus: '#db4437'
+        googlePlus: '#db4437',
       },
       zIndex: {
         header: 'var(--header-z-index)',
         footer: 'var(--footer-z-index)',
         customizer: 'var(--customizer-z-index)',
         search: 'var(--search-z-index)',
-        drawer: 'var(--drawer-z-index)'
-      }
-    }
-  }
-})
+        drawer: 'var(--drawer-z-index)',
+      },
+    },
+  },
+});

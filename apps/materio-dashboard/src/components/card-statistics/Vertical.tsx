@@ -1,19 +1,19 @@
 // MUI Imports
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
 
 // Types Imports
-import type { CardStatsVerticalProps } from '@/types/pages/widgetTypes'
+import type { CardStatsVerticalProps } from '@/types/pages/widgetTypes';
 
 // Components Imports
-import CustomAvatar from '@core/components/mui/Avatar'
-import OptionMenu from '@core/components/option-menu'
+import CustomAvatar from '@core/components/mui/Avatar';
+import OptionMenu from '@core/components/option-menu';
 
 const CardStatVertical = (props: CardStatsVerticalProps) => {
   // Props
   const { title, stats, avatarIcon, avatarColor, trendNumber, trend, subtitle, avatarSkin, avatarSize, moreOptions } =
-    props
+    props;
 
   return (
     <Card className='bs-full'>
@@ -27,7 +27,7 @@ const CardStatVertical = (props: CardStatsVerticalProps) => {
               ? moreOptions
               : {
                   options: ['Refresh', 'Share', 'Update'],
-                  iconButtonProps: { className: 'text-textPrimary' }
+                  iconButtonProps: { className: 'text-textPrimary' },
                 })}
           />
         </div>
@@ -45,7 +45,7 @@ const CardStatVertical = (props: CardStatsVerticalProps) => {
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default CardStatVertical
+export default CardStatVertical;

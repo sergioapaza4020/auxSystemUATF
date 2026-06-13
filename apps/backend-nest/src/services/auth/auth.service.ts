@@ -37,9 +37,7 @@ export class AuthService {
       { idUser: user.idUser },
       {
         secret: process.env.JWT_ACCESS_REFRESH,
-        expiresIn: process.env.JWT_ACCESS_REFRESH_EXPIRES_IN as
-          | number
-          | undefined,
+        expiresIn: process.env.JWT_ACCESS_REFRESH_EXPIRES_IN as number | undefined,
       },
     );
 
@@ -88,9 +86,7 @@ export class AuthService {
   private buildSessionPayload(user: User, idSession: number) {
     const roles = user.roles.map((r) => r.name);
 
-    const permissions = [
-      ...new Set(user.roles.flatMap((r) => r.permissions.map((p) => p.name))),
-    ];
+    const permissions = [...new Set(user.roles.flatMap((r) => r.permissions.map((p) => p.name)))];
 
     return {
       idUser: user.idUser,
@@ -122,16 +118,11 @@ export class AuthService {
 
       await this.sessionService.updateLastSessionUsed(session);
 
-      const newPayload = await this.getSession(
-        payload.idUser,
-        session.idSession,
-      );
+      const newPayload = await this.getSession(payload.idUser, session.idSession);
 
       const newAccessToken = this.jwtService.sign(newPayload, {
         secret: process.env.JWT_ACCESS_SECRET,
-        expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as
-          | number
-          | undefined,
+        expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as number | undefined,
       });
 
       await this.sessionService.updateLastSessionUsed(session);

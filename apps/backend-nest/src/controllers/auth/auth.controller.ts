@@ -27,10 +27,7 @@ export class AuthController {
   @ApiBearerAuth('access-token')
   @Get('me')
   async getProfile(@CurrentUser() user: JwtPayload) {
-    const session = await this.authService.getSession(
-      user.idUser,
-      user.idSession,
-    );
+    const session = await this.authService.getSession(user.idUser, user.idSession);
 
     return {
       message: 'User session active',
@@ -41,9 +38,7 @@ export class AuthController {
   @Public()
   @Post('refresh-access-token')
   async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-    const tokens = await this.authService.refreshToken(
-      refreshTokenDto.refreshToken,
-    );
+    const tokens = await this.authService.refreshToken(refreshTokenDto.refreshToken);
 
     return {
       message: 'Token refreshed successfully',

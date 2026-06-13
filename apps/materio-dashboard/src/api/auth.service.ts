@@ -1,49 +1,49 @@
-import type { ILogin } from '@/interfaces/auth/auth.interface'
+import type { ILogin } from '@/interfaces/auth/auth.interface';
 
-import { instance } from '@/api/config/config'
+import { instance } from '@/api/config/config';
 
-import { getRefreshToken, saveTokens, setAccessToken } from '@/utils/authCookies'
-import type { ApiResponse } from '@/interfaces/apiResponse'
-import type { ICurrentUser } from '@/interfaces/auth/current-user.interface'
-import { refreshInstance } from './config/refreshInstance'
+import { getRefreshToken, saveTokens, setAccessToken } from '@/utils/authCookies';
+import type { ApiResponse } from '@/interfaces/apiResponse';
+import type { ICurrentUser } from '@/interfaces/auth/current-user.interface';
+import { refreshInstance } from './config/refreshInstance';
 
 export const Login = async ({ username, password }: ILogin): Promise<any> => {
   try {
-    const response = await instance.post('/auth/login', { username, password })
+    const response = await instance.post('/auth/login', { username, password });
 
-    const { accessToken, refreshToken } = response.data.data
+    const { accessToken, refreshToken } = response.data.data;
 
-    saveTokens(accessToken, refreshToken)
+    saveTokens(accessToken, refreshToken);
   } catch (error: any) {
-    console.error('Login failed:', error)
-    throw error
+    console.error('Login failed:', error);
+    throw error;
   }
-}
+};
 
 export const getCurrentUser = async () => {
   try {
-    const response = await instance.get<ApiResponse<ICurrentUser>>('/auth/me')
+    const response = await instance.get<ApiResponse<ICurrentUser>>('/auth/me');
 
-    return response.data.data
+    return response.data.data;
   } catch (error: any) {
-    console.error('Get user failed:', error)
-    throw error
+    console.error('Get user failed:', error);
+    throw error;
   }
-}
+};
 
 export const refreshAccessToken = async () => {
   try {
-    const refreshToken = getRefreshToken()
+    const refreshToken = getRefreshToken();
 
-    if (!refreshToken) throw new Error('Refresh token not found')
+    if (!refreshToken) throw new Error('Refresh token not found');
 
-    const response = await refreshInstance.post('/auth/refresh-access-token', { refreshToken })
+    const response = await refreshInstance.post('/auth/refresh-access-token', { refreshToken });
 
-    setAccessToken(response.data.data.accessToken)
+    setAccessToken(response.data.data.accessToken);
 
-    return response.data.data.accessToken
+    return response.data.data.accessToken;
   } catch (error: any) {
-    console.error(error)
-    throw error
+    console.error(error);
+    throw error;
   }
-}
+};

@@ -1,29 +1,29 @@
-'use client'
+'use client';
 
 // React Imports
-import { useRef, useState } from 'react'
-import type { MouseEvent } from 'react'
+import { useRef, useState } from 'react';
+import type { MouseEvent } from 'react';
 
 // Next Imports
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
 
 // MUI Imports
-import { styled } from '@mui/material/styles'
-import Badge from '@mui/material/Badge'
-import Avatar from '@mui/material/Avatar'
-import Popper from '@mui/material/Popper'
-import Fade from '@mui/material/Fade'
-import Paper from '@mui/material/Paper'
-import ClickAwayListener from '@mui/material/ClickAwayListener'
-import MenuList from '@mui/material/MenuList'
-import Typography from '@mui/material/Typography'
-import Divider from '@mui/material/Divider'
-import MenuItem from '@mui/material/MenuItem'
-import Button from '@mui/material/Button'
+import { styled } from '@mui/material/styles';
+import Badge from '@mui/material/Badge';
+import Avatar from '@mui/material/Avatar';
+import Popper from '@mui/material/Popper';
+import Fade from '@mui/material/Fade';
+import Paper from '@mui/material/Paper';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import MenuList from '@mui/material/MenuList';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
 
-import capitalize from '@mui/utils/capitalize'
+import capitalize from '@mui/utils/capitalize';
 
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth';
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
@@ -32,45 +32,45 @@ const BadgeContentSpan = styled('span')({
   borderRadius: '50%',
   cursor: 'pointer',
   backgroundColor: 'var(--mui-palette-success-main)',
-  boxShadow: '0 0 0 2px var(--mui-palette-background-paper)'
-})
+  boxShadow: '0 0 0 2px var(--mui-palette-background-paper)',
+});
 
 const UserDropdown = () => {
   // States
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   // Refs
-  const anchorRef = useRef<HTMLDivElement>(null)
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   // Hooks
-  const router = useRouter()
+  const router = useRouter();
 
-  const { user, loading, logout } = useAuth()
+  const { user, loading, logout } = useAuth();
 
   const handleDropdownOpen = () => {
-    !open ? setOpen(true) : setOpen(false)
-  }
+    !open ? setOpen(true) : setOpen(false);
+  };
 
   const handleDropdownClose = async (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {
     if (url === '/login') {
-      await logout()
-      router.replace(url)
+      await logout();
+      router.replace(url);
 
-      return
+      return;
     }
 
     if (url) {
-      router.push(url)
+      router.push(url);
 
-      return
+      return;
     }
 
-    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) return
+    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) return;
 
-    setOpen(false)
-  }
+    setOpen(false);
+  };
 
-  if (loading) return <div>Cargando...</div>
+  if (loading) return <div>Cargando...</div>;
 
   return (
     <>
@@ -101,11 +101,11 @@ const UserDropdown = () => {
           <Fade
             {...TransitionProps}
             style={{
-              transformOrigin: placement === 'bottom-end' ? 'right top' : 'left top'
+              transformOrigin: placement === 'bottom-end' ? 'right top' : 'left top',
             }}
           >
             <Paper className='shadow-lg'>
-              <ClickAwayListener onClickAway={e => handleDropdownClose(e as MouseEvent | TouchEvent)}>
+              <ClickAwayListener onClickAway={(e) => handleDropdownClose(e as MouseEvent | TouchEvent)}>
                 <MenuList>
                   <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
                     <Avatar alt='John Doe' src='/images/avatars/1.png' />
@@ -117,7 +117,7 @@ const UserDropdown = () => {
                     </div>
                   </div>
                   <Divider className='mlb-1' />
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
+                  <MenuItem className='gap-3' onClick={(e) => handleDropdownClose(e)}>
                     <i className='ri-user-3-line' />
                     <Typography color='text.primary'>Mi perfil</Typography>
                   </MenuItem>
@@ -128,7 +128,7 @@ const UserDropdown = () => {
                       color='error'
                       size='small'
                       endIcon={<i className='ri-logout-box-r-line' />}
-                      onClick={e => handleDropdownClose(e, '/login')}
+                      onClick={(e) => handleDropdownClose(e, '/login')}
                       sx={{ '& .MuiButton-endIcon': { marginInlineStart: 1.5 } }}
                     >
                       Cerrar sesión
@@ -141,7 +141,7 @@ const UserDropdown = () => {
         )}
       </Popper>
     </>
-  )
-}
+  );
+};
 
-export default UserDropdown
+export default UserDropdown;

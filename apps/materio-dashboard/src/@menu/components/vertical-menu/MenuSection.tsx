@@ -1,44 +1,44 @@
-'use client'
+'use client';
 
 // React Imports
-import { forwardRef } from 'react'
-import type { ForwardRefRenderFunction, CSSProperties, ReactElement, ReactNode } from 'react'
+import { forwardRef } from 'react';
+import type { ForwardRefRenderFunction, CSSProperties, ReactElement, ReactNode } from 'react';
 
 // Third-party Imports
-import classnames from 'classnames'
-import type { CSSObject } from '@emotion/styled'
+import classnames from 'classnames';
+import type { CSSObject } from '@emotion/styled';
 
 // Type Imports
-import type { MenuSectionStyles } from './Menu'
-import type { ChildrenType, RootStylesType } from '../../types'
+import type { MenuSectionStyles } from './Menu';
+import type { ChildrenType, RootStylesType } from '../../types';
 
 // Hook Imports
-import useVerticalMenu from '../../hooks/useVerticalMenu'
+import useVerticalMenu from '../../hooks/useVerticalMenu';
 
 // Util Imports
-import { menuClasses } from '../../utils/menuClasses'
+import { menuClasses } from '../../utils/menuClasses';
 
 // Styled Component Imports
-import StyledMenuIcon from '../../styles/StyledMenuIcon'
-import StyledMenuPrefix from '../../styles/StyledMenuPrefix'
-import StyledMenuSuffix from '../../styles/StyledMenuSuffix'
-import StyledMenuSectionLabel from '../../styles/StyledMenuSectionLabel'
-import StyledVerticalMenuSection from '../../styles/vertical/StyledVerticalMenuSection'
+import StyledMenuIcon from '../../styles/StyledMenuIcon';
+import StyledMenuPrefix from '../../styles/StyledMenuPrefix';
+import StyledMenuSuffix from '../../styles/StyledMenuSuffix';
+import StyledMenuSectionLabel from '../../styles/StyledMenuSectionLabel';
+import StyledVerticalMenuSection from '../../styles/vertical/StyledVerticalMenuSection';
 
 export type MenuSectionProps = Partial<ChildrenType> &
   RootStylesType & {
-    label: ReactNode
-    icon?: ReactElement
-    prefix?: ReactNode
-    suffix?: ReactNode
+    label: ReactNode;
+    icon?: ReactElement;
+    prefix?: ReactNode;
+    suffix?: ReactNode;
 
     /**
      * @ignore
      */
-    className?: string
-  }
+    className?: string;
+  };
 
-type MenuSectionElement = keyof MenuSectionStyles
+type MenuSectionElement = keyof MenuSectionStyles;
 
 const menuSectionWrapperStyles: CSSProperties = {
   display: 'inline-block',
@@ -46,8 +46,8 @@ const menuSectionWrapperStyles: CSSProperties = {
   position: 'relative',
   listStyle: 'none',
   padding: 0,
-  overflow: 'hidden'
-}
+  overflow: 'hidden',
+};
 
 const menuSectionContentStyles: CSSProperties = {
   display: 'flex',
@@ -56,22 +56,22 @@ const menuSectionContentStyles: CSSProperties = {
   position: 'relative',
   paddingBlock: '0.75rem',
   paddingInline: '1.25rem',
-  overflow: 'hidden'
-}
+  overflow: 'hidden',
+};
 
 const MenuSection: ForwardRefRenderFunction<HTMLLIElement, MenuSectionProps> = (props, ref) => {
   // Props
-  const { children, icon, className, prefix, suffix, label, rootStyles, ...rest } = props
+  const { children, icon, className, prefix, suffix, label, rootStyles, ...rest } = props;
 
   // Hooks
-  const { menuSectionStyles, textTruncate } = useVerticalMenu()
+  const { menuSectionStyles, textTruncate } = useVerticalMenu();
 
   const getMenuSectionStyles = (element: MenuSectionElement): CSSObject | undefined => {
     // If the menuSectionStyles prop is provided, get the styles for the element from the prop
     if (menuSectionStyles) {
-      return menuSectionStyles[element]
+      return menuSectionStyles[element];
     }
-  }
+  };
 
   return (
     // eslint-disable-next-line lines-around-comment
@@ -115,7 +115,7 @@ const MenuSection: ForwardRefRenderFunction<HTMLLIElement, MenuSectionProps> = (
         {children}
       </ul>
     </StyledVerticalMenuSection>
-  )
-}
+  );
+};
 
-export default forwardRef<HTMLLIElement, MenuSectionProps>(MenuSection)
+export default forwardRef<HTMLLIElement, MenuSectionProps>(MenuSection);
