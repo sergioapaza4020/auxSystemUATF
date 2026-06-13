@@ -3,10 +3,10 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Public } from '@core/decorators/public/public.decorator';
 import { LoginDto } from 'src/dtos/auth/login.dto';
-import { User } from 'src/entities/users/users.entity';
 import { AuthService } from 'src/services/auth/auth.service';
 import { RefreshTokenDto } from 'src/dtos/auth/refresh-token.dto';
 import type { Request } from 'express';
+import type { JwtPayload } from '@common/types/jwt-payload.type';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -26,8 +26,11 @@ export class AuthController {
 
   @ApiBearerAuth('access-token')
   @Get('me')
-  async getProfile(@CurrentUser() user: User) {
-    const session = await this.authService.getSession(user.idUser);
+  async getProfile(@CurrentUser() user: JwtPayload) {
+    const session = await this.authService.getSession(
+      user.idUser,
+      user.idSession,
+    );
 
     return {
       message: 'User session active',

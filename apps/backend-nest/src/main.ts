@@ -13,7 +13,7 @@ async function bootstrap() {
       'API para el sistema de auxiliares de la UATF como parte de beca investigación 2026',
     )
     .setContact('MushuDev', '#', 'sergio.apaza1432@gmail.com')
-    .setVersion('0.1')
+    .setVersion('0.4')
     .addBearerAuth(
       {
         type: 'http',

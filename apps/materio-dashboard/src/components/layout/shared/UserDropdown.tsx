@@ -21,8 +21,9 @@ import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 
-import { Logout } from '@/api/sessions.service'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import capitalize from '@mui/utils/capitalize'
+
+import { useAuth } from '@/hooks/useAuth'
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
@@ -44,13 +45,15 @@ const UserDropdown = () => {
   // Hooks
   const router = useRouter()
 
+  const { user, loading, logout } = useAuth()
+
   const handleDropdownOpen = () => {
     !open ? setOpen(true) : setOpen(false)
   }
 
   const handleDropdownClose = async (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {
     if (url === '/login') {
-      await Logout()
+      await logout()
       router.replace(url)
 
       return
@@ -66,8 +69,6 @@ const UserDropdown = () => {
 
     setOpen(false)
   }
-
-  const { user, loading } = useCurrentUser()
 
   if (loading) return <div>Cargando...</div>
 
@@ -110,7 +111,7 @@ const UserDropdown = () => {
                     <Avatar alt='John Doe' src='/images/avatars/1.png' />
                     <div className='flex items-start flex-col'>
                       <Typography className='font-medium' color='text.primary'>
-                        {user?.username}
+                        {capitalize(user?.username ?? 'Usuario')}
                       </Typography>
                       <Typography variant='caption'>{user?.roles[0]}</Typography>
                     </div>
@@ -119,18 +120,6 @@ const UserDropdown = () => {
                   <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
                     <i className='ri-user-3-line' />
                     <Typography color='text.primary'>Mi perfil</Typography>
-                  </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
-                    <i className='ri-settings-4-line' />
-                    <Typography color='text.primary'>Configuración</Typography>
-                  </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
-                    <i className='ri-money-dollar-circle-line' />
-                    <Typography color='text.primary'>Precios</Typography>
-                  </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e)}>
-                    <i className='ri-question-line' />
-                    <Typography color='text.primary'>Preguntas frecuentes</Typography>
                   </MenuItem>
                   <div className='flex items-center plb-2 pli-4'>
                     <Button

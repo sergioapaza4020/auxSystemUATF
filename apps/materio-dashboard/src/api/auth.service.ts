@@ -3,7 +3,7 @@ import type { ILogin } from '@/interfaces/auth/auth.interface'
 import { instance } from '@/api/config/config'
 
 import { getRefreshToken, saveTokens, setAccessToken } from '@/utils/authCookies'
-import type { ApiResponse } from '@/interfaces/api-response.interface'
+import type { ApiResponse } from '@/interfaces/apiResponse'
 import type { ICurrentUser } from '@/interfaces/auth/current-user.interface'
 import { refreshInstance } from './config/refreshInstance'
 
