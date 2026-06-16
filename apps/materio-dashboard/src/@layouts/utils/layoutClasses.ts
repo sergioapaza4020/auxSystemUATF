@@ -15,10 +15,10 @@ export const verticalLayoutClasses = {
   footerDetached: 'ts-vertical-layout-footer-detached',
   footerContentWrapper: 'ts-vertical-layout-footer-content-wrapper',
   footerContent: 'ts-vertical-layout-footer-content',
-  footerContentCompact: 'ts-vertical-layout-footer-content-compact'
-}
+  footerContentCompact: 'ts-vertical-layout-footer-content-compact',
+};
 
 // Classes for blank layout
 export const blankLayoutClasses = {
-  root: 'ts-blank-layout'
-}
+  root: 'ts-blank-layout',
+};

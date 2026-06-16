@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
 // React Imports
-import { createContext, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ForwardRefRenderFunction, MenuHTMLAttributes, MutableRefObject, ReactElement, ReactNode } from 'react'
+import { createContext, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ForwardRefRenderFunction, MenuHTMLAttributes, MutableRefObject, ReactElement, ReactNode } from 'react';
 
 // Next Imports
-import { usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation';
 
 // Third-party Imports
-import classnames from 'classnames'
-import type { CSSObject } from '@emotion/styled'
+import classnames from 'classnames';
+import type { CSSObject } from '@emotion/styled';
 
 // Type Imports
 import type {
@@ -17,67 +17,67 @@ import type {
   MenuItemStyles,
   RootStylesType,
   RenderExpandIconParams,
-  RenderExpandedMenuItemIcon
-} from '../../types'
+  RenderExpandedMenuItemIcon,
+} from '../../types';
 
 // Util Imports
-import { menuClasses } from '../../utils/menuClasses'
+import { menuClasses } from '../../utils/menuClasses';
 
 // Styled Component Imports
-import StyledVerticalMenu from '../../styles/vertical/StyledVerticalMenu'
+import StyledVerticalMenu from '../../styles/vertical/StyledVerticalMenu';
 
 // Style Imports
-import styles from '../../styles/styles.module.css'
+import styles from '../../styles/styles.module.css';
 
 // Default Config Imports
-import { verticalSubMenuToggleDuration } from '../../defaultConfigs'
+import { verticalSubMenuToggleDuration } from '../../defaultConfigs';
 
 export type MenuSectionStyles = {
-  root?: CSSObject
-  label?: CSSObject
-  prefix?: CSSObject
-  suffix?: CSSObject
-  icon?: CSSObject
-}
+  root?: CSSObject;
+  label?: CSSObject;
+  prefix?: CSSObject;
+  suffix?: CSSObject;
+  icon?: CSSObject;
+};
 
 export type OpenSubmenu = {
-  level: number
-  label: ReactNode
-  active: boolean
-  id: string
-}
+  level: number;
+  label: ReactNode;
+  active: boolean;
+  id: string;
+};
 
 export type VerticalMenuContextProps = {
-  transitionDuration?: number
-  menuSectionStyles?: MenuSectionStyles
-  menuItemStyles?: MenuItemStyles
-  subMenuOpenBehavior?: 'accordion' | 'collapse'
-  renderExpandIcon?: (params: RenderExpandIconParams) => ReactElement
-  renderExpandedMenuItemIcon?: RenderExpandedMenuItemIcon
-  textTruncate?: boolean
+  transitionDuration?: number;
+  menuSectionStyles?: MenuSectionStyles;
+  menuItemStyles?: MenuItemStyles;
+  subMenuOpenBehavior?: 'accordion' | 'collapse';
+  renderExpandIcon?: (params: RenderExpandIconParams) => ReactElement;
+  renderExpandedMenuItemIcon?: RenderExpandedMenuItemIcon;
+  textTruncate?: boolean;
 
   /**
    * @ignore
    */
-  openSubmenu?: OpenSubmenu[]
+  openSubmenu?: OpenSubmenu[];
 
   /**
    * @ignore
    */
-  openSubmenusRef?: MutableRefObject<OpenSubmenu[]>
+  openSubmenusRef?: MutableRefObject<OpenSubmenu[]>;
 
   /**
    * @ignore
    */
-  toggleOpenSubmenu?: (...submenus: { level: number; label: ReactNode; active?: boolean; id: string }[]) => void
-}
+  toggleOpenSubmenu?: (...submenus: { level: number; label: ReactNode; active?: boolean; id: string }[]) => void;
+};
 
 export type MenuProps = VerticalMenuContextProps &
   RootStylesType &
   Partial<ChildrenType> &
-  MenuHTMLAttributes<HTMLMenuElement>
+  MenuHTMLAttributes<HTMLMenuElement>;
 
-export const VerticalMenuContext = createContext({} as VerticalMenuContextProps)
+export const VerticalMenuContext = createContext({} as VerticalMenuContextProps);
 
 const Menu: ForwardRefRenderFunction<HTMLMenuElement, MenuProps> = (props, ref) => {
   // Props
@@ -93,61 +93,61 @@ const Menu: ForwardRefRenderFunction<HTMLMenuElement, MenuProps> = (props, ref) 
     transitionDuration = verticalSubMenuToggleDuration,
     textTruncate = true,
     ...rest
-  } = props
+  } = props;
 
   // States
-  const [openSubmenu, setOpenSubmenu] = useState<OpenSubmenu[]>([])
+  const [openSubmenu, setOpenSubmenu] = useState<OpenSubmenu[]>([]);
 
   // Refs
-  const openSubmenusRef = useRef<OpenSubmenu[]>([])
+  const openSubmenusRef = useRef<OpenSubmenu[]>([]);
 
   // Hooks
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   const toggleOpenSubmenu = useCallback(
     (...submenus: { level: number; label: ReactNode; active?: boolean; id: string }[]): void => {
-      if (!submenus.length) return
+      if (!submenus.length) return;
 
-      const openSubmenuCopy = [...openSubmenu]
+      const openSubmenuCopy = [...openSubmenu];
 
       submenus.forEach(({ level, label, active = false, id }) => {
-        const submenuIndex = openSubmenuCopy.findIndex(submenu => submenu.id === id)
-        const submenuExists = submenuIndex >= 0
-        const isAccordion = subMenuOpenBehavior === 'accordion'
+        const submenuIndex = openSubmenuCopy.findIndex((submenu) => submenu.id === id);
+        const submenuExists = submenuIndex >= 0;
+        const isAccordion = subMenuOpenBehavior === 'accordion';
 
-        const inactiveSubmenuIndex = openSubmenuCopy.findIndex(submenu => !submenu.active && submenu.level === 0)
+        const inactiveSubmenuIndex = openSubmenuCopy.findIndex((submenu) => !submenu.active && submenu.level === 0);
 
         // Delete submenu if it exists
         if (submenuExists) {
-          openSubmenuCopy.splice(submenuIndex, 1)
+          openSubmenuCopy.splice(submenuIndex, 1);
         }
 
         if (isAccordion) {
           // Add submenu if it doesn't exist
           if (!submenuExists) {
             if (inactiveSubmenuIndex >= 0 && !active && level === 0) {
-              openSubmenuCopy.splice(inactiveSubmenuIndex, 1, { level, label, active, id })
+              openSubmenuCopy.splice(inactiveSubmenuIndex, 1, { level, label, active, id });
             } else {
-              openSubmenuCopy.push({ level, label, active, id })
+              openSubmenuCopy.push({ level, label, active, id });
             }
           }
         } else {
           // Add submenu if it doesn't exist
           if (!submenuExists) {
-            openSubmenuCopy.push({ level, label, active, id })
+            openSubmenuCopy.push({ level, label, active, id });
           }
         }
-      })
+      });
 
-      setOpenSubmenu(openSubmenuCopy)
+      setOpenSubmenu(openSubmenuCopy);
     },
-    [openSubmenu, subMenuOpenBehavior]
-  )
+    [openSubmenu, subMenuOpenBehavior],
+  );
 
   useEffect(() => {
-    setOpenSubmenu([...openSubmenusRef.current])
-    openSubmenusRef.current = []
-  }, [pathname])
+    setOpenSubmenu([...openSubmenusRef.current]);
+    openSubmenusRef.current = [];
+  }, [pathname]);
 
   const providerValue = useMemo(
     () => ({
@@ -160,7 +160,7 @@ const Menu: ForwardRefRenderFunction<HTMLMenuElement, MenuProps> = (props, ref) 
       openSubmenusRef,
       toggleOpenSubmenu,
       subMenuOpenBehavior,
-      textTruncate
+      textTruncate,
     }),
     [
       transitionDuration,
@@ -172,9 +172,9 @@ const Menu: ForwardRefRenderFunction<HTMLMenuElement, MenuProps> = (props, ref) 
       openSubmenusRef,
       toggleOpenSubmenu,
       subMenuOpenBehavior,
-      textTruncate
-    ]
-  )
+      textTruncate,
+    ],
+  );
 
   return (
     <VerticalMenuContext.Provider value={providerValue}>
@@ -187,7 +187,7 @@ const Menu: ForwardRefRenderFunction<HTMLMenuElement, MenuProps> = (props, ref) 
         <ul className={styles.ul}>{children}</ul>
       </StyledVerticalMenu>
     </VerticalMenuContext.Provider>
-  )
-}
+  );
+};
 
-export default forwardRef(Menu)
+export default forwardRef(Menu);

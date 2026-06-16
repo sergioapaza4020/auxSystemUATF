@@ -1,7 +1,7 @@
-import { SessionsTable } from '@/views/admin/SessionsTable'
+import { SessionsTable } from '@/views/admin/SessionsTable';
 
 const Sessions = () => {
-  return <SessionsTable />
-}
+  return <SessionsTable />;
+};
 
-export default Sessions
+export default Sessions;

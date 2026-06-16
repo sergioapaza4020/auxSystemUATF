@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserSession } from 'src/entities/user-sessions/user-sessions.entity';
 import { User } from 'src/entities/users/users.entity';
@@ -101,10 +97,7 @@ export class SessionsService {
     return this.sessionRepository.save(session);
   }
 
-  async revokeSession(
-    session: UserSession,
-    revokedBy?: User,
-  ): Promise<UserSession> {
+  async revokeSession(session: UserSession, revokedBy?: User): Promise<UserSession> {
     session.isActive = false;
 
     session.revokedAt = new Date();
@@ -115,10 +108,7 @@ export class SessionsService {
     return this.sessionRepository.save(session);
   }
 
-  async revokeSessionById(
-    idSession: number,
-    revokedBy?: User,
-  ): Promise<UserSession> {
+  async revokeSessionById(idSession: number, revokedBy?: User): Promise<UserSession> {
     const session = await this.sessionRepository.findOne({
       where: { idSession },
       relations: ['user'],

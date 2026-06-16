@@ -1,31 +1,31 @@
 // Next Imports
-import Link from 'next/link'
+import Link from 'next/link';
 
 // MUI Imports
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Grid from '@mui/material/Grid'
-import Typography from '@mui/material/Typography'
-import Switch from '@mui/material/Switch'
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Switch from '@mui/material/Switch';
 
 // Component Imports
-import CustomIconButton from '@core/components/mui/IconButton'
+import CustomIconButton from '@core/components/mui/IconButton';
 
 type ConnectedAccountsType = {
-  title: string
-  logo: string
-  checked: boolean
-  subtitle: string
-}
+  title: string;
+  logo: string;
+  checked: boolean;
+  subtitle: string;
+};
 
 type SocialAccountsType = {
-  title: string
-  logo: string
-  username?: string
-  isConnected: boolean
-  href?: string
-}
+  title: string;
+  logo: string;
+  username?: string;
+  isConnected: boolean;
+  href?: string;
+};
 
 // Vars
 const connectedAccountsArr: ConnectedAccountsType[] = [
@@ -33,65 +33,65 @@ const connectedAccountsArr: ConnectedAccountsType[] = [
     checked: true,
     title: 'Google',
     logo: '/images/logos/google.png',
-    subtitle: 'Calendar and Contacts'
+    subtitle: 'Calendar and Contacts',
   },
   {
     checked: false,
     title: 'Slack',
     logo: '/images/logos/slack.png',
-    subtitle: 'Communications'
+    subtitle: 'Communications',
   },
   {
     checked: true,
     title: 'Github',
     logo: '/images/logos/github.png',
-    subtitle: 'Manage your Git repositories'
+    subtitle: 'Manage your Git repositories',
   },
   {
     checked: true,
     title: 'Mailchimp',
     subtitle: 'Email marketing service',
-    logo: '/images/logos/mailchimp.png'
+    logo: '/images/logos/mailchimp.png',
   },
   {
     title: 'Asana',
     checked: false,
     subtitle: 'Task Communication',
-    logo: '/images/logos/asana.png'
-  }
-]
+    logo: '/images/logos/asana.png',
+  },
+];
 
 const socialAccountsArr: SocialAccountsType[] = [
   {
     title: 'Facebook',
     isConnected: false,
-    logo: '/images/logos/facebook.png'
+    logo: '/images/logos/facebook.png',
   },
   {
     title: 'Twitter',
     isConnected: true,
     username: '@Theme_Selection',
     logo: '/images/logos/twitter.png',
-    href: 'https://twitter.com/Theme_Selection'
+    href: 'https://twitter.com/Theme_Selection',
   },
   {
     title: 'Linkedin',
     isConnected: true,
     username: '@ThemeSelection',
     logo: '/images/logos/linkedin.png',
-    href: 'https://in.linkedin.com/company/themeselection'
+    href: 'https://in.linkedin.com/company/themeselection',
   },
   {
     title: 'Dribbble',
     isConnected: false,
-    logo: '/images/logos/dribbble.png'
+    logo: '/images/logos/dribbble.png',
   },
   {
     title: 'Behance',
     isConnected: false,
-    logo: '/images/logos/behance.png'
-  }
-]
+    logo: '/images/logos/behance.png',
+  },
+];
 
 const Connections = () => {
   return (
@@ -148,7 +148,7 @@ const Connections = () => {
         </Grid>
       </Grid>
     </Card>
-  )
-}
+  );
+};
 
-export default Connections
+export default Connections;

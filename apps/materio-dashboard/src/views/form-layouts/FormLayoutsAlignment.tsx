@@ -1,32 +1,32 @@
-'use client'
+'use client';
 
 // React Imports
-import { useState } from 'react'
+import { useState } from 'react';
 
 // MUI Imports
-import Card from '@mui/material/Card'
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import Checkbox from '@mui/material/Checkbox'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import InputAdornment from '@mui/material/InputAdornment'
-import IconButton from '@mui/material/IconButton'
+import Card from '@mui/material/Card';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import Checkbox from '@mui/material/Checkbox';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
 
 const FormLayoutsAlignment = () => {
   // States
-  const [isPasswordShown, setIsPasswordShown] = useState(false)
+  const [isPasswordShown, setIsPasswordShown] = useState(false);
 
-  const handleClickShowPassword = () => setIsPasswordShown(show => !show)
+  const handleClickShowPassword = () => setIsPasswordShown((show) => !show);
 
   return (
     <Card>
       <CardHeader title='Form Alignment' />
       <CardContent className='flex flex-col items-center justify-center bs-[500px]'>
-        <form onSubmit={e => e.preventDefault()} className='p-12 max-is-[400px] border rounded'>
+        <form onSubmit={(e) => e.preventDefault()} className='p-12 max-is-[400px] border rounded'>
           <Grid container spacing={5}>
             <Grid item xs={12}>
               <Typography variant='h5'>Sign In</Typography>
@@ -48,13 +48,13 @@ const FormLayoutsAlignment = () => {
                         size='small'
                         edge='end'
                         onClick={handleClickShowPassword}
-                        onMouseDown={e => e.preventDefault()}
+                        onMouseDown={(e) => e.preventDefault()}
                         aria-label='toggle password visibility'
                       >
                         <i className={isPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
             </Grid>
@@ -70,7 +70,7 @@ const FormLayoutsAlignment = () => {
         </form>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default FormLayoutsAlignment
+export default FormLayoutsAlignment;

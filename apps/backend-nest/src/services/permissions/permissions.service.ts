@@ -15,15 +15,11 @@ export class PermissionsService {
     const permission = await this.getOneByName(permissionCreateDto.name);
     if (permission) throw new BadRequestException('Permission already exists');
 
-    const permissionCreated =
-      this.permissionRepository.create(permissionCreateDto);
+    const permissionCreated = this.permissionRepository.create(permissionCreateDto);
     permissionCreated.authorId = 0;
     permissionCreated.createdAt = new Date();
     permissionCreated.updatedAt = new Date();
-    permissionCreated.name = permissionCreateDto.name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '.');
+    permissionCreated.name = permissionCreateDto.name.toLowerCase().trim().replace(/\s+/g, '.');
     return this.permissionRepository.save(permissionCreated);
   }
 

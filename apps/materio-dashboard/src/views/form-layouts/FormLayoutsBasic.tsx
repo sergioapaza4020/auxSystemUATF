@@ -1,36 +1,36 @@
-'use client'
+'use client';
 
 // React Imports
-import { useState } from 'react'
+import { useState } from 'react';
 
 // Next Imports
-import Link from 'next/link'
+import Link from 'next/link';
 
 // MUI Imports
-import Card from '@mui/material/Card'
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
+import Card from '@mui/material/Card';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 
 const FormLayoutsBasic = () => {
   // States
-  const [isPasswordShown, setIsPasswordShown] = useState(false)
-  const [isConfirmPasswordShown, setIsConfirmPasswordShown] = useState(false)
+  const [isPasswordShown, setIsPasswordShown] = useState(false);
+  const [isConfirmPasswordShown, setIsConfirmPasswordShown] = useState(false);
 
-  const handleClickShowPassword = () => setIsPasswordShown(show => !show)
+  const handleClickShowPassword = () => setIsPasswordShown((show) => !show);
 
-  const handleClickShowConfirmPassword = () => setIsConfirmPasswordShown(show => !show)
+  const handleClickShowConfirmPassword = () => setIsConfirmPasswordShown((show) => !show);
 
   return (
     <Card>
       <CardHeader title='Basic' />
       <CardContent>
-        <form onSubmit={e => e.preventDefault()}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <Grid container spacing={5}>
             <Grid item xs={12}>
               <TextField fullWidth label='Name' placeholder='John Doe' />
@@ -59,13 +59,13 @@ const FormLayoutsBasic = () => {
                         size='small'
                         edge='end'
                         onClick={handleClickShowPassword}
-                        onMouseDown={e => e.preventDefault()}
+                        onMouseDown={(e) => e.preventDefault()}
                         aria-label='toggle password visibility'
                       >
                         <i className={isPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
             </Grid>
@@ -84,13 +84,13 @@ const FormLayoutsBasic = () => {
                         size='small'
                         edge='end'
                         onClick={handleClickShowConfirmPassword}
-                        onMouseDown={e => e.preventDefault()}
+                        onMouseDown={(e) => e.preventDefault()}
                         aria-label='toggle confirm password visibility'
                       >
                         <i className={isConfirmPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
             </Grid>
@@ -101,7 +101,7 @@ const FormLayoutsBasic = () => {
                 </Button>
                 <div className='flex items-center justify-center gap-2'>
                   <Typography color='text.primary'>Already have an account?</Typography>
-                  <Link href='/' onClick={e => e.preventDefault()} className='text-primary'>
+                  <Link href='/' onClick={(e) => e.preventDefault()} className='text-primary'>
                     Log In
                   </Link>
                 </div>
@@ -111,7 +111,7 @@ const FormLayoutsBasic = () => {
         </form>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default FormLayoutsBasic
+export default FormLayoutsBasic;

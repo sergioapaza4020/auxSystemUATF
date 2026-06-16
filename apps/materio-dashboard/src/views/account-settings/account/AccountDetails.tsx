@@ -1,37 +1,37 @@
-'use client'
+'use client';
 
 // React Imports
-import { useState } from 'react'
-import type { ChangeEvent } from 'react'
+import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 
 // MUI Imports
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
-import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
-import Chip from '@mui/material/Chip'
-import type { SelectChangeEvent } from '@mui/material/Select'
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Chip from '@mui/material/Chip';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 type Data = {
-  firstName: string
-  lastName: string
-  email: string
-  organization: string
-  phoneNumber: number | string
-  address: string
-  state: string
-  zipCode: string
-  country: string
-  language: string
-  timezone: string
-  currency: string
-}
+  firstName: string;
+  lastName: string;
+  email: string;
+  organization: string;
+  phoneNumber: number | string;
+  address: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  language: string;
+  timezone: string;
+  currency: string;
+};
 
 // Vars
 const initialData: Data = {
@@ -46,48 +46,48 @@ const initialData: Data = {
   country: 'usa',
   language: 'arabic',
   timezone: 'gmt-12',
-  currency: 'usd'
-}
+  currency: 'usd',
+};
 
-const languageData = ['English', 'Arabic', 'French', 'German', 'Portuguese']
+const languageData = ['English', 'Arabic', 'French', 'German', 'Portuguese'];
 
 const AccountDetails = () => {
   // States
-  const [formData, setFormData] = useState<Data>(initialData)
-  const [fileInput, setFileInput] = useState<string>('')
-  const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png')
-  const [language, setLanguage] = useState<string[]>(['English'])
+  const [formData, setFormData] = useState<Data>(initialData);
+  const [fileInput, setFileInput] = useState<string>('');
+  const [imgSrc, setImgSrc] = useState<string>('/images/avatars/1.png');
+  const [language, setLanguage] = useState<string[]>(['English']);
 
   const handleDelete = (value: string) => {
-    setLanguage(current => current.filter(item => item !== value))
-  }
+    setLanguage((current) => current.filter((item) => item !== value));
+  };
 
   const handleChange = (event: SelectChangeEvent<string[]>) => {
-    setLanguage(event.target.value as string[])
-  }
+    setLanguage(event.target.value as string[]);
+  };
 
   const handleFormChange = (field: keyof Data, value: Data[keyof Data]) => {
-    setFormData({ ...formData, [field]: value })
-  }
+    setFormData({ ...formData, [field]: value });
+  };
 
   const handleFileInputChange = (file: ChangeEvent) => {
-    const reader = new FileReader()
-    const { files } = file.target as HTMLInputElement
+    const reader = new FileReader();
+    const { files } = file.target as HTMLInputElement;
 
     if (files && files.length !== 0) {
-      reader.onload = () => setImgSrc(reader.result as string)
-      reader.readAsDataURL(files[0])
+      reader.onload = () => setImgSrc(reader.result as string);
+      reader.readAsDataURL(files[0]);
 
       if (reader.result !== null) {
-        setFileInput(reader.result as string)
+        setFileInput(reader.result as string);
       }
     }
-  }
+  };
 
   const handleFileInputReset = () => {
-    setFileInput('')
-    setImgSrc('/images/avatars/1.png')
-  }
+    setFileInput('');
+    setImgSrc('/images/avatars/1.png');
+  };
 
   return (
     <Card>
@@ -116,7 +116,7 @@ const AccountDetails = () => {
         </div>
       </CardContent>
       <CardContent>
-        <form onSubmit={e => e.preventDefault()}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <Grid container spacing={5}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -124,7 +124,7 @@ const AccountDetails = () => {
                 label='First Name'
                 value={formData.firstName}
                 placeholder='John'
-                onChange={e => handleFormChange('firstName', e.target.value)}
+                onChange={(e) => handleFormChange('firstName', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -133,7 +133,7 @@ const AccountDetails = () => {
                 label='Last Name'
                 value={formData.lastName}
                 placeholder='Doe'
-                onChange={e => handleFormChange('lastName', e.target.value)}
+                onChange={(e) => handleFormChange('lastName', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -142,7 +142,7 @@ const AccountDetails = () => {
                 label='Email'
                 value={formData.email}
                 placeholder='john.doe@gmail.com'
-                onChange={e => handleFormChange('email', e.target.value)}
+                onChange={(e) => handleFormChange('email', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -151,7 +151,7 @@ const AccountDetails = () => {
                 label='Organization'
                 value={formData.organization}
                 placeholder='ThemeSelection'
-                onChange={e => handleFormChange('organization', e.target.value)}
+                onChange={(e) => handleFormChange('organization', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -160,7 +160,7 @@ const AccountDetails = () => {
                 label='Phone Number'
                 value={formData.phoneNumber}
                 placeholder='+1 (234) 567-8901'
-                onChange={e => handleFormChange('phoneNumber', e.target.value)}
+                onChange={(e) => handleFormChange('phoneNumber', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -169,7 +169,7 @@ const AccountDetails = () => {
                 label='Address'
                 value={formData.address}
                 placeholder='Address'
-                onChange={e => handleFormChange('address', e.target.value)}
+                onChange={(e) => handleFormChange('address', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -178,7 +178,7 @@ const AccountDetails = () => {
                 label='State'
                 value={formData.state}
                 placeholder='New York'
-                onChange={e => handleFormChange('state', e.target.value)}
+                onChange={(e) => handleFormChange('state', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -188,7 +188,7 @@ const AccountDetails = () => {
                 label='Zip Code'
                 value={formData.zipCode}
                 placeholder='123456'
-                onChange={e => handleFormChange('zipCode', e.target.value)}
+                onChange={(e) => handleFormChange('zipCode', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -197,7 +197,7 @@ const AccountDetails = () => {
                 <Select
                   label='Country'
                   value={formData.country}
-                  onChange={e => handleFormChange('country', e.target.value)}
+                  onChange={(e) => handleFormChange('country', e.target.value)}
                 >
                   <MenuItem value='usa'>USA</MenuItem>
                   <MenuItem value='uk'>UK</MenuItem>
@@ -214,14 +214,14 @@ const AccountDetails = () => {
                   label='Language'
                   value={language}
                   onChange={handleChange}
-                  renderValue={selected => (
+                  renderValue={(selected) => (
                     <div className='flex flex-wrap gap-2'>
-                      {(selected as string[]).map(value => (
+                      {(selected as string[]).map((value) => (
                         <Chip
                           key={value}
                           clickable
                           deleteIcon={
-                            <i className='ri-close-circle-fill' onMouseDown={event => event.stopPropagation()} />
+                            <i className='ri-close-circle-fill' onMouseDown={(event) => event.stopPropagation()} />
                           }
                           size='small'
                           label={value}
@@ -231,7 +231,7 @@ const AccountDetails = () => {
                     </div>
                   )}
                 >
-                  {languageData.map(name => (
+                  {languageData.map((name) => (
                     <MenuItem key={name} value={name}>
                       {name}
                     </MenuItem>
@@ -245,7 +245,7 @@ const AccountDetails = () => {
                 <Select
                   label='TimeZone'
                   value={formData.timezone}
-                  onChange={e => handleFormChange('timezone', e.target.value)}
+                  onChange={(e) => handleFormChange('timezone', e.target.value)}
                   MenuProps={{ PaperProps: { style: { maxHeight: 250 } } }}
                 >
                   <MenuItem value='gmt-12'>(GMT-12:00) International Date Line West</MenuItem>
@@ -274,7 +274,7 @@ const AccountDetails = () => {
                 <Select
                   label='Currency'
                   value={formData.currency}
-                  onChange={e => handleFormChange('currency', e.target.value)}
+                  onChange={(e) => handleFormChange('currency', e.target.value)}
                 >
                   <MenuItem value='usd'>USD</MenuItem>
                   <MenuItem value='euro'>EUR</MenuItem>
@@ -295,7 +295,7 @@ const AccountDetails = () => {
         </form>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default AccountDetails
+export default AccountDetails;

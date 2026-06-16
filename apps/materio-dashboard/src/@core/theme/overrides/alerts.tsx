@@ -1,8 +1,8 @@
 // React Imports
-import React from 'react'
+import React from 'react';
 
 // MUI Imports
-import type { Theme } from '@mui/material/styles'
+import type { Theme } from '@mui/material/styles';
 
 const alerts: Theme['components'] = {
   MuiAlert: {
@@ -11,8 +11,8 @@ const alerts: Theme['components'] = {
         error: <i className='ri-error-warning-line' />,
         warning: <i className='ri-alert-line' />,
         info: <i className='ri-information-line' />,
-        success: <i className='ri-checkbox-circle-line' />
-      }
+        success: <i className='ri-checkbox-circle-line' />,
+      },
     },
     styleOverrides: {
       root: ({ theme }) => ({
@@ -21,9 +21,9 @@ const alerts: Theme['components'] = {
         ...theme.typography.body1,
         '&:not(:has(.MuiAlertTitle-root))': {
           '& .MuiAlert-icon + .MuiAlert-message': {
-            alignSelf: 'center'
-          }
-        }
+            alignSelf: 'center',
+          },
+        },
       }),
       icon: {
         padding: 0,
@@ -34,16 +34,16 @@ const alerts: Theme['components'] = {
         alignItems: 'center',
         justifyContent: 'center',
         '& i, & svg': {
-          fontSize: 'inherit'
-        }
+          fontSize: 'inherit',
+        },
       },
       message: {
-        padding: 0
+        padding: 0,
       },
       action: {
         padding: 0,
-        marginRight: 0
-      }
+        marginRight: 0,
+      },
     },
     variants: [
       {
@@ -51,36 +51,36 @@ const alerts: Theme['components'] = {
         style: {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-error-main)',
-            color: 'var(--mui-palette-error-contrastText)'
-          }
-        }
+            color: 'var(--mui-palette-error-contrastText)',
+          },
+        },
       },
       {
         props: { variant: 'standard', severity: 'warning' },
         style: {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-warning-main)',
-            color: 'var(--mui-palette-warning-contrastText)'
-          }
-        }
+            color: 'var(--mui-palette-warning-contrastText)',
+          },
+        },
       },
       {
         props: { variant: 'standard', severity: 'info' },
         style: {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-info-main)',
-            color: 'var(--mui-palette-info-contrastText)'
-          }
-        }
+            color: 'var(--mui-palette-info-contrastText)',
+          },
+        },
       },
       {
         props: { variant: 'standard', severity: 'success' },
         style: {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-success-main)',
-            color: 'var(--mui-palette-success-contrastText)'
-          }
-        }
+            color: 'var(--mui-palette-success-contrastText)',
+          },
+        },
       },
       {
         props: { variant: 'outlined', severity: 'error' },
@@ -88,9 +88,9 @@ const alerts: Theme['components'] = {
           borderColor: 'var(--mui-palette-error-main)',
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-error-mainOpacity)',
-            color: 'var(--mui-palette-error-main)'
-          }
-        }
+            color: 'var(--mui-palette-error-main)',
+          },
+        },
       },
       {
         props: { variant: 'outlined', severity: 'warning' },
@@ -98,9 +98,9 @@ const alerts: Theme['components'] = {
           borderColor: 'var(--mui-palette-warning-main)',
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-warning-mainOpacity)',
-            color: 'var(--mui-palette-warning-main)'
-          }
-        }
+            color: 'var(--mui-palette-warning-main)',
+          },
+        },
       },
       {
         props: { variant: 'outlined', severity: 'info' },
@@ -108,9 +108,9 @@ const alerts: Theme['components'] = {
           borderColor: 'var(--mui-palette-info-main)',
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-info-mainOpacity)',
-            color: 'var(--mui-palette-info-main)'
-          }
-        }
+            color: 'var(--mui-palette-info-main)',
+          },
+        },
       },
       {
         props: { variant: 'outlined', severity: 'success' },
@@ -118,9 +118,9 @@ const alerts: Theme['components'] = {
           borderColor: 'var(--mui-palette-success-main)',
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-success-mainOpacity)',
-            color: 'var(--mui-palette-success-main)'
-          }
-        }
+            color: 'var(--mui-palette-success-main)',
+          },
+        },
       },
       {
         props: { variant: 'filled', severity: 'error' },
@@ -128,9 +128,9 @@ const alerts: Theme['components'] = {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-common-white)',
             color: 'var(--mui-palette-error-main)',
-            boxShadow: 'var(--mui-customShadows-xs)'
-          }
-        }
+            boxShadow: 'var(--mui-customShadows-xs)',
+          },
+        },
       },
       {
         props: { variant: 'filled', severity: 'warning' },
@@ -138,9 +138,9 @@ const alerts: Theme['components'] = {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-common-white)',
             color: 'var(--mui-palette-warning-main)',
-            boxShadow: 'var(--mui-customShadows-xs)'
-          }
-        }
+            boxShadow: 'var(--mui-customShadows-xs)',
+          },
+        },
       },
       {
         props: { variant: 'filled', severity: 'info' },
@@ -148,9 +148,9 @@ const alerts: Theme['components'] = {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-common-white)',
             color: 'var(--mui-palette-info-main)',
-            boxShadow: 'var(--mui-customShadows-xs)'
-          }
-        }
+            boxShadow: 'var(--mui-customShadows-xs)',
+          },
+        },
       },
       {
         props: { variant: 'filled', severity: 'success' },
@@ -158,11 +158,11 @@ const alerts: Theme['components'] = {
           '& .MuiAlert-icon': {
             backgroundColor: 'var(--mui-palette-common-white)',
             color: 'var(--mui-palette-success-main)',
-            boxShadow: 'var(--mui-customShadows-xs)'
-          }
-        }
-      }
-    ]
+            boxShadow: 'var(--mui-customShadows-xs)',
+          },
+        },
+      },
+    ],
   },
   MuiAlertTitle: {
     styleOverrides: {
@@ -170,10 +170,10 @@ const alerts: Theme['components'] = {
         ...theme.typography.h5,
         marginTop: 0,
         marginBottom: theme.spacing(1),
-        color: 'inherit'
-      })
-    }
-  }
-}
+        color: 'inherit',
+      }),
+    },
+  },
+};
 
-export default alerts
+export default alerts;

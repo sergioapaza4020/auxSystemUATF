@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { RolesAssignPermissionsDto } from 'src/dtos/roles/role-assign-permissions.dto';
 import { RoleCreateDto } from 'src/dtos/roles/roles.dto';
 import { RolesService } from 'src/services/roles/roles.service';
@@ -41,10 +32,7 @@ export class RolesController {
     @Param('idRole', ParseIntPipe) idRole: number,
     @Body() roleAssignPermissionDto: RolesAssignPermissionsDto,
   ) {
-    return this.rolesService.assignPermissions(
-      idRole,
-      roleAssignPermissionDto.permissionNames,
-    );
+    return this.rolesService.assignPermissions(idRole, roleAssignPermissionDto.permissionNames);
   }
 
   @Delete(':idRole')

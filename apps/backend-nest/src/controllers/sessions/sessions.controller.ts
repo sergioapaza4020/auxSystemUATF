@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Param,
-  ParseIntPipe,
-  Post,
-  Body,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Param, ParseIntPipe, Post, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { SessionsService } from 'src/services/sessions/sessions.service';

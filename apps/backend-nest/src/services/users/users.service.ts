@@ -87,8 +87,7 @@ export class UsersService {
       if (!role) throw new BadRequestException(`Role not found: ${rn}`);
 
       const alreadyAssigned = user.roles?.some((r) => r.name === rn);
-      if (alreadyAssigned)
-        throw new BadRequestException(`Role not found: ${rn}`);
+      if (alreadyAssigned) throw new BadRequestException(`Role not found: ${rn}`);
 
       user.roles?.push(role);
     }

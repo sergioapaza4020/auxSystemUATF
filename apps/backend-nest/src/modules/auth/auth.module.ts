@@ -14,9 +14,7 @@ import { SessionsModule } from '../sessions/sessions.module';
       useFactory: () => ({
         secret: process.env.JWT_ACCESS_SECRET,
         signOptions: {
-          expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as
-            | number
-            | undefined,
+          expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as number | undefined,
         },
       }),
     }),
