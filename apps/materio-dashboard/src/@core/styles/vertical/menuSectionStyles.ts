@@ -1,11 +1,11 @@
 // MUI Imports
-import type { Theme } from '@mui/material/styles'
+import type { Theme } from '@mui/material/styles';
 
 // Type Imports
-import type { MenuProps } from '@menu/vertical-menu'
+import type { MenuProps } from '@menu/vertical-menu';
 
 // Util Imports
-import { menuClasses } from '@menu/utils/menuClasses'
+import { menuClasses } from '@menu/utils/menuClasses';
 
 const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
   return {
@@ -21,22 +21,22 @@ const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
           content: '""',
           blockSize: 1,
           inlineSize: '0.875rem',
-          backgroundColor: 'var(--mui-palette-divider)'
+          backgroundColor: 'var(--mui-palette-divider)',
         },
         '&:after': {
           content: '""',
           blockSize: 1,
           flexGrow: 1,
-          backgroundColor: 'var(--mui-palette-divider)'
-        }
+          backgroundColor: 'var(--mui-palette-divider)',
+        },
       },
       [`& .${menuClasses.menuSectionLabel}`]: {
         flexGrow: 0,
         fontSize: '13px',
-        lineHeight: 1.38462
-      }
-    }
-  }
-}
+        lineHeight: 1.38462,
+      },
+    },
+  };
+};
 
-export default menuSectionStyles
+export default menuSectionStyles;

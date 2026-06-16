@@ -1,14 +1,14 @@
 // MUI Imports
-import Card from '@mui/material/Card'
-import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
-import TextField from '@mui/material/TextField'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import InputAdornment from '@mui/material/InputAdornment'
+import Card from '@mui/material/Card';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import InputAdornment from '@mui/material/InputAdornment';
 
 // Component Imports
-import Form from '@components/Form'
+import Form from '@components/Form';
 
 const FormLayoutsWithIcon = () => {
   return (
@@ -27,7 +27,7 @@ const FormLayoutsWithIcon = () => {
                     <InputAdornment position='start'>
                       <i className='ri-user-3-line' />
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
             </Grid>
@@ -42,7 +42,7 @@ const FormLayoutsWithIcon = () => {
                     <InputAdornment position='start'>
                       <i className='ri-mail-line' />
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
             </Grid>
@@ -56,7 +56,7 @@ const FormLayoutsWithIcon = () => {
                     <InputAdornment position='start'>
                       <i className='ri-phone-fill' />
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
             </Grid>
@@ -73,7 +73,7 @@ const FormLayoutsWithIcon = () => {
                     <InputAdornment position='start'>
                       <i className='ri-message-2-line' />
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
             </Grid>
@@ -86,7 +86,7 @@ const FormLayoutsWithIcon = () => {
         </Form>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default FormLayoutsWithIcon
+export default FormLayoutsWithIcon;

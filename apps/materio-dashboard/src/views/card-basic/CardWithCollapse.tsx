@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
 // React Imports
-import { useState } from 'react'
+import { useState } from 'react';
 
 // MUI Imports
-import Card from '@mui/material/Card'
-import CardMedia from '@mui/material/CardMedia'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
-import CardActions from '@mui/material/CardActions'
-import Button from '@mui/material/Button'
-import IconButton from '@mui/material/IconButton'
-import Collapse from '@mui/material/Collapse'
-import Divider from '@mui/material/Divider'
+import Card from '@mui/material/Card';
+import CardMedia from '@mui/material/CardMedia';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import CardActions from '@mui/material/CardActions';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Collapse from '@mui/material/Collapse';
+import Divider from '@mui/material/Divider';
 
 const CardWithCollapse = () => {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <Card>
@@ -44,7 +44,7 @@ const CardWithCollapse = () => {
         </CardContent>
       </Collapse>
     </Card>
-  )
-}
+  );
+};
 
-export default CardWithCollapse
+export default CardWithCollapse;

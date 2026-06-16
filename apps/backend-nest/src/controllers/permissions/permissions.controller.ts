@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { Public } from '@core/decorators/public/public.decorator';
 import { PermissionCreateDto } from 'src/dtos/permissions/permissions.dto';
 import { PermissionsService } from 'src/services/permissions/permissions.service';

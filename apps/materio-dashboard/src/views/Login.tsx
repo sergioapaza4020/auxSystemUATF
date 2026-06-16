@@ -1,67 +1,67 @@
-'use client'
+'use client';
 
 // React Imports
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 
 // Next Imports
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // MUI Imports
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
-import TextField from '@mui/material/TextField'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import Checkbox from '@mui/material/Checkbox'
-import Button from '@mui/material/Button'
-import FormControlLabel from '@mui/material/FormControlLabel'
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import Checkbox from '@mui/material/Checkbox';
+import Button from '@mui/material/Button';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
-import { Login as ApiLogin } from '../api/auth.service'
+import { Login as ApiLogin } from '../api/auth.service';
 
 // Type Imports
-import type { Mode } from '@core/types'
+import type { Mode } from '@core/types';
 
 // Component Imports
-import Logo from '@components/layout/shared/Logo'
-import Illustrations from '@components/Illustrations'
+import Logo from '@components/layout/shared/Logo';
+import Illustrations from '@components/Illustrations';
 
 // Hook Imports
-import { useImageVariant } from '@core/hooks/useImageVariant'
+import { useImageVariant } from '@core/hooks/useImageVariant';
 
 const Login = ({ mode }: { mode: Mode }) => {
   // States
-  const [isPasswordShown, setIsPasswordShown] = useState(false)
+  const [isPasswordShown, setIsPasswordShown] = useState(false);
 
   // Vars
-  const darkImg = '/images/pages/auth-v1-mask-dark.png'
-  const lightImg = '/images/pages/auth-v1-mask-light.png'
+  const darkImg = '/images/pages/auth-v1-mask-dark.png';
+  const lightImg = '/images/pages/auth-v1-mask-light.png';
 
   // Hooks
-  const router = useRouter()
-  const authBackground = useImageVariant(mode, lightImg, darkImg)
+  const router = useRouter();
+  const authBackground = useImageVariant(mode, lightImg, darkImg);
 
-  const handleClickShowPassword = () => setIsPasswordShown(show => !show)
+  const handleClickShowPassword = () => setIsPasswordShown((show) => !show);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const data = new FormData(e.currentTarget)
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
 
     try {
       await ApiLogin({
         username: data.get('username') as string,
-        password: data.get('password') as string
-      })
+        password: data.get('password') as string,
+      });
 
-      router.push('/dashboard')
+      router.push('/dashboard');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : (error as any).data?.message || 'An error occurred'
+      const errorMessage = error instanceof Error ? error.message : (error as any).data?.message || 'An error occurred';
 
-      alert(errorMessage)
+      alert(errorMessage);
     }
-  }
+  };
 
   return (
     <div className='flex flex-col justify-center items-center min-bs-[100dvh] relative p-6'>
@@ -86,12 +86,12 @@ const Login = ({ mode }: { mode: Mode }) => {
                         size='small'
                         edge='end'
                         onClick={handleClickShowPassword}
-                        onMouseDown={e => e.preventDefault()}
+                        onMouseDown={(e) => e.preventDefault()}
                       >
                         <i className={isPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
               <div className='flex justify-between items-center gap-x-3 gap-y-1 flex-wrap'>
@@ -112,7 +112,7 @@ const Login = ({ mode }: { mode: Mode }) => {
       </Card>
       <Illustrations maskImg={{ src: authBackground }} />
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

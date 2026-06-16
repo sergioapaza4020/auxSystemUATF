@@ -16,8 +16,8 @@ export const menuClasses = {
   subMenuExpandIcon: 'ts-submenu-expand-icon',
   disabled: 'ts-disabled',
   active: 'ts-active',
-  open: 'ts-open'
-}
+  open: 'ts-open',
+};
 
 // Classes for vertical navigation menu
 export const verticalNavClasses = {
@@ -27,5 +27,5 @@ export const verticalNavClasses = {
   header: 'ts-vertical-nav-header',
   backdrop: 'ts-vertical-nav-backdrop',
   toggled: 'ts-toggled',
-  breakpointReached: 'ts-breakpoint-reached'
-}
+  breakpointReached: 'ts-breakpoint-reached',
+};

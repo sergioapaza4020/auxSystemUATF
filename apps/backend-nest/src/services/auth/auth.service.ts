@@ -33,20 +33,11 @@ export class AuthService {
   async login(loginDto: LoginDto, request: Request) {
     const user = await this.validateUser(loginDto);
 
-    const session = this.buildSessionPayload(user);
-
-    const accessToken = this.jwtService.sign(session, {
-      secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as number | undefined,
-    });
-
     const refreshToken = this.jwtService.sign(
       { idUser: user.idUser },
       {
         secret: process.env.JWT_ACCESS_REFRESH,
-        expiresIn: process.env.JWT_ACCESS_REFRESH_EXPIRES_IN as
-          | number
-          | undefined,
+        expiresIn: process.env.JWT_ACCESS_REFRESH_EXPIRES_IN as number | undefined,
       },
     );
 
@@ -60,7 +51,7 @@ export class AuthService {
 
     const lastUsedAt = new Date();
 
-    const userSession = this.sessionService.createSession({
+    const userSession = await this.sessionService.createSession({
       user,
       refreshToken,
       ipAddress,
@@ -69,6 +60,13 @@ export class AuthService {
       os,
       device,
       lastUsedAt,
+    });
+
+    const session = this.buildSessionPayload(user, userSession.idSession);
+
+    const accessToken = this.jwtService.sign(session, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as number | undefined,
     });
 
     return {
@@ -85,15 +83,14 @@ export class AuthService {
     return decoded as JwtPayload;
   }
 
-  private buildSessionPayload(user: User) {
+  private buildSessionPayload(user: User, idSession: number) {
     const roles = user.roles.map((r) => r.name);
 
-    const permissions = [
-      ...new Set(user.roles.flatMap((r) => r.permissions.map((p) => p.name))),
-    ];
+    const permissions = [...new Set(user.roles.flatMap((r) => r.permissions.map((p) => p.name)))];
 
     return {
       idUser: user.idUser,
+      idSession,
       username: user.username,
       email: user.email,
       roles,
@@ -101,11 +98,11 @@ export class AuthService {
     };
   }
 
-  async getSession(userId: number) {
-    const user = await this.userService.getOneById(userId);
+  async getSession(idUser: number, idSession: number) {
+    const user = await this.userService.getOneById(idUser);
     if (!user) throw new UnauthorizedException('User not found');
 
-    return this.buildSessionPayload(user);
+    return this.buildSessionPayload(user, idSession);
   }
 
   async refreshToken(token: string) {
@@ -121,13 +118,11 @@ export class AuthService {
 
       await this.sessionService.updateLastSessionUsed(session);
 
-      const newPayload = await this.getSession(payload.idUser);
+      const newPayload = await this.getSession(payload.idUser, session.idSession);
 
       const newAccessToken = this.jwtService.sign(newPayload, {
         secret: process.env.JWT_ACCESS_SECRET,
-        expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as
-          | number
-          | undefined,
+        expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as number | undefined,
       });
 
       await this.sessionService.updateLastSessionUsed(session);
