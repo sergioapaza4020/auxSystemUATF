@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.2.0...v1.2.1) (2026-06-16)
+
+### Bug Fixes
+
+* minor changes ([382a53c](https://github.com/sergioapaza4020/auxSystemUATF/commit/382a53c449332716f0532448296962f8a47c414b))
+
 ## [1.2.0](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.1.7...v1.2.0) (2026-06-08)
 
 ### Features
