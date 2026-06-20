@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { Public } from '@core/decorators/public/public.decorator';
 import { PermissionCreateDto } from 'src/dtos/permissions/permissions.dto';
 import { PermissionsService } from 'src/services/permissions/permissions.service';
+import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
+import { User } from 'src/entities/users/users.entity';
 
 @Public()
 @Controller('permissions')
@@ -14,8 +16,8 @@ export class PermissionsController {
   }
 
   @Post()
-  async create(@Body() permissionCreateDto: PermissionCreateDto) {
-    return this.permissionsService.create(permissionCreateDto);
+  async create(@Body() permissionCreateDto: PermissionCreateDto, @CurrentUser() user: User) {
+    return this.permissionsService.create(permissionCreateDto, user.idUser);
   }
 
   @Get('name/:name')

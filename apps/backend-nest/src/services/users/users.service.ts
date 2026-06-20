@@ -37,9 +37,7 @@ export class UsersService {
       ...userCreateDto,
       password: hash,
     });
-    userCreated.authorId = 0;
-    userCreated.createdAt = new Date();
-    userCreated.updatedAt = new Date();
+    userCreated.createdBy = 0;
     return this.userRepository.save(userCreated);
   }
 

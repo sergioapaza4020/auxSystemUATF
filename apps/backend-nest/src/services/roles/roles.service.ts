@@ -17,7 +17,7 @@ export class RolesService {
     if (role) throw new BadRequestException('Role already exists');
 
     const roleCreated = this.roleRepository.create(roleCreateDto);
-    roleCreated.authorId = 0;
+    roleCreated.createdBy = 0;
     roleCreated.createdAt = new Date();
     roleCreated.updatedAt = new Date();
     roleCreated.name = roleCreateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
