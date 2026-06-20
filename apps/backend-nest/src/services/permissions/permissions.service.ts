@@ -16,7 +16,7 @@ export class PermissionsService {
     if (permission) throw new BadRequestException('Permission already exists');
 
     const permissionCreated = this.permissionRepository.create(permissionCreateDto);
-    permissionCreated.authorId = authorId;
+    permissionCreated.createdBy = authorId;
     permissionCreated.createdAt = new Date();
     permissionCreated.updatedAt = new Date();
     permissionCreated.name = permissionCreateDto.name.toLowerCase().trim().replace(/\s+/g, '.');
