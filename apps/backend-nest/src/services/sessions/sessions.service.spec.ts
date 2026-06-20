@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionsService } from './sessions.service';
-import { mockSessionService } from '@common/mocks/sessions.mock';
+import { mockSessionService } from '@common/test-mocks/sessions.mock';
 
 describe('SessionsService', () => {
   let service: SessionsService;

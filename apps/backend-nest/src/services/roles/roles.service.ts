@@ -12,12 +12,12 @@ export class RolesService {
     private readonly permissionsService: PermissionsService,
   ) {}
 
-  async create(roleCreateDto: RoleCreateDto): Promise<Role> {
+  async create(roleCreateDto: RoleCreateDto, authorId: number): Promise<Role> {
     const role = await this.getOneByName(roleCreateDto.name);
     if (role) throw new BadRequestException('Role already exists');
 
     const roleCreated = this.roleRepository.create(roleCreateDto);
-    roleCreated.authorId = 0;
+    roleCreated.authorId = authorId;
     roleCreated.createdAt = new Date();
     roleCreated.updatedAt = new Date();
     roleCreated.name = roleCreateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');

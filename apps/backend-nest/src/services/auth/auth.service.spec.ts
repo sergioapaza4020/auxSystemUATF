@@ -3,9 +3,9 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { SessionsService } from '../sessions/sessions.service';
-import { mockJwtService } from '@common/mocks/jwt.mock';
-import { mockSessionService } from '@common/mocks/sessions.mock';
-import { mockUsersService } from '@common/mocks/users.mock';
+import { mockJwtService } from '@common/test-mocks/jwt.mock';
+import { mockSessionService } from '@common/test-mocks/sessions.mock';
+import { mockUsersService } from '@common/test-mocks/users.mock';
 
 describe('AuthService', () => {
   let service: AuthService;

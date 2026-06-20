@@ -4,8 +4,14 @@ export abstract class BaseEntity {
   @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
-  @Column({ name: 'author_id' })
-  authorId: number;
+  @Column({ name: 'created_by' })
+  createdBy: number;
+
+  @Column({ name: 'updated_by' })
+  updatedBy: number;
+
+  @Column({ name: 'deleted_by' })
+  deletedBy: number;
 
   @CreateDateColumn({
     name: 'created_at',

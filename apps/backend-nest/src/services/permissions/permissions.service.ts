@@ -11,12 +11,12 @@ export class PermissionsService {
     private readonly permissionRepository: Repository<Permission>,
   ) {}
 
-  async create(permissionCreateDto: PermissionCreateDto): Promise<Permission> {
+  async create(permissionCreateDto: PermissionCreateDto, authorId: number): Promise<Permission> {
     const permission = await this.getOneByName(permissionCreateDto.name);
     if (permission) throw new BadRequestException('Permission already exists');
 
     const permissionCreated = this.permissionRepository.create(permissionCreateDto);
-    permissionCreated.authorId = 0;
+    permissionCreated.authorId = authorId;
     permissionCreated.createdAt = new Date();
     permissionCreated.updatedAt = new Date();
     permissionCreated.name = permissionCreateDto.name.toLowerCase().trim().replace(/\s+/g, '.');

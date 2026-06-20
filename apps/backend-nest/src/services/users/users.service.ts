@@ -25,7 +25,7 @@ export class UsersService {
     });
   }
 
-  async create(userCreateDto: UserCreateDto): Promise<User> {
+  async create(userCreateDto: UserCreateDto, authorId: number): Promise<User> {
     const user =
       (await this.getOneByEmail(userCreateDto.email)) ||
       (await this.getOneByUsername(userCreateDto.username));
@@ -37,9 +37,7 @@ export class UsersService {
       ...userCreateDto,
       password: hash,
     });
-    userCreated.authorId = 0;
-    userCreated.createdAt = new Date();
-    userCreated.updatedAt = new Date();
+    userCreated.authorId = authorId;
     return this.userRepository.save(userCreated);
   }
 
