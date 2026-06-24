@@ -11,7 +11,6 @@ export class FacultyCreateDto {
   idDean: number;
 
   @ApiProperty()
-  @IsNumber()
   @IsArray()
-  idCareers: number[];
+  idCareers?: number[];
 }

@@ -17,8 +17,6 @@ export class PermissionsService {
 
     const permissionCreated = this.permissionRepository.create(permissionCreateDto);
     permissionCreated.createdBy = authorId;
-    permissionCreated.createdAt = new Date();
-    permissionCreated.updatedAt = new Date();
     permissionCreated.name = permissionCreateDto.name.toLowerCase().trim().replace(/\s+/g, '.');
     return this.permissionRepository.save(permissionCreated);
   }
@@ -44,8 +42,6 @@ export class PermissionsService {
       where: { idPermission, isActive: true },
     });
     if (!permission) throw new BadRequestException('Permission not found');
-    permission.updatedAt = new Date();
-    permission.deletedAt = new Date();
     permission.isActive = false;
     return this.permissionRepository.save(permission);
   }
@@ -55,8 +51,6 @@ export class PermissionsService {
       where: { idPermission, isActive: false },
     });
     if (!permission) throw new BadRequestException('Permission not found');
-    permission.updatedAt = new Date();
-    permission.deletedAt = new Date();
     permission.isActive = true;
     return this.permissionRepository.save(permission);
   }

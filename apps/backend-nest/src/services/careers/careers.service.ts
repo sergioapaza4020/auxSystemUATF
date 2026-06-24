@@ -15,11 +15,12 @@ export class CareersService {
     });
   }
 
-  async create(careerCreateDto: CareerCreateDto) {
+  async create(careerCreateDto: CareerCreateDto, authorId: number): Promise<Career> {
     const career = await this.getOneByName(careerCreateDto.name);
     if (!career) throw new BadRequestException('Career does not exists');
 
     const careerCreated = this.careerRepository.create();
+    careerCreated.createdBy = authorId;
     return careerCreated;
   }
 
@@ -33,5 +34,23 @@ export class CareersService {
     return this.careerRepository.findOne({
       where: { name, isActive: true },
     });
+  }
+
+  async delete(idCareer: number) {
+    const career = await this.careerRepository.findOne({
+      where: { idCareer, isActive: true },
+    });
+    if (!career) throw new BadRequestException('Career not found');
+    career.isActive = false;
+    return this.careerRepository.save(career);
+  }
+
+  async reactivate(idCareer: number) {
+    const career = await this.careerRepository.findOne({
+      where: { idCareer, isActive: false },
+    });
+    if (!career) throw new BadRequestException('Career not found');
+    career.isActive = true;
+    return this.careerRepository.save(career);
   }
 }

@@ -18,8 +18,6 @@ export class RolesService {
 
     const roleCreated = this.roleRepository.create(roleCreateDto);
     roleCreated.createdBy = 0;
-    roleCreated.createdAt = new Date();
-    roleCreated.updatedAt = new Date();
     roleCreated.name = roleCreateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
     return this.roleRepository.save(roleCreated);
   }
@@ -67,8 +65,6 @@ export class RolesService {
       where: { idRole, isActive: true },
     });
     if (!role) throw new BadRequestException('Role not found');
-    role.updatedAt = new Date();
-    role.deletedAt = new Date();
     role.isActive = false;
     return this.roleRepository.save(role);
   }
@@ -78,7 +74,6 @@ export class RolesService {
       where: { idRole, isActive: false },
     });
     if (!role) throw new BadRequestException('Role not found');
-    role.updatedAt = new Date();
     role.isActive = true;
     return this.roleRepository.save(role);
   }

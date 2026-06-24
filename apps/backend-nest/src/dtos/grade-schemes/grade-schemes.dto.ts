@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsString } from 'class-validator';
 
-export class RoleCreateDto {
+export class GradeSchemeCreateDto {
   @ApiProperty()
   @IsString()
   name: string;
@@ -12,5 +12,5 @@ export class RoleCreateDto {
 
   @ApiProperty()
   @IsArray()
-  permissionNames: string[];
+  idItems?: number[];
 }

@@ -99,8 +99,6 @@ export class UsersService {
       where: { idUser: idUser, isActive: true },
     });
     if (!user) throw new BadRequestException('User not found');
-    user.updatedAt = new Date();
-    user.deletedAt = new Date();
     user.isActive = false;
     return this.userRepository.save(user);
   }
@@ -110,7 +108,6 @@ export class UsersService {
       where: { idUser: idUser, isActive: false },
     });
     if (!user) throw new BadRequestException('User not found');
-    user.updatedAt = new Date();
     user.isActive = true;
     return this.userRepository.save(user);
   }

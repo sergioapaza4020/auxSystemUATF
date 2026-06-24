@@ -1,16 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsString } from 'class-validator';
 
-export class CourseCreateDto {
+export class GradeSchemeItemCreateDto {
   @ApiProperty()
   @IsString()
   name: string;
 
   @ApiProperty()
-  @IsString()
-  code: string;
-
-  @ApiProperty()
   @IsNumber()
-  group: number;
+  percentage: number;
 }

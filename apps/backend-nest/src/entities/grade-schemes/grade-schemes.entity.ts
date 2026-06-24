@@ -11,7 +11,7 @@ export class GradeScheme extends BaseEntity {
   @Column({ name: 'name' })
   name: string;
 
-  @Column({ name: 'name' })
+  @Column({ name: 'description' })
   description: string;
 
   @OneToMany(() => Course, (course) => course.gradeScheme)

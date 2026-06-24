@@ -15,7 +15,6 @@ export class CareerCreateDto {
   idDirector: number;
 
   @ApiProperty()
-  @IsNumber()
   @IsArray()
   idMembers: number[];
 }

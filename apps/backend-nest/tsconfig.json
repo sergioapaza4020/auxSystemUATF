@@ -13,11 +13,10 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "paths": {
-      "@core/*": ["src/core/*"],
-      "@common/*": ["src/common/*"],
-      "src/*": ["src/*"]
+      "@core/*": ["./src/core/*"],
+      "@common/*": ["./src/common/*"],
+      "src/*": ["./src/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -25,6 +24,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
     "noFallthroughCasesInSwitch": false
   }
 }
