@@ -4,13 +4,22 @@ export abstract class BaseEntity {
   @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
-  @Column({ name: 'created_by' })
+  @Column({
+    name: 'created_by',
+    nullable: true,
+  })
   createdBy: number;
 
-  @Column({ name: 'updated_by' })
+  @Column({
+    name: 'updated_by',
+    nullable: true,
+  })
   updatedBy: number;
 
-  @Column({ name: 'deleted_by' })
+  @Column({
+    name: 'deleted_by',
+    nullable: true,
+  })
   deletedBy: number;
 
   @CreateDateColumn({

@@ -11,7 +11,6 @@ export class CareersService {
   async getAll(): Promise<Career[]> {
     return this.careerRepository.find({
       where: { isActive: true },
-      relations: { faculty: true },
     });
   }
 

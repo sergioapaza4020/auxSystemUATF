@@ -16,8 +16,8 @@ export class CareersController {
   }
 
   @Post()
-  async create(@Body() permissionCreateDto: CareerCreateDto, @CurrentUser() user: User) {
-    return this.careersService.create(permissionCreateDto, user.idUser);
+  async create(@Body() careerCreateDto: CareerCreateDto, @CurrentUser() user: User) {
+    return this.careersService.create(careerCreateDto, user.idUser);
   }
 
   @Get('name/:name')
@@ -25,18 +25,18 @@ export class CareersController {
     return this.careersService.getOneByName(name);
   }
 
-  @Get('id/:idFaculty')
-  async getOneById(@Param('idFaculty') idFaculty: number) {
-    return this.careersService.getOneById(idFaculty);
+  @Get('id/:idCareer')
+  async getOneById(@Param('idCareer') idCareer: number) {
+    return this.careersService.getOneById(idCareer);
   }
 
-  @Delete(':idFaculty')
-  async delete(@Param('idFaculty') idFaculty: number) {
-    return this.careersService.delete(idFaculty);
+  @Delete(':idCareer')
+  async delete(@Param('idCareer') idCareer: number) {
+    return this.careersService.delete(idCareer);
   }
 
-  @Patch('reactivate/:idFaculty')
-  async reactivate(@Param('idFaculty') idFaculty: number) {
-    return this.careersService.reactivate(idFaculty);
+  @Patch('reactivate/:idCareer')
+  async reactivate(@Param('idCareer') idCareer: number) {
+    return this.careersService.reactivate(idCareer);
   }
 }

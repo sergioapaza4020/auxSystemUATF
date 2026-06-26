@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PermissionsController } from './permissions.controller';
 import { PermissionsService } from 'src/services/permissions/permissions.service';
-import { mockRolesService } from '@common/test-mocks/roles.mock';
+import { mockPermissionsService } from '@common/test-mocks/permissions.mock';
 
 describe('PermissionsController', () => {
   let controller: PermissionsController;
@@ -9,7 +9,7 @@ describe('PermissionsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PermissionsController],
-      providers: [{ provide: PermissionsService, useValue: mockRolesService }],
+      providers: [{ provide: PermissionsService, useValue: mockPermissionsService }],
     }).compile();
 
     controller = module.get<PermissionsController>(PermissionsController);

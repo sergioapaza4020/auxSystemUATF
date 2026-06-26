@@ -24,7 +24,7 @@ export class Career extends BaseEntity {
   @JoinColumn({ name: 'id_director' })
   director: User;
 
-  @OneToMany(() => User, (user) => user.career)
+  @OneToMany(() => User, (user) => user.career, { nullable: true })
   members: User;
 
   @Column({ name: 'name' })
