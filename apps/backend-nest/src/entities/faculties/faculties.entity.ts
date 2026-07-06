@@ -8,7 +8,7 @@ export class Faculty extends BaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_faculty' })
   idFaculty: number;
 
-  @Column({ name: 'name' })
+  @Column({ name: 'name', unique: true })
   name: string;
 
   @OneToOne(() => User, (user) => user.deanFaculty)

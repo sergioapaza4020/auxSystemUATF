@@ -13,7 +13,7 @@ export class GradeSchemesService {
   async getAll(): Promise<GradeScheme[]> {
     return this.gradeSchemeRepository.find({
       where: { isActive: true },
-      relations: { items: true },
+      relations: { details: true },
     });
   }
 

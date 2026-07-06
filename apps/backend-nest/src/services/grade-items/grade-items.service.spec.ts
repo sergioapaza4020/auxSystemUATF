@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GradeSchemeItemsService } from './grade-scheme-items.service';
+import { GradeItemsService } from './grade-items.service';
 import { mockTestService } from '@common/test-mocks/base.mock';
 
-describe('GradeSchemeItemsService', () => {
-  let service: GradeSchemeItemsService;
+describe('GradeItemsService', () => {
+  let service: GradeItemsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [{ provide: GradeSchemeItemsService, useValue: mockTestService }],
+      providers: [{ provide: GradeItemsService, useValue: mockTestService }],
     }).compile();
 
-    service = module.get<GradeSchemeItemsService>(GradeSchemeItemsService);
+    service = module.get<GradeItemsService>(GradeItemsService);
   });
 
   it('should be defined', () => {

@@ -79,7 +79,7 @@ export const SessionsTable = () => {
 
     const result = await Swal.fire({
       theme: `${themeMode}`,
-      title: `Eliminando la sesión de ${username}`,
+      title: `Revocando la sesión de ${username}`,
       text: '¿Estás seguro?',
       icon: 'warning',
       showDenyButton: true,
@@ -103,11 +103,11 @@ export const SessionsTable = () => {
         ),
       );
 
-      await Swal.fire('Sesión eliminada con éxito', '', 'success');
+      await Swal.fire('Sesión revocada con éxito', '', 'success');
     } catch (error) {
       console.error(error);
 
-      await Swal.fire('Error al eliminar la sesión', '', 'error');
+      await Swal.fire('Error al revocar la sesión', '', 'error');
     }
   };
 

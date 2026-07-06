@@ -4,6 +4,7 @@ import { CurrentUser } from '@core/decorators/current-user/current-user.decorato
 import { SessionsService } from 'src/services/sessions/sessions.service';
 import { User } from 'src/entities/users/users.entity';
 import { LogoutDto } from 'src/dtos/sessions/logout.dto';
+import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 
 @ApiBearerAuth('access-token')
 @Controller('sessions')
@@ -11,19 +12,10 @@ import { LogoutDto } from 'src/dtos/sessions/logout.dto';
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
+  @Permissions('session.get-all')
   @Get()
   async getAllSessions() {
     const sessions = await this.sessionsService.getAllSessions();
-
-    return {
-      message: 'Sesiones recuperadas con éxito',
-      data: sessions,
-    };
-  }
-
-  @Get('my-sessions')
-  async getMySessions(@CurrentUser() user: User) {
-    const sessions = await this.sessionsService.getUserSessions(user.idUser);
 
     return {
       message: 'Sesiones recuperadas con éxito',
@@ -38,6 +30,7 @@ export class SessionsController {
     return { message: 'Logout successful' };
   }
 
+  @Permissions('session.revoke-one')
   @Patch('revoke/:idSession')
   async revokeSession(@Param('idSession', ParseIntPipe) idSession: number) {
     const session = await this.sessionsService.revokeSessionById(idSession);
@@ -48,6 +41,7 @@ export class SessionsController {
     };
   }
 
+  @Permissions('session.revoke-all')
   @Patch('revoke-all')
   async revokeAllSessions(@CurrentUser() user: User) {
     await this.sessionsService.revokeAllSessions(user.idUser);

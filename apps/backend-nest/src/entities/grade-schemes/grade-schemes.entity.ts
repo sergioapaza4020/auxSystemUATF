@@ -1,7 +1,7 @@
 import { BaseEntity } from '@common/entities/base.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { GradeSchemeItem } from '../grade-scheme-items/grade-scheme-items.entity';
 import { Course } from '../courses/courses.entity';
+import { GradeSchemeDetail } from '../grade-scheme-detail/grade-scheme-detail.entity';
 
 @Entity('grade_schemes')
 export class GradeScheme extends BaseEntity {
@@ -17,6 +17,6 @@ export class GradeScheme extends BaseEntity {
   @OneToMany(() => Course, (course) => course.gradeScheme)
   courses: Course[];
 
-  @OneToMany(() => GradeSchemeItem, (item) => item.gradeScheme)
-  items: GradeSchemeItem[];
+  @OneToMany(() => GradeSchemeDetail, (detail) => detail.gradeScheme)
+  details: GradeSchemeDetail[];
 }

@@ -14,7 +14,7 @@ import { PermissionsGuard } from '@core/guards/permissions/permissions.guard';
 import { FacultiesModule } from './modules/faculties/faculties.module';
 import { CareersModule } from './modules/careers/careers.module';
 import { CoursesModule } from './modules/courses/courses.module';
-import { GradeSchemeItemsModule } from './modules/grade-scheme-items/grade-scheme-items.module';
+import { GradeItemsModule } from './modules/grade-items/grade-items.module';
 import { GradeSchemesModule } from './modules/grade-schemes/grade-schemes.module';
 
 @Module({
@@ -36,7 +36,7 @@ import { GradeSchemesModule } from './modules/grade-schemes/grade-schemes.module
     FacultiesModule,
     CareersModule,
     CoursesModule,
-    GradeSchemeItemsModule,
+    GradeItemsModule,
     GradeSchemesModule,
   ],
   controllers: [AppController],

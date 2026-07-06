@@ -26,16 +26,6 @@ export const getAllSessions = async (): Promise<any> => {
   }
 };
 
-export const getMySessions = async (): Promise<any> => {
-  try {
-    const sessions = await instance.get('/sessions/my-sessions');
-
-    return sessions.data.data;
-  } catch (error: any) {
-    console.error(error);
-  }
-};
-
 export const revokeSessionById = async (idSession: number) => {
   try {
     const response = await instance.patch(`/sessions/revoke/${idSession}`);
