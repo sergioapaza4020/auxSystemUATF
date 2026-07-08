@@ -1,4 +1,8 @@
-import { Career } from 'src/entities/careers/careers.entity';
-import { DeepPartial } from 'typeorm';
+import { CareerSeed } from '../interfaces/careers.interface';
 
-export const careersData: DeepPartial<Career>[] = [];
+export const careersData: CareerSeed[] = [
+  {
+    name: 'Ingeniería de sistemas',
+    faculty: 'Vicerrectorado',
+  },
+];

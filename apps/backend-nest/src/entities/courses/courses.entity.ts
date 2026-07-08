@@ -1,7 +1,16 @@
 import { BaseEntity } from '@common/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserCourse } from '../user-courses/user-courses.entity';
 import { GradeScheme } from '../grade-schemes/grade-schemes.entity';
+import { Career } from '../careers/careers.entity';
 
 @Entity('courses')
 export class Course extends BaseEntity {
@@ -14,6 +23,9 @@ export class Course extends BaseEntity {
   @ManyToOne(() => GradeScheme, (scheme) => scheme.courses)
   @JoinColumn({ name: 'id_grade_scheme' })
   gradeScheme: GradeScheme;
+
+  @ManyToMany(() => Career, (career) => career.courses)
+  career: Career;
 
   @Column({ name: 'name' })
   name: string;

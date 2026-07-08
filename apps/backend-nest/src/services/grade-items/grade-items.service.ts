@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { GradeSchemeItemCreateDto } from 'src/dtos/grade-scheme-items/grade-scheme-items.dto';
+import { GradeItemCreateDto } from 'src/dtos/grade-items/grade-items.dto';
 import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
 import { Repository } from 'typeorm';
 
@@ -17,7 +17,7 @@ export class GradeItemsService {
     });
   }
 
-  async create(GradeItemCreateDto: GradeSchemeItemCreateDto, authorId: number) {
+  async create(GradeItemCreateDto: GradeItemCreateDto, authorId: number) {
     const GradeItem = await this.getOneByName(GradeItemCreateDto.name);
     if (!GradeItem) throw new BadRequestException('GradeItem does not exists');
 

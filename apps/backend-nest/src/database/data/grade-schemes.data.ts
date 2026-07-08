@@ -7,6 +7,10 @@ export const gradeSchemesData: DeepPartial<GradeScheme>[] = [
     description: 'Esquema de calificación teórico - experimental 001',
   },
   {
+    name: 'Evaluación teórica - experimental 002',
+    description: 'Esquema de calificación teórico - experimental 002',
+  },
+  {
     name: 'Evaluación teórica 001',
     description: 'Esquema de calificación teórico 001',
   },

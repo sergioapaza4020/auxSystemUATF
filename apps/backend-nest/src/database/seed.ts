@@ -7,16 +7,36 @@ import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
 import { GradeItemSeeder } from './seeders/grade-items.seeder';
 import { GradeSchemeSeeder } from './seeders/grade-schemes.seeder';
 import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
+import { GradeSchemeDetailSeeder } from './seeders/grade-scheme-details.seeder';
+import { GradeSchemeDetail } from 'src/entities/grade-scheme-detail/grade-scheme-detail.entity';
+import { CourseSeeder } from './seeders/courses.seeder';
+import { Course } from 'src/entities/courses/courses.entity';
+import { Career } from 'src/entities/careers/careers.entity';
+import { CareerSeeder } from './seeders/careers.seeder';
 
 async function seed() {
   await AppDataSource.initialize();
 
   console.log('Database connected');
 
-  new PermissionSeeder(AppDataSource.getRepository(Permission)).run();
-  new FacultySeeder(AppDataSource.getRepository(Faculty)).run();
-  new GradeItemSeeder(AppDataSource.getRepository(GradeItem)).run();
-  new GradeSchemeSeeder(AppDataSource.getRepository(GradeScheme)).run();
+  await new PermissionSeeder(AppDataSource.getRepository(Permission)).run();
+  await new FacultySeeder(AppDataSource.getRepository(Faculty)).run();
+  await new GradeItemSeeder(AppDataSource.getRepository(GradeItem)).run();
+  await new GradeSchemeSeeder(AppDataSource.getRepository(GradeScheme)).run();
+  await new GradeSchemeDetailSeeder(
+    AppDataSource.getRepository(GradeSchemeDetail),
+    AppDataSource.getRepository(GradeScheme),
+    AppDataSource.getRepository(GradeItem),
+  ).run();
+  await new CourseSeeder(
+    AppDataSource.getRepository(Course),
+    AppDataSource.getRepository(Career),
+    AppDataSource.getRepository(GradeScheme),
+  ).run();
+  await new CareerSeeder(
+    AppDataSource.getRepository(Career),
+    AppDataSource.getRepository(Faculty),
+  ).run();
 
   await AppDataSource.destroy();
 

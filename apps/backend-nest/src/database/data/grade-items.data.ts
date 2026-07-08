@@ -3,13 +3,7 @@ import { DeepPartial } from 'typeorm';
 
 export const gradeItemsData: DeepPartial<GradeItem>[] = [
   {
-    name: 'Primer parcial',
-  },
-  {
-    name: 'Segundo parcial',
-  },
-  {
-    name: 'Tercer parcial',
+    name: 'Parciales',
   },
   {
     name: 'Prácticas',

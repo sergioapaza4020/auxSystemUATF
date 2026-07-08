@@ -2,7 +2,7 @@ import { CurrentUser } from '@core/decorators/current-user/current-user.decorato
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { GradeSchemeItemCreateDto } from 'src/dtos/grade-scheme-items/grade-scheme-items.dto';
+import { GradeItemCreateDto } from 'src/dtos/grade-items/grade-items.dto';
 import { User } from 'src/entities/users/users.entity';
 import { GradeItemsService } from 'src/services/grade-items/grade-items.service';
 
@@ -20,7 +20,7 @@ export class GradeItemsController {
 
   @Permissions('grade-item.create')
   @Post()
-  async create(@Body() permissionCreateDto: GradeSchemeItemCreateDto, @CurrentUser() user: User) {
+  async create(@Body() permissionCreateDto: GradeItemCreateDto, @CurrentUser() user: User) {
     return await this.GradeItemsService.create(permissionCreateDto, user.idUser);
   }
 

@@ -3,6 +3,8 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   OneToOne,
@@ -10,6 +12,7 @@ import {
 } from 'typeorm';
 import { User } from '../users/users.entity';
 import { Faculty } from '../faculties/faculties.entity';
+import { Course } from '../courses/courses.entity';
 
 @Entity('careers')
 export class Career extends BaseEntity {
@@ -26,6 +29,10 @@ export class Career extends BaseEntity {
 
   @OneToMany(() => User, (user) => user.career, { nullable: true })
   members: User[];
+
+  @ManyToMany(() => Course, (course) => course.career)
+  @JoinTable({ name: 'career_courses' })
+  courses: Course[];
 
   @Column({ name: 'name', unique: true })
   name: string;
