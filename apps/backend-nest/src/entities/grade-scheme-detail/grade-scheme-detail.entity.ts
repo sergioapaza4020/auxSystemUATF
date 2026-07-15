@@ -12,7 +12,7 @@ export class GradeSchemeDetail extends BaseEntity {
   gradeScheme: GradeScheme;
 
   @ManyToOne(() => GradeItem)
-  @JoinColumn({ name: 'id_grade_scheme_item' })
+  @JoinColumn({ name: 'id_grade_item' })
   gradeItem: GradeItem;
 
   @Column({ name: 'percentage' })

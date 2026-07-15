@@ -6,7 +6,7 @@ import { FacultyCreateDto } from 'src/dtos/faculties/faculties.dto';
 import { User } from 'src/entities/users/users.entity';
 import { FacultiesService } from 'src/services/faculties/faculties.service';
 
-@ApiBearerAuth('acess-token')
+@ApiBearerAuth('access-token')
 @Controller('faculties')
 @ApiTags('Faculties')
 export class FacultiesController {

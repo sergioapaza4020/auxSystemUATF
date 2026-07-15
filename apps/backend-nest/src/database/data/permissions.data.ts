@@ -111,12 +111,12 @@ export const permissionsData: DeepPartial<Permission>[] = [
     description: 'Get all courses',
   },
   {
-    name: 'career.get-one-by-name',
-    description: 'Get one career by name',
+    name: 'course.get-one-by-name',
+    description: 'Get one course by name',
   },
   {
-    name: 'career.get-one-by-id',
-    description: 'Get one career by id',
+    name: 'course.get-one-by-id',
+    description: 'Get one course by id',
   },
   {
     name: 'course.delete',

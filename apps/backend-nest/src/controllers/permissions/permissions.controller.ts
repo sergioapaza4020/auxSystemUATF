@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PermissionCreateDto } from 'src/dtos/permissions/permissions.dto';
 import { PermissionsService } from 'src/services/permissions/permissions.service';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { User } from 'src/entities/users/users.entity';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 
-@ApiBearerAuth('acess-token')
+@ApiBearerAuth('access-token')
 @Controller('permissions')
 @ApiTags('Permissions')
 export class PermissionsController {

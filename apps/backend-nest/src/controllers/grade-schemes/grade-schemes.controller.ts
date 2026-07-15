@@ -6,7 +6,7 @@ import { GradeSchemeCreateDto } from 'src/dtos/grade-schemes/grade-schemes.dto';
 import { User } from 'src/entities/users/users.entity';
 import { GradeSchemesService } from 'src/services/grade-schemes/grade-schemes.service';
 
-@ApiBearerAuth('acess-token')
+@ApiBearerAuth('access-token')
 @Controller('grade-schemes')
 @ApiTags('Grade-schemes')
 export class GradeSchemesController {

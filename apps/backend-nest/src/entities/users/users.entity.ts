@@ -25,8 +25,8 @@ export class User extends BaseEntity {
   userCourses: UserCourse[];
 
   @ManyToOne(() => Career, { nullable: true })
-  @JoinColumn({ name: 'members' })
-  career: Career;
+  @JoinColumn({ name: 'careers' })
+  careers: Career[];
 
   @Column({ unique: true, name: 'email' })
   email: string;

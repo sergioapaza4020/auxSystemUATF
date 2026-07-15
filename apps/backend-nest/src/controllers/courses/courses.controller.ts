@@ -6,7 +6,7 @@ import { CourseCreateDto } from 'src/dtos/courses/courses.dto';
 import { User } from 'src/entities/users/users.entity';
 import { CoursesService } from 'src/services/courses/courses.service';
 
-@ApiBearerAuth('acess-token')
+@ApiBearerAuth('access-token')
 @Controller('courses')
 @ApiTags('Courses')
 export class CoursesController {

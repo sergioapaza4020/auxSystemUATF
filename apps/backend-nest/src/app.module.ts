@@ -16,6 +16,7 @@ import { CareersModule } from './modules/careers/careers.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { GradeItemsModule } from './modules/grade-items/grade-items.module';
 import { GradeSchemesModule } from './modules/grade-schemes/grade-schemes.module';
+import { databaseConfig } from './core/config/database/database.config';
 
 @Module({
   imports: [
@@ -24,10 +25,8 @@ import { GradeSchemesModule } from './modules/grade-schemes/grade-schemes.module
       envFilePath: join(__dirname, '..', '.env'),
     }),
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
+      ...databaseConfig,
       autoLoadEntities: true,
-      synchronize: true,
     }),
     UsersModule,
     AuthModule,

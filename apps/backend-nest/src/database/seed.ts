@@ -1,4 +1,4 @@
-import { AppDataSource } from './datasource';
+import AppDataSource from './datasource';
 import { PermissionSeeder } from './seeders/permissions.seeder';
 import { Permission } from 'src/entities/permissions/permissions.entity';
 import { Faculty } from 'src/entities/faculties/faculties.entity';
@@ -13,6 +13,10 @@ import { CourseSeeder } from './seeders/courses.seeder';
 import { Course } from 'src/entities/courses/courses.entity';
 import { Career } from 'src/entities/careers/careers.entity';
 import { CareerSeeder } from './seeders/careers.seeder';
+import { Role } from 'src/entities/roles/roles.entity';
+import { RoleSeeder } from './seeders/roles.seeder';
+import { UserSeeder } from './seeders/users.seeder';
+import { User } from 'src/entities/users/users.entity';
 
 async function seed() {
   await AppDataSource.initialize();
@@ -28,16 +32,24 @@ async function seed() {
     AppDataSource.getRepository(GradeScheme),
     AppDataSource.getRepository(GradeItem),
   ).run();
+  await new CareerSeeder(
+    AppDataSource.getRepository(Career),
+    AppDataSource.getRepository(Faculty),
+  ).run();
   await new CourseSeeder(
     AppDataSource.getRepository(Course),
     AppDataSource.getRepository(Career),
     AppDataSource.getRepository(GradeScheme),
   ).run();
-  await new CareerSeeder(
-    AppDataSource.getRepository(Career),
-    AppDataSource.getRepository(Faculty),
+  await new RoleSeeder(
+    AppDataSource.getRepository(Role),
+    AppDataSource.getRepository(Permission),
   ).run();
-
+  await new UserSeeder(
+    AppDataSource.getRepository(User),
+    AppDataSource.getRepository(Role),
+    AppDataSource.getRepository(Career),
+  ).run();
   await AppDataSource.destroy();
 
   console.log('Seed completed');
