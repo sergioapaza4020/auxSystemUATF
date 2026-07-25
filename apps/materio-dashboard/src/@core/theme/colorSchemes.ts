@@ -8,9 +8,9 @@ const colorSchemes = (): Theme['colorSchemes'] => {
     light: {
       palette: {
         primary: {
-          main: '#8C57FF',
-          light: '#A379FF',
-          dark: '#7E4EE6',
+          main: '#003273ff',
+          light: '#0052bcff',
+          dark: '#00142E',
           lighterOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.08)',
           lightOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.16)',
           mainOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.24)',
@@ -18,9 +18,9 @@ const colorSchemes = (): Theme['colorSchemes'] => {
           darkerOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.38)',
         },
         secondary: {
-          main: '#8A8D93',
-          light: '#A1A4A9',
-          dark: '#7C7F84',
+          main: '#930004',
+          light: '#FF0018',
+          dark: '#7C0002',
           contrastText: '#fff',
           lighterOpacity: 'rgb(var(--mui-palette-secondary-mainChannel) / 0.08)',
           lightOpacity: 'rgb(var(--mui-palette-secondary-mainChannel) / 0.16)',
@@ -134,8 +134,8 @@ const colorSchemes = (): Theme['colorSchemes'] => {
           successBg: 'var(--mui-palette-success-mainOpacity)',
         },
         SnackbarContent: {
-          bg: '#1A0E33',
-          color: 'var(--mui-palette-background-paper)',
+          bg: '#F7F4FF',
+          color: 'rgb(var(--mui-mainColorChannels-light) / 0.9)',
         },
         Switch: {
           defaultColor: 'var(--mui-palette-common-white)',
@@ -167,9 +167,9 @@ const colorSchemes = (): Theme['colorSchemes'] => {
     dark: {
       palette: {
         primary: {
-          main: '#8C57FF',
-          light: '#A379FF',
-          dark: '#7E4EE6',
+          main: '#0064e7ff',
+          light: '#3083f0ff',
+          dark: '#003d8dff',
           lighterOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.08)',
           lightOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.16)',
           mainOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.24)',
@@ -177,9 +177,9 @@ const colorSchemes = (): Theme['colorSchemes'] => {
           darkerOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.38)',
         },
         secondary: {
-          main: '#8A8D93',
-          light: '#A1A4A9',
-          dark: '#7C7F84',
+          main: '#930004',
+          light: '#FF0018',
+          dark: '#7C0002',
           contrastText: '#fff',
           lighterOpacity: 'rgb(var(--mui-palette-secondary-mainChannel) / 0.08)',
           lightOpacity: 'rgb(var(--mui-palette-secondary-mainChannel) / 0.16)',
@@ -293,8 +293,8 @@ const colorSchemes = (): Theme['colorSchemes'] => {
           successBg: 'var(--mui-palette-success-mainOpacity)',
         },
         SnackbarContent: {
-          bg: '#F7F4FF',
-          color: 'var(--mui-palette-background-paper)',
+          bg: '#1A0E33',
+          color: 'rgb(var(--mui-mainColorChannels-dark) / 0.9)',
         },
         Switch: {
           defaultColor: 'var(--mui-palette-common-white)',

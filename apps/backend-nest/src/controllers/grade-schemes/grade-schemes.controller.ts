@@ -1,9 +1,8 @@
-import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { GradeSchemeUpdateDto } from 'src/dtos/grade-schemes/grade-scheme-update.dto';
 import { GradeSchemeCreateDto } from 'src/dtos/grade-schemes/grade-schemes.dto';
-import { User } from 'src/entities/users/users.entity';
 import { GradeSchemesService } from 'src/services/grade-schemes/grade-schemes.service';
 
 @ApiBearerAuth('access-token')
@@ -20,8 +19,8 @@ export class GradeSchemesController {
 
   @Permissions('grade-scheme.create')
   @Post()
-  async create(@Body() gradeSchemeCreateDto: GradeSchemeCreateDto, @CurrentUser() user: User) {
-    return this.gradeSchemesService.create(gradeSchemeCreateDto, user.idUser);
+  async create(@Body() gradeSchemeCreateDto: GradeSchemeCreateDto) {
+    return this.gradeSchemesService.create(gradeSchemeCreateDto);
   }
 
   @Permissions('grade-scheme.get-one-by-name')
@@ -34,6 +33,15 @@ export class GradeSchemesController {
   @Get('id/:idGradeScheme')
   async getOneById(@Param('idGradeScheme') idGradeScheme: number) {
     return this.gradeSchemesService.getOneById(idGradeScheme);
+  }
+
+  @Permissions('grade-scheme.put')
+  @Put('update/:idGradeScheme')
+  async update(
+    @Param('idGradeScheme') idGradeScheme: number,
+    @Body() gradeSchemeUpdateDto: GradeSchemeUpdateDto,
+  ) {
+    return this.gradeSchemesService.update(idGradeScheme, gradeSchemeUpdateDto);
   }
 
   @Permissions('grade-scheme.delete')

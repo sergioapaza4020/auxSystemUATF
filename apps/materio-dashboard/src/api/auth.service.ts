@@ -15,23 +15,23 @@ export const Login = async ({ username, password }: ILogin): Promise<any> => {
 
     saveTokens(accessToken, refreshToken);
   } catch (error: any) {
-    console.error('Login failed:', error);
+    console.error(error.response.data);
     throw error;
   }
 };
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = async (): Promise<any> => {
   try {
     const response = await instance.get<ApiResponse<ICurrentUser>>('/auth/me');
 
     return response.data.data;
   } catch (error: any) {
-    console.error('Get user failed:', error);
+    console.error(error.response.data);
     throw error;
   }
 };
 
-export const refreshAccessToken = async () => {
+export const refreshAccessToken = async (): Promise<any> => {
   try {
     const refreshToken = getRefreshToken();
 
@@ -43,7 +43,7 @@ export const refreshAccessToken = async () => {
 
     return response.data.data.accessToken;
   } catch (error: any) {
-    console.error(error);
+    console.error(error.response.data);
     throw error;
   }
 };

@@ -1,5 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsString, MinLength } from 'class-validator';
+import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
+
+class DetailCreateDto {
+  @ApiProperty()
+  @IsNumber()
+  percentage: number;
+
+  @ApiProperty()
+  @IsNumber()
+  order: number;
+
+  @ApiProperty()
+  gradeItem: GradeItem;
+}
 
 export class GradeSchemeCreateDto {
   @ApiProperty()
@@ -12,5 +26,6 @@ export class GradeSchemeCreateDto {
 
   @ApiProperty()
   @IsArray()
-  idItems?: number[];
+  @MinLength(1)
+  details: DetailCreateDto[];
 }

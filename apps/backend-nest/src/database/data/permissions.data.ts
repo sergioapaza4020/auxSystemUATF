@@ -219,6 +219,10 @@ export const permissionsData: DeepPartial<Permission>[] = [
     description: 'Get one grade-scheme by id',
   },
   {
+    name: 'grade-scheme.update',
+    description: 'Update a grade-scheme by id',
+  },
+  {
     name: 'grade-scheme.delete',
     description: 'Delete a grade-scheme',
   },

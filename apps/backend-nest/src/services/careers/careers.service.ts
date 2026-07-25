@@ -16,7 +16,7 @@ export class CareersService {
 
   async create(careerCreateDto: CareerCreateDto, authorId: number): Promise<Career> {
     const career = await this.getOneByName(careerCreateDto.name);
-    if (!career) throw new BadRequestException('Career does not exists');
+    if (career) throw new BadRequestException('Career already exists');
 
     const careerCreated = this.careerRepository.create();
     careerCreated.createdBy = authorId;

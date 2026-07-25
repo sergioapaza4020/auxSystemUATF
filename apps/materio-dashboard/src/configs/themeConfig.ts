@@ -24,7 +24,7 @@ export type Config = {
 
 const themeConfig: Config = {
   templateName: 'Sistema auxiliares UATF',
-  settingsCookieName: 'aux-system-uatf',
+  settingsCookieName: 'aux-system-uatf-theme',
   mode: 'light', // 'light', 'dark'
   layoutPadding: 24, // Common padding for header, content, footer layout components (in px)
   compactContentWidth: 1440, // in px

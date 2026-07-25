@@ -23,6 +23,8 @@ import Button from '@mui/material/Button';
 
 import capitalize from '@mui/utils/capitalize';
 
+import { CircularProgress } from '@mui/material';
+
 import { useAuth } from '@/hooks/useAuth';
 
 // Styled component for badge content
@@ -70,7 +72,7 @@ const UserDropdown = () => {
     setOpen(false);
   };
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) return <CircularProgress aria-label='loading...' />;
 
   return (
     <>

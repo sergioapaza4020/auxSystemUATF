@@ -61,9 +61,17 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-line' /> }}
         menuSectionStyles={menuSectionStyles(theme)}
       >
-        <MenuSection label='Pruebas'>
-          <MenuItem href='/dashboard/admin/sessions' icon={<i className='ri-admin-line' />}>
+        <MenuSection label='Super-Admin'>
+          <MenuItem href='/dashboard/super-admin/sessions' icon={<i className='ri-admin-line' />}>
             Sesiones
+          </MenuItem>
+        </MenuSection>
+        <MenuSection label='Admin'>
+          <MenuItem href='/dashboard/admin/grade-schemes' icon={<i className='ri-article-line' />}>
+            Esquema de notas
+          </MenuItem>
+          <MenuItem href='/dashboard/admin/grade-schemes/create' icon={<i className='ri-add-line' />}>
+            Registrar esquema de notas
           </MenuItem>
         </MenuSection>
         <MenuSection label='Ejemplos'>
@@ -95,7 +103,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href='/dashboard/form-layouts' icon={<i className='ri-layout-4-line' />}>
             Diseño de formularios
           </MenuItem>
-          <MenuItem suffix={<Chip label='New' size='small' color='info' />}>Item con chip</MenuItem>
+          <MenuItem suffix={<Chip label='Ejemplo' size='small' color='primary' />}>Item con chip</MenuItem>
           <SubMenu label='Niveles de menú'>
             <MenuItem>Nivel de menú 2</MenuItem>
             <SubMenu label='Nivel de menú 2'>

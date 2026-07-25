@@ -17,7 +17,7 @@ export class CoursesService {
 
   async create(courseCreateDto: CourseCreateDto, authorId: number) {
     const course = await this.getOneByName(courseCreateDto.name);
-    if (!course) throw new BadRequestException('Course does not exists');
+    if (course) throw new BadRequestException('Course already exists');
 
     const courseCreated = this.courseRepository.create();
     courseCreated.createdBy = authorId;

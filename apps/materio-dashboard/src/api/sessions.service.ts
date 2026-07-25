@@ -8,7 +8,7 @@ export const Logout = async (): Promise<void> => {
     try {
       await instance.post('/sessions/logout', { refreshToken });
     } catch (error: any) {
-      console.error('Logout failed:', error);
+      console.error(error.response.data);
       throw error;
     }
   }
@@ -21,19 +21,19 @@ export const getAllSessions = async (): Promise<any> => {
     const sessions = await instance.get('/sessions');
 
     return sessions.data.data;
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error(error.response.data);
+    throw error;
   }
 };
 
-export const revokeSessionById = async (idSession: number) => {
+export const revokeSessionById = async (idSession: number): Promise<any> => {
   try {
     const response = await instance.patch(`/sessions/revoke/${idSession}`);
 
-    return response.data;
+    return response.data.data;
   } catch (error: any) {
-    console.error(error);
-
+    console.error(error.response.data);
     throw error;
   }
 };

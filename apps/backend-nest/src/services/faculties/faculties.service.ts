@@ -17,7 +17,7 @@ export class FacultiesService {
 
   async create(facultyCreateDto: FacultyCreateDto, authorId: number) {
     const faculty = await this.getOneByName(facultyCreateDto.name);
-    if (!faculty) throw new BadRequestException('Faculty does not exists');
+    if (faculty) throw new BadRequestException('Faculty already exists');
 
     const facultyCreated = this.facultyRepository.create();
     facultyCreated.createdBy = authorId;

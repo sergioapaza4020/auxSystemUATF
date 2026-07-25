@@ -1,7 +1,5 @@
-import type { ColumnId } from '../types/columnId';
-
-export interface HeadCell {
-  id: ColumnId;
+export interface IHeadCell<T> {
+  id: Extract<keyof T, string>;
   label: string;
-  sortable: boolean;
+  sortable?: boolean;
 }

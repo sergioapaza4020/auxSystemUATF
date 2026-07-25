@@ -1,6 +1,7 @@
-import type { HeadCell } from '../interfaces/headCell';
+import type { HeadCell } from '@/components/table/types/headCell';
+import type { ISession } from '@/interfaces/sessions/session.interface';
 
-export const headCellsData: HeadCell[] = [
+export const sessionHeadCellsData = [
   {
     id: 'idSession',
     label: '#',
@@ -46,4 +47,4 @@ export const headCellsData: HeadCell[] = [
     label: 'Acciones',
     sortable: false,
   },
-];
+] as const satisfies readonly HeadCell<ISession>[];

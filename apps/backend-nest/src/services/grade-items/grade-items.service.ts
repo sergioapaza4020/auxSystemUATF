@@ -19,7 +19,7 @@ export class GradeItemsService {
 
   async create(GradeItemCreateDto: GradeItemCreateDto, authorId: number) {
     const GradeItem = await this.getOneByName(GradeItemCreateDto.name);
-    if (!GradeItem) throw new BadRequestException('GradeItem does not exists');
+    if (GradeItem) throw new BadRequestException('Grade item already exists');
 
     const GradeItemCreated = this.GradeItemRepository.create();
     GradeItemCreated.createdBy = authorId;
@@ -42,7 +42,7 @@ export class GradeItemsService {
     const GradeItem = await this.GradeItemRepository.findOne({
       where: { idGradeItem, isActive: true },
     });
-    if (!GradeItem) throw new BadRequestException('GradeItem not found');
+    if (!GradeItem) throw new BadRequestException('Grade item not found');
     GradeItem.isActive = false;
     return this.GradeItemRepository.save(GradeItem);
   }
@@ -51,7 +51,7 @@ export class GradeItemsService {
     const GradeItem = await this.GradeItemRepository.findOne({
       where: { idGradeItem, isActive: false },
     });
-    if (!GradeItem) throw new BadRequestException('GradeItem not found');
+    if (!GradeItem) throw new BadRequestException('Grade item not found');
     GradeItem.isActive = true;
     return await this.GradeItemRepository.save(GradeItem);
   }
