@@ -8,6 +8,7 @@ export const getGradeSchemes = async (): Promise<any> => {
     return gradeSchemes.data.data;
   } catch (error: any) {
     console.error(error.response.data);
+    throw error;
   }
 };
 

@@ -1,4 +1,4 @@
-import type { IHeadCell } from '../interfaces/headCell';
+import type { DataColumn } from '../interfaces/dataColumn';
 import type { SpecialColumn } from '../interfaces/specialColumn';
 
-export type HeadCell<T> = IHeadCell<T> | SpecialColumn;
+export type HeadCell<T> = DataColumn<T> | SpecialColumn;

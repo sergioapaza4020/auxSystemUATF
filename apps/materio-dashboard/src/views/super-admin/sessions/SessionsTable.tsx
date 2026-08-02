@@ -2,41 +2,30 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import DeleteIcon from '@mui/icons-material/Delete';
-import Swal, { type SweetAlertTheme } from 'sweetalert2';
-
-import {
-  Chip,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TablePagination,
-  TableRow,
-  Tooltip,
-  Zoom,
-} from '@mui/material';
+import { Paper, Table, TableBody, TableContainer } from '@mui/material';
 
 import { getAllSessions, revokeSessionById } from '@/api/sessions.service';
 import type { ISession } from '@/interfaces/sessions/session.interface';
 import { useAuth } from '@/hooks/useAuth';
-import { EnhancedTableHead } from '@/components/table/HeaderTable';
+import { EnhancedTableHead } from '@/components/table/components/HeaderTable';
 import { sessionHeadCellsData } from '@/views/super-admin/sessions/data/head-cells.data';
 import type { Order } from '@/components/table/types/order';
 import { getComparator } from '@/components/table/utils/getComparator';
-import { getSessionActivity } from '@/views/super-admin/sessions/utils/getSessionActivity';
-import type { SortableColumn } from './types/sortableColumn';
-import { LoadingTable } from '@/components/loading-skeletons/table/LoadingTable';
+import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import { useSettings } from '@/@core/hooks/useSettings';
+import type { SortableIds } from '@/components/table/types/sortableIds';
+import { PaginationTable } from '@/components/table/components/PaginationTable';
+import { SessionRow } from './components/SessionRow';
+import { useDialog } from '@/hooks/useDialog';
+
+type OrderBy = SortableIds<ISession, typeof sessionHeadCellsData>;
 
 export const SessionsTable = () => {
   const [sessions, setSessions] = useState<ISession[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [order, setOrder] = useState<Order>('desc');
-  const [orderBy, setOrderBy] = useState<SortableColumn>('idSession');
+  const [orderBy, setOrderBy] = useState<OrderBy>('idSession');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -48,6 +37,7 @@ export const SessionsTable = () => {
   );
 
   const { user } = useAuth();
+  const dialog = useDialog();
 
   useEffect(() => {
     const loadSessions = async () => {
@@ -67,22 +57,13 @@ export const SessionsTable = () => {
 
   if (loading) return <LoadingTable />;
 
-  const handleOpenDeleteButton = async (username: string, idSession: number) => {
-    let themeMode: SweetAlertTheme = 'light';
-
-    if (settings.mode) themeMode = settings.mode;
-
-    const result = await Swal.fire({
-      theme: `${themeMode}`,
-      title: `Revocando la sesión de ${username}`,
-      text: '¿Estás seguro?',
-      icon: 'warning',
-      showDenyButton: true,
-      confirmButtonText: 'Si',
-      denyButtonText: 'No',
+  const handleOpenDeleteButton = async (idSession: number) => {
+    const confirmed = await dialog.confirm({
+      title: `Revocando la sesión de ${user?.username}`,
+      text: '¿Estás seguro? Esta acción no se puede deshacer',
     });
 
-    if (!result.isConfirmed) return;
+    if (!confirmed) return;
 
     try {
       await revokeSessionById(idSession);
@@ -98,25 +79,17 @@ export const SessionsTable = () => {
         ),
       );
 
-      await Swal.fire({
-        theme: `${themeMode}`,
-        title: 'Sesión revocada con éxito',
-        text: '',
-        icon: 'success',
-      });
-    } catch (error) {
-      console.error(error);
+      await dialog.success('Sesión revocada con éxito');
+    } catch (error: any) {
+      console.error(error.response.data);
 
-      await Swal.fire({
-        theme: `${themeMode}`,
-        title: 'Error al revocar la sesión',
-        text: '',
-        icon: 'success',
-      });
+      await dialog.error('No se pudo revocar la sesión');
+
+      throw error;
     }
   };
 
-  const handleRequestSort = (event: React.MouseEvent<unknown>, property: SortableColumn) => {
+  const handleRequestSort = (event: React.MouseEvent<unknown>, property: OrderBy) => {
     const isAsc = orderBy === property && order === 'asc';
 
     setOrder(isAsc ? 'desc' : 'asc');
@@ -136,7 +109,7 @@ export const SessionsTable = () => {
     <Paper sx={{ width: '100%', mb: 2 }}>
       <TableContainer>
         <Table sx={{ minWidth: 750 }} aria-label='sessions-table'>
-          <EnhancedTableHead<ISession>
+          <EnhancedTableHead<ISession, typeof sessionHeadCellsData>
             headCells={sessionHeadCellsData}
             order={order}
             orderBy={orderBy}
@@ -144,79 +117,24 @@ export const SessionsTable = () => {
           />
           <TableBody>
             {visibleRows.map((session: ISession) => {
-              const isDeleteDisabled = !session.isActive || session.idSession === user?.idSession;
-
               return (
-                <TableRow
+                <SessionRow
                   key={session.idSession}
-                  hover={session.isActive && user?.idSession !== session.idSession}
-                  sx={{ cursor: 'pointer', '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell align='center' component='th' scope='row' padding='none'>
-                    {session.idSession}
-                  </TableCell>
-                  <TableCell component='th' scope='row'>
-                    {session.idSession !== user?.idSession ? session.user.username : 'Sesión actual'}
-                  </TableCell>
-                  <TableCell>{session.browser ? session.browser : 'No disponible'}</TableCell>
-                  <TableCell>{session.os ? session.os : 'No disponible'}</TableCell>
-                  <TableCell>{session.device ? session.device : 'No disponible'}</TableCell>
-                  <TableCell align='center'>{session.ipAddress}</TableCell>
-                  <TableCell align='center'>
-                    {session.isActive ? (
-                      <Chip label='Activo' color='success' />
-                    ) : (
-                      <Chip label='Inactivo' color='error' />
-                    )}
-                  </TableCell>
-                  <TableCell align='center'>{getSessionActivity(session.lastUsedAt, session.isActive)}</TableCell>
-                  <TableCell align='center'>
-                    <Tooltip
-                      title='Eliminar'
-                      slots={{ transition: Zoom }}
-                      disableHoverListener={isDeleteDisabled}
-                      disableFocusListener={isDeleteDisabled}
-                      disableTouchListener={isDeleteDisabled}
-                    >
-                      <span>
-                        <IconButton
-                          onClick={() => handleOpenDeleteButton(session.user.username, session.idSession)}
-                          disabled={isDeleteDisabled}
-                        >
-                          <DeleteIcon color={!isDeleteDisabled ? 'error' : 'disabled'} />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
+                  session={session}
+                  onDelete={() => handleOpenDeleteButton(session.idSession)}
+                />
               );
             })}
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        labelRowsPerPage='Filas por página:'
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        rowsPerPageOptions={[5, 10, 25]}
-        component='div'
+      <PaginationTable
         count={sessions.length}
-        rowsPerPage={rowsPerPage}
         page={page}
+        rowsPerPage={rowsPerPage}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        slotProps={{
-          select: {
-            MenuProps: {
-              PaperProps: {
-                sx: {
-                  '& .MuiMenuItem-root.Mui-selected': {
-                    ...(settings.mode === 'dark' && { color: '#fff' }),
-                  },
-                },
-              },
-            },
-          },
-        }}
+        darkMode={settings.mode === 'dark'}
       />
     </Paper>
   );

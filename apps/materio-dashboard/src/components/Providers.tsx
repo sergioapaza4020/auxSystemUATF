@@ -8,6 +8,9 @@ import ThemeProvider from '@components/theme';
 
 // Util Imports
 import { getMode, getSettingsFromCookie } from '@core/utils/serverHelpers';
+import { SnackbarProvider } from '@/providers/SnackbarProvider';
+import { DialogProvider } from '@/providers/DialogProvider';
+import { AuthProvider } from '@/providers/AuthProvider';
 
 type Props = ChildrenType & {
   direction: Direction;
@@ -22,11 +25,17 @@ const Providers = (props: Props) => {
   const settingsCookie = getSettingsFromCookie();
 
   return (
-    <VerticalNavProvider>
-      <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
-        <ThemeProvider direction={direction}>{children}</ThemeProvider>
-      </SettingsProvider>
-    </VerticalNavProvider>
+    <AuthProvider>
+      <VerticalNavProvider>
+        <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
+          <ThemeProvider direction={direction}>
+            <DialogProvider>
+              <SnackbarProvider>{children}</SnackbarProvider>
+            </DialogProvider>
+          </ThemeProvider>
+        </SettingsProvider>
+      </VerticalNavProvider>
+    </AuthProvider>
   );
 };
 

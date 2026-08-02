@@ -9,7 +9,6 @@ import '@/app/globals.css';
 
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css';
-import { AuthProvider } from '@/providers/AuthProvider';
 
 export const metadata = {
   title: 'Aux System U.A.T.F.',
@@ -23,9 +22,7 @@ const RootLayout = ({ children }: ChildrenType) => {
 
   return (
     <html id='__next' dir={direction}>
-      <body className='flex is-full min-bs-full flex-auto flex-col'>
-        <AuthProvider>{children}</AuthProvider>
-      </body>
+      <body className='flex is-full min-bs-full flex-auto flex-col'>{children}</body>
     </html>
   );
 };

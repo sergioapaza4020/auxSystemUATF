@@ -57,7 +57,6 @@
 
 ### Bug Fixes
 
-<<<<<<< HEAD
 * **auth:** auth only backend ([417bbaa](https://github.com/sergioapaza4020/auxSystemUATF/commit/417bbaaed57a6f627377191ddf309c17183a44d7))
 * **ci:** fix ci semantic release tags ([e1c231e](https://github.com/sergioapaza4020/auxSystemUATF/commit/e1c231ef9784c242a8d46700934a32682ff006da))
 * reorganize folders and files from backend ([4f57e40](https://github.com/sergioapaza4020/auxSystemUATF/commit/4f57e404e45940f9335d2850496ea6d3b6cc83b7))
@@ -85,11 +84,3 @@
 * test husky and commitizen ([c5edbe7](https://github.com/sergioapaza4020/auxSystemUATF/commit/c5edbe7aaf894acfd12528ba4c543d215be023e1))
 * **test:** fix tests in backend mocking data ([13ae3bc](https://github.com/sergioapaza4020/auxSystemUATF/commit/13ae3bc14e10f157294de5a578ce8aca1e8f8c08))
 * testtestests ([f36bc36](https://github.com/sergioapaza4020/auxSystemUATF/commit/f36bc362d410f25e3f797bea4a519fd8a68e14d8))
-=======
-- **auth:** auth only backend ([417bbaa](https://github.com/sergioapaza4020/auxSystemUATF/commit/417bbaaed57a6f627377191ddf309c17183a44d7))
-- reorganize folders and files from backend ([4f57e40](https://github.com/sergioapaza4020/auxSystemUATF/commit/4f57e404e45940f9335d2850496ea6d3b6cc83b7))
-- test 2 ([f8a874a](https://github.com/sergioapaza4020/auxSystemUATF/commit/f8a874ab35941fd0c3a934237e7141286feccbed))
-- test husky and commitizen ([c5edbe7](https://github.com/sergioapaza4020/auxSystemUATF/commit/c5edbe7aaf894acfd12528ba4c543d215be023e1))
-- **test:** fix tests in backend mocking data ([13ae3bc](https://github.com/sergioapaza4020/auxSystemUATF/commit/13ae3bc14e10f157294de5a578ce8aca1e8f8c08))
-- testtestests ([f36bc36](https://github.com/sergioapaza4020/auxSystemUATF/commit/f36bc362d410f25e3f797bea4a519fd8a68e14d8))
->>>>>>> dev

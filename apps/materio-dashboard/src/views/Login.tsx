@@ -1,7 +1,6 @@
 'use client';
 
 // React Imports
-import { useState } from 'react';
 import type { FormEvent } from 'react';
 
 // Next Imports
@@ -13,8 +12,6 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -30,10 +27,10 @@ import Illustrations from '@components/Illustrations';
 
 // Hook Imports
 import { useImageVariant } from '@core/hooks/useImageVariant';
+import { useSnackbar } from '@/hooks/useSnackbar';
 
 const Login = ({ mode }: { mode: Mode }) => {
-  // States
-  const [isPasswordShown, setIsPasswordShown] = useState(false);
+  const snackbar = useSnackbar();
 
   // Vars
   const darkImg = '/images/pages/auth-v1-mask-dark.png';
@@ -42,8 +39,6 @@ const Login = ({ mode }: { mode: Mode }) => {
   // Hooks
   const router = useRouter();
   const authBackground = useImageVariant(mode, lightImg, darkImg);
-
-  const handleClickShowPassword = () => setIsPasswordShown((show) => !show);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,10 +51,10 @@ const Login = ({ mode }: { mode: Mode }) => {
       });
 
       router.push('/dashboard');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : (error as any).data?.message || 'An error occurred';
+    } catch (error: any) {
+      const errorMessage = error ? error.response.data.message : 'An error occurred';
 
-      alert(errorMessage);
+      snackbar.error(errorMessage);
     }
   };
 
@@ -73,29 +68,9 @@ const Login = ({ mode }: { mode: Mode }) => {
           <div className='flex flex-col gap-5'>
             <form noValidate autoComplete='off' onSubmit={handleSubmit} className='flex flex-col gap-5'>
               <TextField autoFocus fullWidth id='username' label='Usuario' name='username' />
-              <TextField
-                fullWidth
-                label='Contraseña'
-                id='password'
-                name='password'
-                type={isPasswordShown ? 'text' : 'password'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <IconButton
-                        size='small'
-                        edge='end'
-                        onClick={handleClickShowPassword}
-                        onMouseDown={(e) => e.preventDefault()}
-                      >
-                        <i className={isPasswordShown ? 'ri-eye-off-line' : 'ri-eye-line'} />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              <TextField fullWidth label='Contraseña' id='password' name='password' type='password' />
               <div className='flex justify-between items-center gap-x-3 gap-y-1 flex-wrap'>
-                <FormControlLabel control={<Checkbox />} label='Recordarme' />
+                <FormControlLabel control={<Checkbox />} label='Recuérdame' />
               </div>
               <Button fullWidth variant='contained' type='submit'>
                 Iniciar Sesión
