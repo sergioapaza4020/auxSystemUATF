@@ -26,14 +26,12 @@ export class GradeSchemesService {
   }
 
   async create(gradeSchemeCreateDto: GradeSchemeCreateDto) {
-    console.log('entro a la funcion al menos');
     const gradeScheme = await this.gradeSchemeRepository.findOne({
       where: { name: gradeSchemeCreateDto.name },
     });
 
     if (gradeScheme) throw new BadRequestException('Grade scheme already exists');
 
-    console.log('traté de encontrar a gradescheme que no existe, en efecto, no existe');
     const newGradeScheme: GradeSchemeCreateDto = {
       name: '',
       description: '',
@@ -69,7 +67,6 @@ export class GradeSchemesService {
     await this.gradeSchemeDetailRepository.save(details);
 
     newGradeScheme.details = details;
-    console.log(newGradeScheme);
 
     await this.gradeSchemeRepository.save(newGradeScheme);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { createContext } from 'react';
 
 import type { AlertColor } from '@mui/material';
@@ -9,16 +10,16 @@ export interface SnackbarState {
   severity: AlertColor;
   message: string;
   autoHideDuration: number;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }
 
 export interface SnackbarContextType {
   snackbar: SnackbarState;
 
-  success: (message: string, duration?: number) => void;
-  error: (message: string, duration?: number) => void;
-  warning: (message: string, duration?: number) => void;
-  info: (message: string, duration?: number) => void;
+  success: (message: string, action?: ReactNode, duration?: number) => void;
+  error: (message: string, action?: ReactNode, duration?: number) => void;
+  warning: (message: string, action?: ReactNode, duration?: number) => void;
+  info: (message: string, action?: ReactNode, duration?: number) => void;
 
   closeSnackbar: () => void;
 }

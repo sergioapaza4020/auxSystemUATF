@@ -25,17 +25,17 @@ const Providers = (props: Props) => {
   const settingsCookie = getSettingsFromCookie();
 
   return (
-    <AuthProvider>
-      <VerticalNavProvider>
-        <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
-          <ThemeProvider direction={direction}>
-            <DialogProvider>
-              <SnackbarProvider>{children}</SnackbarProvider>
-            </DialogProvider>
-          </ThemeProvider>
-        </SettingsProvider>
-      </VerticalNavProvider>
-    </AuthProvider>
+    <VerticalNavProvider>
+      <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
+        <ThemeProvider direction={direction}>
+          <DialogProvider>
+            <SnackbarProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </SnackbarProvider>
+          </DialogProvider>
+        </ThemeProvider>
+      </SettingsProvider>
+    </VerticalNavProvider>
   );
 };
 

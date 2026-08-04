@@ -37,9 +37,13 @@ export function AppSnackbar(props: AppSnackbarProps) {
         variant='filled'
         onClose={onClose}
         action={
-          <IconButton color='inherit' size='small' onClick={onClose}>
-            <CloseIcon fontSize='small' />
-          </IconButton>
+          <>
+            {snackbar.action ?? snackbar.action}
+
+            <IconButton color='inherit' size='small' onClick={onClose}>
+              <CloseIcon fontSize='small' />
+            </IconButton>
+          </>
         }
       >
         {snackbar.message}

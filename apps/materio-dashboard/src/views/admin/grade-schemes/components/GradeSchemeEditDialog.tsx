@@ -1,58 +1,39 @@
-import { useEffect, useState } from 'react';
-
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, TextField } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 
 import Form from '@components/Form';
 
-import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
-import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
+import type { IGradeSchemeCreateOrEdit } from '@/interfaces/grade-schemes/grade-scheme-edit.interface';
 
-import { GradeSchemeItemsEditor } from './GradeSchemeItemsEditor';
+import { useGradeSchemeForm } from '@/hooks/grade-schemes';
+import { GradeSchemeFields } from './GradeSchemeFields';
+import { useGradeItems } from '@/hooks/grade-items';
+import { LoadingOverlay } from '@/components/feedback/LoadingOverlay';
 
 interface GradeSchemeEditDialogProps {
   open: boolean;
-  gradeScheme?: IGradeScheme;
-  gradeItems: IGradeItem[];
+  initialValue?: IGradeSchemeCreateOrEdit;
   loading: boolean;
   onClose: () => void;
-  onSubmit: (gradeScheme: IGradeScheme) => Promise<void>;
+  onSubmit: (gradeScheme: IGradeSchemeCreateOrEdit) => Promise<void>;
 }
 
 export function GradeSchemeEditDialog(props: GradeSchemeEditDialogProps) {
-  const { open, gradeScheme, gradeItems, loading, onClose, onSubmit } = props;
+  const { open, initialValue, loading, onClose, onSubmit } = props;
 
-  const [form, setForm] = useState<IGradeScheme | null>(null);
+  const { gradeScheme, updateField, handleGradeItemChange, handlePercentageChange, totalPercentage, isValid } =
+    useGradeSchemeForm({ initialValue });
 
-  useEffect(() => {
-    if (open && gradeScheme) {
-      setForm(structuredClone(gradeScheme));
-    }
-  }, [open, gradeScheme]);
-
-  const updateField = <K extends keyof IGradeScheme>(key: K, value: IGradeScheme[K]) => {
-    setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
-  };
-
-  const totalPercentage = form?.details.reduce((sum, detail) => sum + detail.percentage, 0) ?? 0;
-
-  const isFormValid = (): boolean => {
-    if (!form) return false;
-    if (!form.name.trim()) return false;
-    if (form.details.length === 0) return false;
-    if (totalPercentage !== 100) return false;
-
-    return form.details.every((detail) => detail.percentage > 0);
-  };
+  const { gradeItems, loading: loadingGradeItems } = useGradeItems();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!form) return;
+    if (!gradeScheme) return;
 
-    await onSubmit(form);
+    await onSubmit(gradeScheme);
   };
 
-  if (!form) return null;
+  if (!gradeScheme) return null;
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -61,44 +42,15 @@ export function GradeSchemeEditDialog(props: GradeSchemeEditDialogProps) {
       </DialogTitle>
       <DialogContent>
         <Form onSubmit={handleSubmit} id='update-grade-scheme'>
-          <Grid container spacing={5}>
-            <Grid item xs={12}>
-              <TextField
-                autoFocus
-                required
-                margin='dense'
-                id='name'
-                name='name'
-                label='Nombre'
-                type='text'
-                fullWidth
-                value={form?.name}
-                onChange={(e) => updateField('name', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin='dense'
-                id='description'
-                name='description'
-                label='Descripción'
-                type='text'
-                maxRows={4}
-                multiline
-                fullWidth
-                value={form?.description ?? ''}
-                onChange={(e) => updateField('description', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <GradeSchemeItemsEditor
-                gradeItems={gradeItems}
-                details={form.details}
-                totalPercentage={totalPercentage}
-                onChange={(details) => updateField('details', details)}
-              />
-            </Grid>
-          </Grid>
+          <GradeSchemeFields
+            form={gradeScheme}
+            gradeItems={gradeItems}
+            loadingGradeItems={loadingGradeItems}
+            updateField={updateField}
+            handleGradeItemChange={handleGradeItemChange}
+            handlePercentageChange={handlePercentageChange}
+            totalPercentage={totalPercentage}
+          />
         </Form>
       </DialogContent>
       <DialogActions>
@@ -110,10 +62,11 @@ export function GradeSchemeEditDialog(props: GradeSchemeEditDialogProps) {
           color='info'
           type='submit'
           form='update-grade-scheme'
-          disabled={loading || !isFormValid}
+          disabled={loading || !isValid}
         >
           Editar
         </Button>
+        <LoadingOverlay open={loading} />
       </DialogActions>
     </Dialog>
   );

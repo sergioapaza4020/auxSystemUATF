@@ -16,7 +16,7 @@ import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
-import { Login as ApiLogin } from '../api/auth.service';
+import { login as apiLogin } from '../api/auth.service';
 
 // Type Imports
 import type { Mode } from '@core/types';
@@ -28,6 +28,9 @@ import Illustrations from '@components/Illustrations';
 // Hook Imports
 import { useImageVariant } from '@core/hooks/useImageVariant';
 import { useSnackbar } from '@/hooks/useSnackbar';
+
+// Util imports
+import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 
 const Login = ({ mode }: { mode: Mode }) => {
   const snackbar = useSnackbar();
@@ -45,16 +48,14 @@ const Login = ({ mode }: { mode: Mode }) => {
     const data = new FormData(e.currentTarget);
 
     try {
-      await ApiLogin({
+      await apiLogin({
         username: data.get('username') as string,
         password: data.get('password') as string,
       });
 
       router.push('/dashboard');
-    } catch (error: any) {
-      const errorMessage = error ? error.response.data.message : 'An error occurred';
-
-      snackbar.error(errorMessage);
+    } catch (error) {
+      snackbar.error(getApiErrorMessage(error));
     }
   };
 

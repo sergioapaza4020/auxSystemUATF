@@ -5,7 +5,7 @@ import useVerticalNav from '@menu/hooks/useVerticalNav';
 
 const NavToggle = () => {
   // Hooks
-  const { toggleVerticalNav, isBreakpointReached } = useVerticalNav();
+  const { toggleVerticalNav } = useVerticalNav();
 
   const handleClick = () => {
     toggleVerticalNav();
@@ -14,7 +14,6 @@ const NavToggle = () => {
   return (
     <>
       <i className='ri-menu-line text-xl cursor-pointer' onClick={handleClick} />
-      {isBreakpointReached && <i className='ri-menu-line text-xl cursor-pointer' onClick={handleClick} />}
     </>
   );
 };

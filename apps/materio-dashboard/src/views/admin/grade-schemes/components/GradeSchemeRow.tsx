@@ -4,6 +4,7 @@ import { ChipList } from '@/components/table/components/ChipList';
 import { StatusChip } from '@/components/table/components/StatusChip';
 import { TableActions } from '@/components/table/components/TableActions';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
+import { formatDescription } from '@/helpers/formatDescription';
 
 interface GradeSchemeRowProps {
   gradeScheme: IGradeScheme;
@@ -34,7 +35,7 @@ export function GradeSchemeRow(props: GradeSchemeRowProps) {
       <TableCell component='th' scope='row'>
         {gradeScheme.name}
       </TableCell>
-      <TableCell>{gradeScheme.description ?? 'Sin descripción'}</TableCell>
+      <TableCell>{formatDescription(gradeScheme.description)}</TableCell>
       <TableCell>
         <ChipList
           items={gradeScheme.details}

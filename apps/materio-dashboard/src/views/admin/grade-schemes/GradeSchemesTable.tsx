@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -9,119 +8,45 @@ import { Box, Button, Paper, Table, TableBody, TableContainer } from '@mui/mater
 
 import AddIcon from '@mui/icons-material/Add';
 
-import {
-  deleteGradeScheme,
-  getGradeSchemeById,
-  getGradeSchemes,
-  reactivateGradeScheme,
-  updateGradeScheme,
-} from '@/api/grade-scheme.service';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
-import { EnhancedTableHead } from '@/components/table/components/HeaderTable';
 import { gradeSchemeHeadCellsData } from '@/views/admin/grade-schemes/data/head-cells.data';
-import type { Order } from '@/components/table/types/order';
-import { getComparator } from '@/components/table/utils/getComparator';
+import { EnhancedTableHead, PaginationTable } from '@/components/table';
+
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 
 import { useSettings } from '@/@core/hooks/useSettings';
 
-import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
-import { getGradeItems } from '@/api/grade-items.service';
-import type { SortableIds } from '@/components/table/types/sortableIds';
-import { PaginationTable } from '@/components/table/components/PaginationTable';
 import { GradeSchemeRow } from './components/GradeSchemeRow';
 import { GradeSchemeEditDialog } from './components/GradeSchemeEditDialog';
-import { LoadingOverlay } from '@/components/feedback/LoadingOverlay';
-import { useSnackbar } from '@/hooks/useSnackbar';
 import { useDialog } from '@/hooks/useDialog';
-
-type OrderBy = SortableIds<IGradeScheme, typeof gradeSchemeHeadCellsData>;
+import { useDataTable } from '@/hooks/table';
+import { useGradeSchemes, useGradeSchemeEditor, useGradeSchemeMutations } from '@/hooks/grade-schemes';
 
 export const GradeSchemesTable = () => {
-  const [gradeSchemes, setGradeSchemes] = useState<IGradeScheme[]>([]);
-  const [gradeItems, setGradeItems] = useState<IGradeItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const [selectedGradeScheme, setSelectedGradeScheme] = useState<IGradeScheme>();
-  const [idGradeScheme, setIdGradeScheme] = useState<number>(0);
-
-  const [openEditForm, setOpenEditForm] = useState<boolean>(false);
-
-  const [openBackdrop, setOpenBackdrop] = useState<boolean>(false);
-
-  const [order, setOrder] = useState<Order>('desc');
-  const [orderBy, setOrderBy] = useState<OrderBy>('idGradeScheme');
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
-
   const router = useRouter();
 
   const { settings } = useSettings();
 
-  const snackbar = useSnackbar();
   const dialog = useDialog();
 
-  const visibleRows = useMemo(
-    () =>
-      [...gradeSchemes].sort(getComparator(order, orderBy)).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [gradeSchemes, order, orderBy, page, rowsPerPage],
-  );
+  const { gradeSchemes, loading, load: loadGS } = useGradeSchemes();
 
-  const updateGradeSchemeState = (idGradeScheme: number, isActive: boolean) => {
-    setGradeSchemes((prevGradeSchemes) =>
-      prevGradeSchemes.map((gradeScheme) =>
-        gradeScheme.idGradeScheme === idGradeScheme
-          ? {
-              ...gradeScheme,
-              isActive: isActive,
-            }
-          : gradeScheme,
-      ),
-    );
-  };
+  const { update: updateGS, remove: removeGS, restore: restoreGS } = useGradeSchemeMutations({ reload: loadGS });
 
-  const loadGradeSchemes = async () => {
-    const gradeSchemes = await getGradeSchemes();
+  const editor = useGradeSchemeEditor({ update: updateGS });
 
-    setGradeSchemes(gradeSchemes);
-
-    setLoading(false);
-  };
-
-  const loadGradeItems = async () => {
-    const gradeItems = await getGradeItems();
-
-    setGradeItems(gradeItems);
-  };
-
-  useEffect(() => {
-    void loadGradeSchemes();
-    void loadGradeItems();
-  }, []);
+  const {
+    order,
+    orderBy,
+    page,
+    rowsPerPage,
+    visibleRows,
+    handleRequestSort,
+    handleChangePage,
+    handleChangeRowsPerPage,
+  } = useDataTable<IGradeScheme, typeof gradeSchemeHeadCellsData>(gradeSchemes, 'idGradeScheme');
 
   if (loading) return <LoadingTable />;
-
-  const handleEditForm = async (gradeScheme: IGradeScheme) => {
-    setOpenBackdrop(true);
-
-    try {
-      await updateGradeScheme(gradeScheme.idGradeScheme, {
-        name: gradeScheme.name,
-        description: gradeScheme.description,
-        details: gradeScheme.details,
-      });
-
-      snackbar.success('Esquema editado correctamente');
-
-      void loadGradeSchemes();
-
-      handleCloseEditButton();
-    } catch (error) {
-      snackbar.error('No se pudo editar el esquema');
-    } finally {
-      setOpenBackdrop(false);
-    }
-  };
 
   const handleOpenDeleteButton = async (name: string, idGradeScheme: number) => {
     const confirmed = await dialog.confirm({
@@ -132,14 +57,10 @@ export const GradeSchemesTable = () => {
     if (!confirmed) return;
 
     try {
-      await deleteGradeScheme(idGradeScheme);
-
-      updateGradeSchemeState(idGradeScheme, false);
+      await removeGS(idGradeScheme);
 
       await dialog.success('Esquema desactivado con éxito');
-    } catch (error: any) {
-      console.error(error.response.data);
-
+    } catch (error) {
       await dialog.error('No se pudo desactivar');
 
       throw error;
@@ -155,53 +76,14 @@ export const GradeSchemesTable = () => {
     if (!confirmed) return;
 
     try {
-      await reactivateGradeScheme(idGradeScheme);
-
-      updateGradeSchemeState(idGradeScheme, true);
+      await restoreGS(idGradeScheme);
 
       await dialog.success('Esquema restaurado con éxito');
-    } catch (error: any) {
-      console.error(error.response.data);
-
+    } catch (error) {
       await dialog.error('No se pudo restaurar');
 
       throw error;
     }
-  };
-
-  const handleOpenEditButton = async (gradeScheme: IGradeScheme) => {
-    setIdGradeScheme(gradeScheme.idGradeScheme);
-    console.log('entrando a editar');
-
-    try {
-      const gs = await getGradeSchemeById(gradeScheme.idGradeScheme);
-
-      setSelectedGradeScheme(gs);
-
-      setOpenEditForm(true);
-    } finally {
-      setIdGradeScheme(0);
-    }
-  };
-
-  const handleCloseEditButton = () => {
-    setOpenEditForm(false);
-  };
-
-  const handleRequestSort = (event: React.MouseEvent<unknown>, property: OrderBy) => {
-    const isAsc = orderBy === property && order === 'asc';
-
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
-
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
   };
 
   return (
@@ -228,9 +110,9 @@ export const GradeSchemesTable = () => {
                 <GradeSchemeRow
                   key={gradeScheme.idGradeScheme}
                   gradeScheme={gradeScheme}
-                  loadingEdit={idGradeScheme === gradeScheme.idGradeScheme}
+                  loadingEdit={editor.loading && editor.editingId === gradeScheme.idGradeScheme}
                   disableEdit={!gradeScheme.isActive}
-                  onEdit={(gs) => handleOpenEditButton(gs)}
+                  onEdit={({ idGradeScheme }) => editor.openEditor(idGradeScheme)}
                   onDelete={(gs) => handleOpenDeleteButton(gs.name, gs.idGradeScheme)}
                   onRestore={(gs) => handleOpenReactivateButton(gs.name, gs.idGradeScheme)}
                 />
@@ -249,14 +131,12 @@ export const GradeSchemesTable = () => {
       </Paper>
 
       <GradeSchemeEditDialog
-        open={openEditForm}
-        gradeScheme={selectedGradeScheme}
-        gradeItems={gradeItems}
-        loading={openBackdrop}
-        onClose={handleCloseEditButton}
-        onSubmit={handleEditForm}
+        open={editor.open}
+        initialValue={editor.initialValue}
+        loading={editor.loading}
+        onClose={editor.close}
+        onSubmit={editor.submit}
       />
-      <LoadingOverlay open={openBackdrop} />
     </Box>
   );
 };

@@ -3,7 +3,7 @@ import type { IGradeItem } from '../grade-items/grade-item.interface';
 export interface IGradeScheme {
   idGradeScheme: number;
   name: string;
-  description: string;
+  description?: string;
   details: IDetail[];
   isActive: boolean;
 }

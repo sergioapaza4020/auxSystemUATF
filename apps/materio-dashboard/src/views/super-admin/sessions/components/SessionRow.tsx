@@ -7,12 +7,12 @@ import type { ISession } from '@/interfaces/sessions/session.interface';
 
 import { getSessionActivity } from '../utils/getSessionActivity';
 
-interface GradeSchemeRowProps {
+interface SessionRowProps {
   session: ISession;
   onDelete: (idSession: number) => void;
 }
 
-export function SessionRow(props: GradeSchemeRowProps) {
+export function SessionRow(props: SessionRowProps) {
   const { session, onDelete } = props;
 
   const { user } = useAuth();

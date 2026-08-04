@@ -36,16 +36,20 @@ export function TableActions(props: TableActionsProps) {
 
       {onDelete ? (
         <Tooltip title='Desactivar' slots={{ transition: Zoom }}>
-          <IconButton disabled={!active} onClick={onDelete}>
-            <DeleteIcon color='error' />
-          </IconButton>
+          <span>
+            <IconButton disabled={!active} onClick={onDelete}>
+              <DeleteIcon color={active ? 'error' : 'disabled'} />
+            </IconButton>
+          </span>
         </Tooltip>
       ) : null}
       {onRestore ? (
         <Tooltip title='Restaurar' slots={{ transition: Zoom }}>
-          <IconButton disabled={active} onClick={onRestore}>
-            <RestoreFromTrashIcon color='warning' />
-          </IconButton>
+          <span>
+            <IconButton disabled={active} onClick={onRestore}>
+              <RestoreFromTrashIcon color={!active ? 'warning' : 'disabled'} />
+            </IconButton>
+          </span>
         </Tooltip>
       ) : null}
     </Box>
