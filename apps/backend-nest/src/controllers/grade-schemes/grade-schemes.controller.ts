@@ -35,7 +35,7 @@ export class GradeSchemesController {
     return this.gradeSchemesService.getOneById(idGradeScheme);
   }
 
-  @Permissions('grade-scheme.put')
+  @Permissions('grade-scheme.update')
   @Put('update/:idGradeScheme')
   async update(
     @Param('idGradeScheme') idGradeScheme: number,

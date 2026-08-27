@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { FacultyUpdateDto } from 'src/dtos/faculties/faculties-update.dto';
 import { FacultyCreateDto } from 'src/dtos/faculties/faculties.dto';
 import { Faculty } from 'src/entities/faculties/faculties.entity';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 
 @Injectable()
 export class FacultiesService {
-  constructor(@InjectRepository(Faculty) private readonly facultyRepository: Repository<Faculty>) {}
+  constructor(
+    @InjectRepository(Faculty) private readonly facultyRepository: Repository<Faculty>,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async getAll(): Promise<Faculty[]> {
     return this.facultyRepository.find({
@@ -33,6 +37,22 @@ export class FacultiesService {
   async getOneByName(name: string): Promise<Faculty | null> {
     return this.facultyRepository.findOne({
       where: { name, isActive: true },
+    });
+  }
+
+  async update(idFaculty: number, facultyUpdateDto: FacultyUpdateDto) {
+    return await this.dataSource.transaction(async (manager) => {
+      const facultyRepository = manager.getRepository(Faculty);
+
+      const faculty = await facultyRepository.findOne({
+        where: { idFaculty, isActive: true },
+      });
+
+      if (!faculty) throw new BadRequestException('Faculty not found');
+
+      const updated = await facultyRepository.update(idFaculty, facultyUpdateDto);
+
+      return await facultyRepository.save({ ...updated, ...facultyUpdateDto });
     });
   }
 

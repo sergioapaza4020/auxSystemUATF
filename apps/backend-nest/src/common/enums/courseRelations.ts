@@ -1,6 +1,6 @@
-export enum courseRelations {
+export enum CourseRelations {
   STUDENT = 'STUDENT',
-  ASSISTANT = 'ASSITANT',
+  ASSISTANT = 'ASSISTANT',
   TEACHER = 'TEACHER',
   DIRECTOR = 'DIRECTOR',
   DEAN = 'DEAN',

@@ -17,6 +17,10 @@ import { Role } from 'src/entities/roles/roles.entity';
 import { RoleSeeder } from './seeders/roles.seeder';
 import { UserSeeder } from './seeders/users.seeder';
 import { User } from 'src/entities/users/users.entity';
+import { SemesterSeeder } from './seeders/semesters.seeder';
+import { Semester } from 'src/entities/semesters/semester.entity';
+import { EnrollmentSeeder } from './seeders/enrollments.seeder';
+import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
 
 async function seed() {
   await AppDataSource.initialize();
@@ -27,6 +31,7 @@ async function seed() {
   await new FacultySeeder(AppDataSource.getRepository(Faculty)).run();
   await new GradeItemSeeder(AppDataSource.getRepository(GradeItem)).run();
   await new GradeSchemeSeeder(AppDataSource.getRepository(GradeScheme)).run();
+  await new SemesterSeeder(AppDataSource.getRepository(Semester)).run();
   await new GradeSchemeDetailSeeder(
     AppDataSource.getRepository(GradeSchemeDetail),
     AppDataSource.getRepository(GradeScheme),
@@ -49,6 +54,12 @@ async function seed() {
     AppDataSource.getRepository(User),
     AppDataSource.getRepository(Role),
     AppDataSource.getRepository(Career),
+  ).run();
+  await new EnrollmentSeeder(
+    AppDataSource.getRepository(Enrollment),
+    AppDataSource.getRepository(User),
+    AppDataSource.getRepository(Course),
+    AppDataSource.getRepository(Semester),
   ).run();
   await AppDataSource.destroy();
 

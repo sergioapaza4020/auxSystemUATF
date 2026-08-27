@@ -11,6 +11,7 @@ import {
 import { UserCourse } from '../user-courses/user-courses.entity';
 import { GradeScheme } from '../grade-schemes/grade-schemes.entity';
 import { Career } from '../careers/careers.entity';
+import { Enrollment } from '../enrollments/enrollments.entity';
 
 @Entity('courses')
 export class Course extends BaseEntity {
@@ -26,6 +27,9 @@ export class Course extends BaseEntity {
 
   @ManyToMany(() => Career, (career) => career.courses)
   career: Career;
+
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.course)
+  enrollments: Enrollment[];
 
   @Column({ name: 'name' })
   name: string;

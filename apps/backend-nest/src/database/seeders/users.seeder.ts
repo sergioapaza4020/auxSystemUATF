@@ -25,6 +25,9 @@ export class UserSeeder {
         name: In(data.careers),
       },
     });
+    if (careers.length !== data.careers.length) {
+      throw new Error(`Some careers not found for user ${data.name}`);
+    }
 
     const roles = await this.roleRepository.find({
       where: {

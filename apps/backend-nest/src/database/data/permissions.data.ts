@@ -179,55 +179,76 @@ export const permissionsData: DeepPartial<Permission>[] = [
 
   {
     name: 'grade-item.get-all',
-    description: 'Get all grade-items',
+    description: 'Get all grade items',
   },
   {
     name: 'grade-item.create',
-    description: 'Create grade-items',
+    description: 'Create grade items',
   },
   {
     name: 'grade-item.get-one-by-name',
-    description: 'Get one grade-item by name',
+    description: 'Get one grade item by name',
   },
   {
     name: 'grade-item.get-one-by-id',
-    description: 'Get one grade-item by id',
+    description: 'Get one grade item by id',
   },
   {
     name: 'grade-item.delete',
-    description: 'Delete a grade-item',
+    description: 'Delete a grade item',
   },
   {
     name: 'grade-item.reactivate',
-    description: 'Reactivate a grade-item',
+    description: 'Reactivate a grade item',
   },
 
   {
     name: 'grade-scheme.get-all',
-    description: 'Get all grade-schemes',
+    description: 'Get all grade schemes',
   },
   {
     name: 'grade-scheme.create',
-    description: 'Create grade-schemes',
+    description: 'Create grade schemes',
   },
   {
     name: 'grade-scheme.get-one-by-name',
-    description: 'Get one grade-scheme by name',
+    description: 'Get one grade scheme by name',
   },
   {
     name: 'grade-scheme.get-one-by-id',
-    description: 'Get one grade-scheme by id',
+    description: 'Get one grade scheme by id',
   },
   {
     name: 'grade-scheme.update',
-    description: 'Update a grade-scheme by id',
+    description: 'Update a grade scheme by id',
   },
   {
     name: 'grade-scheme.delete',
-    description: 'Delete a grade-scheme',
+    description: 'Delete a grade scheme',
   },
   {
     name: 'grade-scheme.reactivate',
-    description: 'Reactivate a grade-scheme',
+    description: 'Reactivate a grade scheme',
+  },
+
+  {
+    name: 'semester.get-all',
+    description: 'Get all grade schemes',
+  },
+  {
+    name: 'semester.create',
+    description: 'Create semesters',
+  },
+  {
+    name: 'semester.get-one-by-id',
+    description: 'Get one semester by id',
+  },
+  {
+    name: 'semester.delete',
+    description: 'Delete a semester',
+  },
+  {
+    name: 'semester.reactivate',
+    description: 'Reactivate a semester',
   },
 ];

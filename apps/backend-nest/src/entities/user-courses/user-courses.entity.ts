@@ -2,7 +2,7 @@ import { BaseEntity } from '@common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../users/users.entity';
 import { Course } from '../courses/courses.entity';
-import { courseRelations } from '@common/enums/courseRelations';
+import { CourseRelations } from '@common/enums/courseRelations';
 
 @Entity('user_courses')
 export class UserCourse extends BaseEntity {
@@ -17,6 +17,6 @@ export class UserCourse extends BaseEntity {
   @JoinColumn({ name: 'id_course' })
   course: Course;
 
-  @Column({ type: 'enum', enum: courseRelations })
-  relationType: courseRelations;
+  @Column({ type: 'enum', enum: CourseRelations })
+  relationType: CourseRelations;
 }

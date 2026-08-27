@@ -15,6 +15,7 @@ import { UserSession } from '../user-sessions/user-sessions.entity';
 import { Faculty } from '../faculties/faculties.entity';
 import { Career } from '../careers/careers.entity';
 import { UserCourse } from '../user-courses/user-courses.entity';
+import { Enrollment } from '../enrollments/enrollments.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -49,8 +50,8 @@ export class User extends BaseEntity {
   @Column({ unique: true, name: 'ci' })
   ci: string;
 
-  @Column({ unique: true, name: 'ru' })
-  ru: string;
+  @Column({ unique: true, name: 'ru', nullable: true })
+  ru?: string;
 
   @ManyToMany(() => Role)
   @JoinTable({ name: 'user_role' })
@@ -64,4 +65,7 @@ export class User extends BaseEntity {
 
   @OneToOne(() => Career, (career) => career.director, { nullable: true })
   directorCareer?: Career;
+
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.user)
+  enrollments: Enrollment[];
 }

@@ -15,4 +15,25 @@ export const coursesData: CourseSeed[] = [
     group: 1,
     gradeScheme: 'Evaluación teórica 001',
   },
+  {
+    career: 'Ingeniería de sistemas',
+    name: 'Diseño y programación gráfica',
+    code: 'SIS-313',
+    group: 2,
+    gradeScheme: 'Evaluación teórica - experimental 001',
+  },
+  {
+    career: 'Ingeniería de sistemas',
+    name: 'Taller de redes',
+    code: 'SIS-625',
+    group: 1,
+    gradeScheme: 'Evaluación teórica - experimental 001',
+  },
+  {
+    career: 'Ingeniería de sistemas',
+    name: 'Tecnologías emergentes',
+    code: 'SIS-414',
+    group: 1,
+    gradeScheme: 'Evaluación experimental - seminario 001',
+  },
 ];
