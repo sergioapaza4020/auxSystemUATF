@@ -21,7 +21,7 @@ export class Course extends BaseEntity {
   @OneToMany(() => UserCourse, (userCourse) => userCourse.course)
   userCourses: UserCourse[];
 
-  @ManyToOne(() => GradeScheme, (scheme) => scheme.courses)
+  @ManyToOne(() => GradeScheme, (scheme) => scheme.courses, { nullable: true })
   @JoinColumn({ name: 'id_grade_scheme' })
   gradeScheme: GradeScheme;
 

@@ -1,9 +1,20 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 import { UsersAssignRolesDto } from 'src/dtos/users/users-assign-roles.dto';
 import { UserCreateDto } from 'src/dtos/users/users.dto';
 import { UsersService } from 'src/services/users/users.service';
+import { UserQueryDto } from 'src/dtos/users/user-query.dto';
 
 @ApiBearerAuth('access-token')
 @Controller('users')
@@ -13,8 +24,8 @@ export class UsersController {
 
   @Permissions('user.get-all')
   @Get()
-  async getAll() {
-    return this.usersService.getAll();
+  async getAll(@Query() query: UserQueryDto) {
+    return this.usersService.getAll(query);
   }
 
   @Permissions('user.create')

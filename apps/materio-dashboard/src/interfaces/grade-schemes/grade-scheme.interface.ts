@@ -9,6 +9,8 @@ export interface IGradeScheme {
 }
 
 export interface IDetail {
+  idGradeSchemeDetail: number;
   percentage: number;
+  order: number;
   gradeItem: IGradeItem;
 }

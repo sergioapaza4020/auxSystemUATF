@@ -73,6 +73,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href='/dashboard/admin/grade-schemes/create' icon={<i className='ri-add-line' />}>
             Registrar esquema de notas
           </MenuItem>
+          <MenuItem href='/dashboard/admin/enrollments' icon={<i className='ri-account-circle-line' />}>
+            Matriculaciones
+          </MenuItem>
         </MenuSection>
         <MenuSection label='Ejemplos'>
           <MenuItem href='/dashboard/account-settings' icon={<i className='ri-user-settings-line' />}>

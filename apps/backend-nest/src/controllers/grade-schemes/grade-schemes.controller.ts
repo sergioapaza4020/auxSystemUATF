@@ -1,5 +1,17 @@
+import type { JwtPayload } from '@common/types/jwt-payload.type';
+import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { GradeSchemeUpdateDto } from 'src/dtos/grade-schemes/grade-scheme-update.dto';
 import { GradeSchemeCreateDto } from 'src/dtos/grade-schemes/grade-schemes.dto';
@@ -21,6 +33,16 @@ export class GradeSchemesController {
   @Post()
   async create(@Body() gradeSchemeCreateDto: GradeSchemeCreateDto) {
     return this.gradeSchemesService.create(gradeSchemeCreateDto);
+  }
+
+  @Permissions('grade-scheme.create')
+  @Post('course/:idCourse')
+  async createForAssistant(
+    @Param('idCourse', ParseIntPipe) idCourse: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: GradeSchemeCreateDto,
+  ) {
+    return this.gradeSchemesService.createForAssistant(idCourse, user.idUser, dto);
   }
 
   @Permissions('grade-scheme.get-one-by-name')

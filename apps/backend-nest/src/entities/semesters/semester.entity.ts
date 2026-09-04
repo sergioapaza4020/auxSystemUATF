@@ -11,13 +11,13 @@ export class Semester extends BaseEntity {
   @Column({ name: 'year' })
   year: number;
 
-  @Column({ name: 'semester_number' })
+  @Column({ name: 'semester_number', type: 'varchar' })
   period: SemesterNumber;
 
-  @Column({ name: 'start_date' })
+  @Column({ name: 'start_date', type: 'timestamp' })
   startDate: Date;
 
-  @Column({ name: 'end_date' })
+  @Column({ name: 'end_date', type: 'timestamp' })
   endDate: Date;
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.semester)

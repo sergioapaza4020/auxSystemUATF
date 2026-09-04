@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { SemesterNumber } from '@common/enums/semesterNumber';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SemesterCreateDto } from 'src/dtos/semesters/semesters.dto';
 import { Semester } from 'src/entities/semesters/semester.entity';
@@ -29,9 +35,32 @@ export class SemestersService {
     return this.semesterRepository.save(semesterCreated);
   }
 
+  async getCurrentSemester(): Promise<Semester> {
+    const now = new Date();
+
+    const semester = await this.semesterRepository
+      .createQueryBuilder('semester')
+      .where('semester.start_date <= :now', { now })
+      .andWhere('semester.end_date >= :now', { now })
+      .andWhere('semester.is_active = true')
+      .getOne();
+
+    if (!semester) {
+      throw new NotFoundException('No existe un semestre activo para la fecha actual');
+    }
+
+    return semester;
+  }
+
   async getOneById(idSemester: number) {
     return this.semesterRepository.findOne({
       where: { idSemester, isActive: true },
+    });
+  }
+
+  async getOneByPeriodYear(period: SemesterNumber, year: number) {
+    return this.semesterRepository.findOne({
+      where: { period, year, isActive: true },
     });
   }
 

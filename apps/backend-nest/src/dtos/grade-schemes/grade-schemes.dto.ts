@@ -1,10 +1,26 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsString, MinLength } from 'class-validator';
-import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
+import {
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+  ArrayMinSize,
+  Min,
+  Max,
+} from 'class-validator';
 
-class DetailCreateDto {
+export class GradeItemReferenceDto {
   @ApiProperty()
   @IsNumber()
+  idGradeItem: number;
+}
+
+export class DetailCreateDto {
+  @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
   percentage: number;
 
   @ApiProperty()
@@ -12,7 +28,8 @@ class DetailCreateDto {
   order: number;
 
   @ApiProperty()
-  gradeItem: GradeItem;
+  @ValidateNested()
+  gradeItem: GradeItemReferenceDto;
 }
 
 export class GradeSchemeCreateDto {
@@ -21,11 +38,13 @@ export class GradeSchemeCreateDto {
   name: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsString()
-  description: string;
+  description?: string;
 
   @ApiProperty()
   @IsArray()
-  @MinLength(1)
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
   details: DetailCreateDto[];
 }

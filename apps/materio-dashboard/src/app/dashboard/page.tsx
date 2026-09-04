@@ -1,11 +1,7 @@
-import { Typography } from '@mui/material';
+import { Principal } from '@/views/principal/Principal';
 
 const DashboardAnalytics = () => {
-  return (
-    <Typography variant='h4' align='center' sx={{ mt: 10 }}>
-      Página dejada en blanco a propósito para pruebas de navegación, ignore este contenido
-    </Typography>
-  );
+  return <Principal />;
 };
 
 export default DashboardAnalytics;

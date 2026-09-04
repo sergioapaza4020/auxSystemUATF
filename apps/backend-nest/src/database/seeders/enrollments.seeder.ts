@@ -49,7 +49,7 @@ export class EnrollmentSeeder {
       throw new BadRequestException(`User ${user.username} doesn't have the ${data.role} role`);
 
     const exists = await this.repository.findOne({
-      where: { user: user, semester: semester, course: course },
+      where: { user, semester, course },
     });
     if (exists)
       throw new BadRequestException(

@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 import { RolesService } from '../roles/roles.service';
+import { UserQueryDto } from 'src/dtos/users/user-query.dto';
 
 @Injectable()
 export class UsersService {
@@ -14,15 +15,47 @@ export class UsersService {
     private readonly rolesService: RolesService,
   ) {}
 
-  async getAll(): Promise<User[]> {
-    return this.userRepository.find({
-      where: { isActive: true },
-      relations: {
-        roles: {
-          permissions: true,
-        },
+  async getAll(query: UserQueryDto) {
+    const { careerId, search, role, page = 1, limit = 20 } = query;
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.careers', 'career')
+      .leftJoinAndSelect('user.roles', 'roles');
+
+    if (careerId) qb.andWhere('career.idCareer = :careerId', { careerId });
+
+    if (search)
+      qb.andWhere(
+        `
+        user.username ILIKE :search
+        OR user.name ILIKE :search
+        OR user.lastname ILIKE :search
+        OR user.ru ILIKE :search
+        OR user.ci ILIKE :search
+        `,
+        { search: `%${search}%` },
+      );
+
+    if (role) {
+      const roles = role.split(',');
+
+      qb.andWhere('roles.name IN (:...roles)', {
+        roles,
+      });
+    }
+
+    qb.skip((page - 1) * limit);
+    qb.take(limit);
+    const [data, total] = await qb.getManyAndCount();
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async create(userCreateDto: UserCreateDto): Promise<User> {
@@ -70,6 +103,7 @@ export class UsersService {
         roles: {
           permissions: true,
         },
+        enrollments: true,
       },
     });
   }

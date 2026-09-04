@@ -12,6 +12,7 @@ export class CoursesService {
     return this.courseRepository.find({
       where: { isActive: true },
       relations: { userCourses: true },
+      order: { code: 'ASC' },
     });
   }
 
@@ -33,6 +34,12 @@ export class CoursesService {
   async getOneByName(name: string): Promise<Course | null> {
     return this.courseRepository.findOne({
       where: { name, isActive: true },
+    });
+  }
+
+  async getOneByCode(code: string): Promise<Course | null> {
+    return this.courseRepository.findOne({
+      where: { code, isActive: true },
     });
   }
 

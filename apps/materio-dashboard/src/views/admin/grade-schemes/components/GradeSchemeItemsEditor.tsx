@@ -1,12 +1,12 @@
 import { Box, Checkbox, CircularProgress, FormControlLabel, FormGroup, TextField, Typography } from '@mui/material';
 
 import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
-import type { IDetail } from '@/interfaces/grade-schemes/grade-scheme.interface';
+import type { IGradeSchemeDetailCreateOrEdit } from '@/interfaces/grade-schemes/grade-scheme-edit.interface';
 import { getDetail } from '@/hooks/grade-schemes/helpers';
 
 interface GradeSchemeItemsEditorProps {
   gradeItems: IGradeItem[];
-  details: IDetail[];
+  details: IGradeSchemeDetailCreateOrEdit[];
   loading: boolean;
   totalPercentage: number;
   onGradeItemChange(gradeItem: IGradeItem, checked: boolean): void;

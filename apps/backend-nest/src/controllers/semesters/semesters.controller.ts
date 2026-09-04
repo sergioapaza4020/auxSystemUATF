@@ -22,6 +22,11 @@ export class SemestersController {
     return this.semestersService.create(semesterCreateDto);
   }
 
+  @Get('current')
+  async getCurrentSemester() {
+    return this.semestersService.getCurrentSemester();
+  }
+
   @Permissions('semester.get-one-by-id')
   @Get('id/:idSemester')
   async getOneById(@Param('idSemester') idSemester: number) {

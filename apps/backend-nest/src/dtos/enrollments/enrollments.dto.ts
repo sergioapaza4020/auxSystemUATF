@@ -1,16 +1,21 @@
 import { CourseRelations } from '@common/enums/courseRelations';
-import { IsEnum, IsNumber } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsString } from 'class-validator';
 
 export class EnrollmentCreateDto {
-  @IsNumber()
-  idUser: number;
+  @ApiProperty()
+  @IsString()
+  username: string;
 
-  @IsNumber()
-  idSemester: number;
+  @ApiProperty()
+  @IsString()
+  semester: string;
 
-  @IsNumber()
-  idCourse: number;
+  @ApiProperty()
+  @IsString()
+  courseCode: string;
 
+  @ApiProperty()
   @IsEnum(CourseRelations)
   role: CourseRelations;
 }

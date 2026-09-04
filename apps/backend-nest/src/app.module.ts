@@ -17,6 +17,9 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { GradeItemsModule } from './modules/grade-items/grade-items.module';
 import { GradeSchemesModule } from './modules/grade-schemes/grade-schemes.module';
 import { databaseConfig } from './core/config/database/database.config';
+import { SemestersModule } from './modules/semesters/semesters.module';
+import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
+import { GradesModule } from './modules/grades/grades.module';
 
 @Module({
   imports: [
@@ -37,6 +40,9 @@ import { databaseConfig } from './core/config/database/database.config';
     CoursesModule,
     GradeItemsModule,
     GradeSchemesModule,
+    SemestersModule,
+    EnrollmentsModule,
+    GradesModule,
   ],
   controllers: [AppController],
   providers: [
