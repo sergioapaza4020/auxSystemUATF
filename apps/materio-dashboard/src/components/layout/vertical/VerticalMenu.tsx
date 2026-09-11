@@ -1,5 +1,4 @@
 // MUI Imports
-import Chip from '@mui/material/Chip';
 import { useTheme } from '@mui/material/styles';
 
 // Third-party Imports
@@ -9,7 +8,7 @@ import PerfectScrollbar from 'react-perfect-scrollbar';
 import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Menu';
 
 // Component Imports
-import { Menu, SubMenu, MenuItem, MenuSection } from '@menu/vertical-menu';
+import { Menu, MenuItem, MenuSection } from '@menu/vertical-menu';
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav';
@@ -77,7 +76,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
             Matriculaciones
           </MenuItem>
         </MenuSection>
-        <MenuSection label='Ejemplos'>
+        {/* <MenuSection label='Ejemplos'>
           <MenuItem href='/dashboard/account-settings' icon={<i className='ri-user-settings-line' />}>
             Configuración de cuenta
           </MenuItem>
@@ -141,7 +140,7 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           >
             Documentación
           </MenuItem>
-        </MenuSection>
+        </MenuSection> */}
       </Menu>
     </ScrollWrapper>
   );

@@ -240,6 +240,10 @@ export const permissionsData: DeepPartial<Permission>[] = [
     description: 'Create semesters',
   },
   {
+    name: 'semester.get-current-semester',
+    description: 'Get current semester',
+  },
+  {
     name: 'semester.get-one-by-id',
     description: 'Get one semester by id',
   },
@@ -250,5 +254,80 @@ export const permissionsData: DeepPartial<Permission>[] = [
   {
     name: 'semester.reactivate',
     description: 'Reactivate a semester',
+  },
+
+  {
+    name: 'enrollment.get-all',
+    description: 'Get all enrollments',
+  },
+  {
+    name: 'enrollment.create',
+    description: 'Create an enrollment',
+  },
+  {
+    name: 'enrollment.get-my-enrollments',
+    description: 'Get an user enrollments',
+  },
+  {
+    name: 'enrollment.get-my-enrollment',
+    description: 'Get own enrollments',
+  },
+  {
+    name: 'enrollment.get-managed-enrollment',
+    description: 'Get managed enrollments',
+  },
+  {
+    name: 'enrollment.get-students-by-enrollment',
+    description: 'Get sutdents by enrollment',
+  },
+
+  {
+    name: 'grade.create',
+    description: 'Create grades',
+  },
+  {
+    name: 'grade.get-by-enrollment',
+    description: 'Get grades by enrollment',
+  },
+  {
+    name: 'grade.get-one',
+    description: 'Get one grade',
+  },
+  {
+    name: 'grade.update',
+    description: 'Update a grade by id',
+  },
+  {
+    name: 'grade.remove',
+    description: 'Remove a grade by id',
+  },
+
+  {
+    name: 'activity.get-all',
+  },
+  {
+    name: 'activity.create',
+  },
+  {
+    name: 'activity.get-by-grade-scheme-detail',
+  },
+  {
+    name: 'activity.update',
+  },
+  {
+    name: 'activity.delete',
+  },
+  {
+    name: 'activity.reactivate',
+  },
+
+  {
+    name: 'assistant-grade-scheme.get-one',
+  },
+  {
+    name: 'assistant-grade-scheme.create',
+  },
+  {
+    name: 'assistant-grade-scheme.update',
   },
 ];

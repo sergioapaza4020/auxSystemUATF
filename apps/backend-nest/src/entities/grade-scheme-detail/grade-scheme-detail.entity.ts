@@ -1,6 +1,15 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { GradeScheme } from '../grade-schemes/grade-schemes.entity';
 import { GradeItem } from '../grade-items/grade-items.entity';
+import { Activity } from '../activities/activity.entity';
 
 @Entity('grade_scheme_details')
 export class GradeSchemeDetail extends BaseEntity {
@@ -14,6 +23,9 @@ export class GradeSchemeDetail extends BaseEntity {
   @ManyToOne(() => GradeItem)
   @JoinColumn({ name: 'id_grade_item' })
   gradeItem: GradeItem;
+
+  @OneToMany(() => Activity, (activity) => activity.gradeSchemeDetail)
+  activities: Activity[];
 
   @Column({ name: 'percentage' })
   percentage: number;

@@ -15,6 +15,7 @@ import { getEnrollmentStudents } from '@/api/enrollments.service';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 import { UserRole } from '@/enums/userRole';
+import { useAssistantGradeScheme } from '@/hooks/assistant-grade-schemes/useAssistantGradeScheme';
 
 export default function EnrollmentDetailPage() {
   const [students, setStudents] = useState<IEnrollmentStudent[]>([]);
@@ -25,6 +26,14 @@ export default function EnrollmentDetailPage() {
   const idEnrollment = Number(params.idEnrollment);
 
   const { enrollment, loading: loadingEnrollment } = useEnrollment(idEnrollment);
+
+  const {
+    scheme: assistantGradeScheme,
+    loading: loadingAssistantGradeScheme,
+    saving: savingAssistantGradeScheme,
+    create: createAssistantGradeScheme,
+    update: updateAssistantGradeScheme,
+  } = useAssistantGradeScheme(enrollment?.role === UserRole.ASSISTANT ? enrollment.course.idCourse : null);
 
   const { grades } = useEnrollmentGrades(idEnrollment);
 
@@ -67,6 +76,11 @@ export default function EnrollmentDetailPage() {
       students={students}
       loading={loadingStudents}
       loadingStudents={loadingStudents}
+      assistantGradeScheme={assistantGradeScheme}
+      loadingAssistantGradeScheme={loadingAssistantGradeScheme}
+      savingAssistantGradeScheme={savingAssistantGradeScheme}
+      onCreateAssistantGradeScheme={createAssistantGradeScheme}
+      onUpdateAssistantGradeScheme={updateAssistantGradeScheme}
     />
   );
 }

@@ -10,6 +10,7 @@ export const getGradesByEnrollment = async (idEnrollment: number): Promise<IGrad
 export const createGrade = async (data: {
   enrollmentId: number;
   gradeSchemeDetailId: number;
+  activityId?: number;
   score: number;
 }): Promise<IGrade> => {
   const response = await instance.post('/grades', data);
@@ -21,4 +22,8 @@ export const updateGrade = async (idGrade: number, score: number): Promise<IGrad
   const response = await instance.patch(`/grades/${idGrade}`, { score });
 
   return response.data.data;
+};
+
+export const deleteGrade = async (idGrade: number): Promise<void> => {
+  await instance.delete(`/grades/${idGrade}`);
 };

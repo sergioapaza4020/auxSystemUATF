@@ -102,6 +102,7 @@ export class EnrollmentsService {
           gradeScheme: {
             details: {
               gradeItem: true,
+              activities: true,
             },
           },
         },
@@ -132,6 +133,7 @@ export class EnrollmentsService {
           gradeScheme: {
             details: {
               gradeItem: true,
+              activities: true,
             },
           },
         },
@@ -146,10 +148,11 @@ export class EnrollmentsService {
   }
 
   async getManagedEnrollment(idAssistant: number, idEnrollment: number) {
-    const enrollment = await this.enrollmentRepository.findOne({
+    const enrollment = await this.verifyAssistantAccess(idAssistant, idEnrollment);
+
+    const fullEnrollment = await this.enrollmentRepository.findOne({
       where: {
-        idEnrollment,
-        role: CourseRelations.STUDENT,
+        idEnrollment: enrollment.idEnrollment,
       },
       relations: {
         user: true,
@@ -158,42 +161,25 @@ export class EnrollmentsService {
           gradeScheme: {
             details: {
               gradeItem: true,
+              activities: true,
             },
           },
         },
       },
     });
 
-    if (!enrollment) {
+    if (!fullEnrollment) {
       throw new NotFoundException('La matrícula del estudiante no existe');
     }
 
-    const assistantEnrollment = await this.enrollmentRepository.findOne({
-      where: {
-        user: {
-          idUser: idAssistant,
-        },
-        course: {
-          idCourse: enrollment.course.idCourse,
-        },
-        semester: {
-          idSemester: enrollment.semester.idSemester,
-        },
-        role: CourseRelations.ASSISTANT,
-      },
-    });
-
-    if (!assistantEnrollment) {
-      throw new ForbiddenException('No tienes permisos para gestionar esta matrícula');
-    }
-
-    return enrollment;
+    return fullEnrollment;
   }
 
-  async getStudentsByEnrollment(idEnrollment: number) {
+  async getStudentsByEnrollment(idAssistant: number, idEnrollment: number) {
     const enrollment = await this.enrollmentRepository.findOne({
       where: {
         idEnrollment,
+        role: CourseRelations.ASSISTANT,
       },
       relations: {
         course: true,
@@ -202,7 +188,19 @@ export class EnrollmentsService {
     });
 
     if (!enrollment) {
-      throw new NotFoundException('Matriculación no encontrada');
+      throw new NotFoundException('Matriculación de auxiliar no encontrada');
+    }
+
+    const assistantEnrollment = await this.enrollmentRepository.findOne({
+      where: {
+        idEnrollment: enrollment.idEnrollment,
+        user: { idUser: idAssistant },
+        role: CourseRelations.ASSISTANT,
+      },
+    });
+
+    if (!assistantEnrollment) {
+      throw new ForbiddenException('No tienes permisos para gestionar esta materia');
     }
 
     const students = await this.enrollmentRepository.find({
@@ -227,5 +225,41 @@ export class EnrollmentsService {
     });
 
     return students;
+  }
+
+  private async verifyAssistantAccess(idAssistant: number, idEnrollment: number) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        idEnrollment,
+        role: CourseRelations.STUDENT,
+      },
+      relations: {
+        course: true,
+        semester: true,
+      },
+    });
+
+    if (!enrollment) {
+      throw new NotFoundException('Matriculación del estudiante no encontrada');
+    }
+
+    const assistantEnrollment = await this.enrollmentRepository.findOne({
+      where: {
+        user: { idUser: idAssistant },
+        course: {
+          idCourse: enrollment.course.idCourse,
+        },
+        semester: {
+          idSemester: enrollment.semester.idSemester,
+        },
+        role: CourseRelations.ASSISTANT,
+      },
+    });
+
+    if (!assistantEnrollment) {
+      throw new ForbiddenException('No tienes permisos para gestionar esta matrícula');
+    }
+
+    return enrollment;
   }
 }

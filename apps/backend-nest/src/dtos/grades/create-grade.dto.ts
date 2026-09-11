@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNumber, Max, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 
 export class CreateGradeDto {
   @ApiProperty()
@@ -9,6 +9,11 @@ export class CreateGradeDto {
   @ApiProperty()
   @IsInt()
   gradeSchemeDetailId: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  activityId?: number;
 
   @ApiProperty()
   @IsNumber()

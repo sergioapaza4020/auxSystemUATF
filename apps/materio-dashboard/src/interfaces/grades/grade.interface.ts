@@ -1,4 +1,5 @@
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
+import type { IActivity } from '../activities/activity.interface';
 
 export interface IGrade {
   idGrade: number;
@@ -6,6 +7,8 @@ export interface IGrade {
   score: number;
 
   enrollment: IEnrollment;
+
+  activity: IActivity | null;
 
   gradeSchemeDetail: {
     idGradeSchemeDetail: number;

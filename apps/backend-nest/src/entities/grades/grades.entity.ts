@@ -2,6 +2,7 @@ import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColu
 
 import { Enrollment } from '../enrollments/enrollments.entity';
 import { GradeSchemeDetail } from '../grade-scheme-detail/grade-scheme-detail.entity';
+import { Activity } from '../activities/activity.entity';
 
 @Entity('grades')
 export class Grade extends BaseEntity {
@@ -19,6 +20,13 @@ export class Grade extends BaseEntity {
   })
   @JoinColumn({ name: 'id_grade_scheme_detail' })
   gradeSchemeDetail: GradeSchemeDetail;
+
+  @ManyToOne(() => Activity, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'id_activity' })
+  activity: Activity | null;
 
   @Column({
     name: 'score',

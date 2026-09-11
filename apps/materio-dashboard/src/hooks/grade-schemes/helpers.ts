@@ -1,7 +1,8 @@
 import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
+import type { IGradeSchemeDetailBase } from '@/interfaces/grade-schemes/grade-scheme-detail.interface';
 import type { IGradeSchemeDetailCreateOrEdit } from '@/interfaces/grade-schemes/grade-scheme-edit.interface';
 
-export const getDetail = (idGradeItem: number, details: IGradeSchemeDetailCreateOrEdit[]) =>
+export const getDetail = <T extends IGradeSchemeDetailBase>(idGradeItem: number, details: T[]) =>
   details.find((detail) => detail.gradeItem.idGradeItem === idGradeItem);
 
 export const toggleGradeItem = (details: IGradeSchemeDetailCreateOrEdit[], gradeItem: IGradeItem, checked: boolean) => {

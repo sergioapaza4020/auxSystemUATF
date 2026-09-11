@@ -22,6 +22,7 @@ export class SemestersController {
     return this.semestersService.create(semesterCreateDto);
   }
 
+  @Permissions('semester.get-current-semester')
   @Get('current')
   async getCurrentSemester() {
     return this.semestersService.getCurrentSemester();

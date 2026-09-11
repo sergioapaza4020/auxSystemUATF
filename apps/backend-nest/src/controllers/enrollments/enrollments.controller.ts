@@ -24,11 +24,13 @@ export class EnrollmentsController {
     return this.enrollmentsService.create(dto);
   }
 
+  @Permissions('enrollment.get-my-enrollments')
   @Get('my-enrollments')
   async getMyEnrollments(@CurrentUser() user: JwtPayload) {
     return this.enrollmentsService.getUserEnrollments(user.idUser);
   }
 
+  @Permissions('enrollment.get-my-enrollment')
   @Get('my-enrollments/:idEnrollment')
   async getMyEnrollment(
     @CurrentUser() user: JwtPayload,
@@ -37,6 +39,7 @@ export class EnrollmentsController {
     return this.enrollmentsService.getMyEnrollment(user.idUser, idEnrollment);
   }
 
+  @Permissions('enrollment.get-managed-enrollment')
   @Get('managed/:idEnrollment')
   async getManagedEnrollment(
     @CurrentUser() user: JwtPayload,
@@ -45,12 +48,13 @@ export class EnrollmentsController {
     return this.enrollmentsService.getManagedEnrollment(user.idUser, idEnrollment);
   }
 
+  @Permissions('enrollment.get-students-by-enrollment')
   @Get(':idEnrollment/students')
   async getStudentsByEnrollment(
+    @CurrentUser() user: JwtPayload,
     @Param('idEnrollment', ParseIntPipe)
     idEnrollment: number,
   ) {
-    console.log('ESTOY ENTRANDO ');
-    return this.enrollmentsService.getStudentsByEnrollment(idEnrollment);
+    return this.enrollmentsService.getStudentsByEnrollment(user.idUser, idEnrollment);
   }
 }

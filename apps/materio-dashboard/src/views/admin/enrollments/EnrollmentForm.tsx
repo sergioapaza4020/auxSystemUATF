@@ -153,7 +153,7 @@ export function EnrollmentCreate(props: EnrollmentCreateProps) {
               loading={loadingCourses}
               onChange={(_, value) => setSelectedCourse(value)}
               getOptionLabel={(course) => `${course.code} - ${course.name}`}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
+              isOptionEqualToValue={(option, value) => option.idCourse === value.idCourse}
               renderInput={(params) => (
                 <TextField
                   {...params}

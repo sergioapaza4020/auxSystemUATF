@@ -20,6 +20,7 @@ import { databaseConfig } from './core/config/database/database.config';
 import { SemestersModule } from './modules/semesters/semesters.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { GradesModule } from './modules/grades/grades.module';
+import { ActivitiesModule } from './modules/activities/activities.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { GradesModule } from './modules/grades/grades.module';
     SemestersModule,
     EnrollmentsModule,
     GradesModule,
+    ActivitiesModule,
   ],
   controllers: [AppController],
   providers: [

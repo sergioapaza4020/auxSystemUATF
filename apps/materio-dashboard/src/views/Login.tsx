@@ -68,8 +68,8 @@ const Login = ({ mode }: { mode: Mode }) => {
           </Link>
           <div className='flex flex-col gap-5'>
             <form noValidate autoComplete='off' onSubmit={handleSubmit} className='flex flex-col gap-5'>
-              <TextField autoFocus fullWidth id='username' label='Usuario' name='username' />
-              <TextField fullWidth label='Contraseña' id='password' name='password' type='password' />
+              <TextField autoFocus fullWidth id='username' label='Usuario' name='username' value='super-mushu' />
+              <TextField fullWidth label='Contraseña' id='password' name='password' type='password' value='password' />
               <div className='flex justify-between items-center gap-x-3 gap-y-1 flex-wrap'>
                 <FormControlLabel control={<Checkbox />} label='Recuérdame' />
               </div>

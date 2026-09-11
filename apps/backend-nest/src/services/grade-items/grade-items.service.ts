@@ -8,51 +8,54 @@ import { Repository } from 'typeorm';
 export class GradeItemsService {
   constructor(
     @InjectRepository(GradeItem)
-    private readonly GradeItemRepository: Repository<GradeItem>,
+    private readonly gradeItemRepository: Repository<GradeItem>,
   ) {}
 
   async getAll(): Promise<GradeItem[]> {
-    return this.GradeItemRepository.find({
+    return this.gradeItemRepository.find({
       where: { isActive: true },
     });
   }
 
-  async create(GradeItemCreateDto: GradeItemCreateDto, authorId: number) {
+  async create(gradeItemCreateDto: GradeItemCreateDto, authorId: number) {
     const GradeItem = await this.getOneByName(GradeItemCreateDto.name);
     if (GradeItem) throw new BadRequestException('Grade item already exists');
 
-    const GradeItemCreated = this.GradeItemRepository.create();
+    const GradeItemCreated = this.gradeItemRepository.create({
+      name: gradeItemCreateDto.name,
+      createdBy: authorId,
+    });
     GradeItemCreated.createdBy = authorId;
     return GradeItemCreated;
   }
 
   async getOneById(idGradeItem: number): Promise<GradeItem | null> {
-    return this.GradeItemRepository.findOne({
+    return this.gradeItemRepository.findOne({
       where: { idGradeItem, isActive: true },
     });
   }
 
   async getOneByName(name: string): Promise<GradeItem | null> {
-    return this.GradeItemRepository.findOne({
+    return this.gradeItemRepository.findOne({
       where: { name, isActive: true },
     });
   }
 
   async delete(idGradeItem: number) {
-    const GradeItem = await this.GradeItemRepository.findOne({
+    const GradeItem = await this.gradeItemRepository.findOne({
       where: { idGradeItem, isActive: true },
     });
     if (!GradeItem) throw new BadRequestException('Grade item not found');
     GradeItem.isActive = false;
-    return this.GradeItemRepository.save(GradeItem);
+    return this.gradeItemRepository.save(GradeItem);
   }
 
   async reactivate(idGradeItem: number) {
-    const GradeItem = await this.GradeItemRepository.findOne({
+    const GradeItem = await this.gradeItemRepository.findOne({
       where: { idGradeItem, isActive: false },
     });
     if (!GradeItem) throw new BadRequestException('Grade item not found');
     GradeItem.isActive = true;
-    return await this.GradeItemRepository.save(GradeItem);
+    return await this.gradeItemRepository.save(GradeItem);
   }
 }
