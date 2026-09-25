@@ -7,6 +7,7 @@ import type { IGrade } from '@/interfaces/grades/grade.interface';
 
 import { createGrade, deleteGrade, updateGrade } from '@/api/grades.service';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
+import type { IStudentAttendance } from '@/interfaces/attendances/attendance.interface';
 
 interface GradesCardProps {
   enrollment: IEnrollment;
@@ -18,6 +19,8 @@ interface GradesCardProps {
   schemeMultiplier?: number;
   assistantMode?: boolean;
   assistantPercentage?: number;
+  attendance?: IStudentAttendance | null;
+  attendanceLoading?: boolean;
 }
 
 export function GradesCard({
@@ -30,6 +33,8 @@ export function GradesCard({
   schemeMultiplier = 1,
   assistantMode = false,
   assistantPercentage,
+  attendance,
+  attendanceLoading = false,
 }: GradesCardProps) {
   const [scores, setScores] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState<number | null>(null);
@@ -185,6 +190,12 @@ export function GradesCard({
   };
 
   const evaluatedPercentage = details.reduce((sum, detail) => {
+    const isAttendance = detail.gradeItem.name.toLowerCase() === 'asistencias';
+
+    if (isAttendance) {
+      return attendance ? sum + Number(detail.percentage) : sum;
+    }
+
     if (detail.activities.length === 0) {
       const grade = grades.find(
         (item) => !item.activity && item.gradeSchemeDetail.idGradeSchemeDetail === detail.idGradeSchemeDetail,
@@ -201,6 +212,18 @@ export function GradesCard({
   }, 0);
 
   const currentScore = details.reduce((sum, detail) => {
+    const isAttendance = detail.gradeItem.name.toLowerCase() === 'asistencias';
+
+    if (isAttendance) {
+      if (!attendance) {
+        return sum;
+      }
+
+      const contribution = (Number(attendance.percentage) * Number(detail.percentage) * schemeMultiplier) / 100;
+
+      return sum + contribution;
+    }
+
     if (detail.activities.length === 0) {
       const grade = grades.find(
         (item) => !item.activity && item.gradeSchemeDetail.idGradeSchemeDetail === detail.idGradeSchemeDetail,
@@ -241,6 +264,54 @@ export function GradesCard({
         ) : (
           <Stack spacing={2}>
             {details.map((detail) => {
+              const isAttendance = detail.gradeItem.name.toLowerCase() === 'asistencias';
+
+              if (isAttendance) {
+                const attendancePercentage = attendance?.percentage ?? null;
+
+                const contribution =
+                  attendancePercentage !== null
+                    ? (Number(attendancePercentage) * Number(detail.percentage) * schemeMultiplier) / 100
+                    : null;
+
+                return (
+                  <Stack key={detail.idGradeSchemeDetail} spacing={0.5}>
+                    <Stack direction='row' justifyContent='space-between' alignItems='center'>
+                      <Typography fontWeight={600}>{detail.gradeItem.name}</Typography>
+
+                      <Typography
+                        fontWeight={700}
+                        color={attendancePercentage !== null ? 'text.primary' : 'text.secondary'}
+                      >
+                        {attendanceLoading
+                          ? 'Cargando...'
+                          : attendancePercentage !== null
+                            ? `${attendancePercentage.toFixed(2)}/100`
+                            : 'Sin registros'}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction='row' justifyContent='space-between'>
+                      <Typography variant='body2' color='text.secondary'>
+                        Vale {detail.percentage}%
+                      </Typography>
+
+                      {contribution !== null && (
+                        <Typography variant='body2' color='text.secondary'>
+                          Aporte: {contribution.toFixed(2)}
+                        </Typography>
+                      )}
+                    </Stack>
+
+                    {attendance && (
+                      <Typography variant='body2' color='text.secondary'>
+                        {attendance.presentSessions} presente(s) de {attendance.totalSessions} sesión(es)
+                      </Typography>
+                    )}
+                  </Stack>
+                );
+              }
+
               if (detail.activities.length === 0) {
                 const grade = grades.find(
                   (item) => !item.activity && item.gradeSchemeDetail.idGradeSchemeDetail === detail.idGradeSchemeDetail,

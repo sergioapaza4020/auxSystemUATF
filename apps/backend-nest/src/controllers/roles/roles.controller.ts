@@ -1,7 +1,18 @@
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RolesAssignPermissionsDto } from 'src/dtos/roles/role-assign-permissions.dto';
+import { RoleUpdateDto } from 'src/dtos/roles/role-update.dto';
 import { RoleCreateDto } from 'src/dtos/roles/roles.dto';
 import { RolesService } from 'src/services/roles/roles.service';
 
@@ -42,6 +53,15 @@ export class RolesController {
     @Body() roleAssignPermissionDto: RolesAssignPermissionsDto,
   ) {
     return this.rolesService.assignPermissions(idRole, roleAssignPermissionDto.permissionNames);
+  }
+
+  @Permissions('role.update')
+  @Put(':idRole')
+  async update(
+    @Param('idRole', ParseIntPipe) idRole: number,
+    @Body() roleUpdateDto: RoleUpdateDto,
+  ) {
+    return this.rolesService.update(idRole, roleUpdateDto);
   }
 
   @Permissions('role.delete')

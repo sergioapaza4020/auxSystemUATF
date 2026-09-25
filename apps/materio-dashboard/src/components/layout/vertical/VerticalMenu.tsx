@@ -64,6 +64,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href='/dashboard/super-admin/sessions' icon={<i className='ri-admin-line' />}>
             Sesiones
           </MenuItem>
+          <MenuItem href='/dashboard/super-admin/roles' icon={<i className='ri-user-2-line' />}>
+            Roles
+          </MenuItem>
         </MenuSection>
         <MenuSection label='Admin'>
           <MenuItem href='/dashboard/admin/grade-schemes' icon={<i className='ri-article-line' />}>

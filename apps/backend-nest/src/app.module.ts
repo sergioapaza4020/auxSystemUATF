@@ -21,6 +21,7 @@ import { SemestersModule } from './modules/semesters/semesters.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { GradesModule } from './modules/grades/grades.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
+import { AttendancesModule } from './modules/attendances/attendances.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ActivitiesModule } from './modules/activities/activities.module';
     EnrollmentsModule,
     GradesModule,
     ActivitiesModule,
+    AttendancesModule,
   ],
   controllers: [AppController],
   providers: [

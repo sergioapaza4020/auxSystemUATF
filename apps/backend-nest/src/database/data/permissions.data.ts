@@ -94,6 +94,10 @@ export const permissionsData: DeepPartial<Permission>[] = [
     description: 'Assign permissions to a role',
   },
   {
+    name: 'role.update',
+    description: 'Update roles',
+  },
+  {
     name: 'role.delete',
     description: 'Delete a role',
   },
@@ -329,5 +333,26 @@ export const permissionsData: DeepPartial<Permission>[] = [
   },
   {
     name: 'assistant-grade-scheme.update',
+  },
+
+  {
+    name: 'attendance.session.create',
+    description: 'Create attendance sessions',
+  },
+  {
+    name: 'attendance.session.get-by-enrollment',
+    description: 'Get attendance sessions by enrollment',
+  },
+  {
+    name: 'attendance.session.get-one',
+    description: 'Get an attendance session',
+  },
+  {
+    name: 'attendance.save',
+    description: 'Save student attendance',
+  },
+  {
+    name: 'attendance.student.get',
+    description: 'Get student attendance',
   },
 ];

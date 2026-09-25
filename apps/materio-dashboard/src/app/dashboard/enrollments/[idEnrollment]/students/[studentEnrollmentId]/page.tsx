@@ -11,6 +11,7 @@ import { GradeSchemeCard } from '@/views/admin/enrollments/GradeSchemeCard';
 import { GradesCard } from '@/views/admin/enrollments/GradesCard';
 import { useManagedEnrollment } from '@/hooks/enrollments/useManagedEnrollment';
 import { useAssistantGradeScheme } from '@/hooks/assistant-grade-schemes/useAssistantGradeScheme';
+import { useStudentAttendance } from '@/hooks/attendances/useStudentAttendance';
 
 export default function StudentEnrollmentDetailPage() {
   const params = useParams();
@@ -24,6 +25,7 @@ export default function StudentEnrollmentDetailPage() {
   );
 
   const { grades, loading: loadingGrades, load: reloadGrades } = useEnrollmentGrades(studentEnrollmentId);
+  const { attendance, loading: loadingAttendance } = useStudentAttendance(studentEnrollmentId);
 
   if (loadingEnrollment) {
     return <CircularProgress />;
@@ -65,6 +67,8 @@ export default function StudentEnrollmentDetailPage() {
             schemeMultiplier={assistantGradeScheme ? Number(assistantGradeScheme.assistantPercentage) / 100 : 1}
             assistantMode
             assistantPercentage={assistantGradeScheme ? Number(assistantGradeScheme.assistantPercentage) : undefined}
+            attendance={attendance}
+            attendanceLoading={loadingAttendance}
           />
         </Grid>
       </Grid>

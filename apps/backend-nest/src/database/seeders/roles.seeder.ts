@@ -31,10 +31,25 @@ export class RoleSeeder {
       where: {
         name: data.name,
       },
+      relations: {
+        permissions: true,
+      },
     });
 
     if (exists) {
-      console.log(`Role ${data.name} already exists`);
+      const assignedPermissionNames = new Set(
+        exists.permissions.map((permission) => permission.name),
+      );
+      const missingPermissions = permissions.filter(
+        (permission) => !assignedPermissionNames.has(permission.name),
+      );
+
+      if (missingPermissions.length > 0) {
+        exists.permissions.push(...missingPermissions);
+
+        await this.repository.save(exists);
+      }
+
       return;
     }
 

@@ -4,6 +4,8 @@ import { RoleCreateDto } from 'src/dtos/roles/roles.dto';
 import { Role } from 'src/entities/roles/roles.entity';
 import { Repository } from 'typeorm';
 import { PermissionsService } from '../permissions/permissions.service';
+import { RoleUpdateDto } from 'src/dtos/roles/role-update.dto';
+import { Permission } from 'src/entities/permissions/permissions.entity';
 
 @Injectable()
 export class RolesService {
@@ -13,18 +15,38 @@ export class RolesService {
   ) {}
 
   async create(roleCreateDto: RoleCreateDto): Promise<Role> {
-    const role = await this.getOneByName(roleCreateDto.name);
+    const normalizedName = roleCreateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
+
+    const role = await this.getOneByName(normalizedName);
     if (role) throw new BadRequestException('Role already exists');
 
-    const roleCreated = this.roleRepository.create(roleCreateDto);
+    const permissions: Permission[] = [];
+
+    for (const permissionName of new Set(roleCreateDto.permissionNames)) {
+      const permission = await this.permissionsService.getOneByName(permissionName);
+
+      if (!permission) {
+        throw new BadRequestException(`Permission not found: ${permissionName}`);
+      }
+
+      permissions.push(permission);
+    }
+
+    const roleCreated = this.roleRepository.create({
+      name: normalizedName,
+      description: roleCreateDto.description?.trim() || null,
+      permissions,
+    });
     roleCreated.createdBy = 0;
-    roleCreated.name = roleCreateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
+
     return this.roleRepository.save(roleCreated);
   }
 
   async getAll(): Promise<Role[]> {
     return this.roleRepository.find({
-      where: { isActive: true },
+      relations: {
+        permissions: true,
+      },
     });
   }
 
@@ -57,6 +79,54 @@ export class RolesService {
     }
 
     role.updatedAt = new Date();
+    return this.roleRepository.save(role);
+  }
+
+  async update(idRole: number, roleUpdateDto: RoleUpdateDto): Promise<Role> {
+    const role = await this.roleRepository.findOne({
+      where: {
+        idRole,
+        isActive: true,
+      },
+      relations: {
+        permissions: true,
+      },
+    });
+
+    if (!role) {
+      throw new BadRequestException('Role not found');
+    }
+
+    const normalizedName = roleUpdateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
+
+    const existingRole = await this.roleRepository.findOne({
+      where: {
+        name: normalizedName,
+        isActive: true,
+      },
+    });
+
+    if (existingRole && existingRole.idRole !== idRole) {
+      throw new BadRequestException('Role already exists');
+    }
+
+    const permissions: Permission[] = [];
+
+    for (const permissionName of roleUpdateDto.permissionNames) {
+      const permission = await this.permissionsService.getOneByName(permissionName);
+
+      if (!permission) {
+        throw new BadRequestException(`Permission not found: ${permissionName}`);
+      }
+
+      permissions.push(permission);
+    }
+
+    role.name = normalizedName;
+    role.description = roleUpdateDto.description?.trim() || null;
+    role.permissions = permissions;
+    role.updatedAt = new Date();
+
     return this.roleRepository.save(role);
   }
 

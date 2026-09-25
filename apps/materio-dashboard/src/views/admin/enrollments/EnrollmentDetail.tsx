@@ -111,6 +111,9 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
                 onSelectStudent={(student) => {
                   router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/${student.idEnrollment}`);
                 }}
+                onManageAttendance={() => {
+                  router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
+                }}
               />
             </Stack>
           ) : (

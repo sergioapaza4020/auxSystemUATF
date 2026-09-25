@@ -10,6 +10,7 @@ import {
   ListItemButton,
   ListItemText,
   Typography,
+  Button,
 } from '@mui/material';
 
 import { ChevronRight } from '@mui/icons-material';
@@ -20,12 +21,26 @@ interface EnrollmentStudentsCardProps {
   students: IEnrollmentStudent[];
   loading: boolean;
   onSelectStudent: (student: IEnrollmentStudent) => void;
+  onManageAttendance: () => void;
 }
 
-export function EnrollmentStudentsCard({ students, loading, onSelectStudent }: EnrollmentStudentsCardProps) {
+export function EnrollmentStudentsCard({
+  students,
+  loading,
+  onSelectStudent,
+  onManageAttendance,
+}: EnrollmentStudentsCardProps) {
   return (
     <Card>
-      <CardHeader title='Estudiantes' subheader={`${students.length} estudiante(s) matriculado(s)`} />
+      <CardHeader
+        title='Estudiantes'
+        subheader={`${students.length} estudiante(s) matriculado(s)`}
+        action={
+          <Button variant='contained' onClick={onManageAttendance}>
+            Asistencia
+          </Button>
+        }
+      />
 
       <CardContent>
         {loading ? (

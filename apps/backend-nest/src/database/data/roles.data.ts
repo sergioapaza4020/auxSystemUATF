@@ -69,6 +69,12 @@ const assistantPermissions: string[] = [
   'assistant-grade-scheme.get-one',
   'assistant-grade-scheme.create',
   'assistant-grade-scheme.update',
+
+  'attendance.session.create',
+  'attendance.session.get-by-enrollment',
+  'attendance.session.get-one',
+  'attendance.save',
+  'attendance.student.get',
 ];
 
 const teacherPermissions: string[] = [];

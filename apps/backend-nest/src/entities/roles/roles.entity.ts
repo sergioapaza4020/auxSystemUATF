@@ -11,7 +11,7 @@ export class Role extends BaseEntity {
   name: string;
 
   @Column({ nullable: true, name: 'description' })
-  description: string;
+  description: string | null;
 
   @ManyToMany(() => Permission, (permission) => permission.roles)
   @JoinTable({ name: 'role_permission' })
