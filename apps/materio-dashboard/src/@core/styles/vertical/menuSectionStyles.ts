@@ -10,30 +10,41 @@ import { menuClasses } from '@menu/utils/menuClasses';
 const menuSectionStyles = (theme: Theme): MenuProps['menuSectionStyles'] => {
   return {
     root: {
-      marginBlockStart: theme.spacing(7),
+      marginBlockStart: theme.spacing(3),
+
       [`& .${menuClasses.menuSectionContent}`]: {
         color: 'var(--mui-palette-text-disabled)',
-        paddingInline: '0 !important',
-        paddingBlock: `${theme.spacing(1.75)} !important`,
-        gap: theme.spacing(2.5),
 
+        paddingInline: `${theme.spacing(4)} !important`,
+
+        paddingBlock: `${theme.spacing(1)} !important`,
+
+        gap: 0,
+
+        // Eliminamos las líneas de Materio
         '&:before': {
-          content: '""',
-          blockSize: 1,
-          inlineSize: '0.875rem',
-          backgroundColor: 'var(--mui-palette-divider)',
+          display: 'none',
         },
+
         '&:after': {
-          content: '""',
-          blockSize: 1,
-          flexGrow: 1,
-          backgroundColor: 'var(--mui-palette-divider)',
+          display: 'none',
         },
       },
+
       [`& .${menuClasses.menuSectionLabel}`]: {
         flexGrow: 0,
-        fontSize: '13px',
-        lineHeight: 1.38462,
+
+        fontSize: '0.6875rem',
+
+        lineHeight: 1.5,
+
+        fontWeight: 700,
+
+        textTransform: 'uppercase',
+
+        letterSpacing: '0.08em',
+
+        color: 'var(--mui-palette-text-disabled)',
       },
     },
   };

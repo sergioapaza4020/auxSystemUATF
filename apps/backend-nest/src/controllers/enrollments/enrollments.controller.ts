@@ -1,7 +1,8 @@
+import { EnrollmentUpdateDto } from 'src/dtos/enrollments/enrollments-update.dto';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { EnrollmentCreateDto } from 'src/dtos/enrollments/enrollments.dto';
 import { EnrollmentsService } from 'src/services/enrollments/enrollments.service';
@@ -56,5 +57,32 @@ export class EnrollmentsController {
     idEnrollment: number,
   ) {
     return this.enrollmentsService.getStudentsByEnrollment(user.idUser, idEnrollment);
+  }
+
+  @Permissions('enrollment.get-one-by-id')
+  @Get('id/:idEnrollment')
+  async getOneById(@Param('idEnrollment', ParseIntPipe) idEnrollment: number) {
+    return this.enrollmentsService.getOneById(idEnrollment);
+  }
+
+  @Permissions('enrollment.update')
+  @Patch(':idEnrollment')
+  async update(
+    @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+    @Body() dto: EnrollmentUpdateDto,
+  ) {
+    return this.enrollmentsService.update(idEnrollment, dto);
+  }
+
+  @Permissions('enrollment.delete')
+  @Delete(':idEnrollment')
+  async delete(@Param('idEnrollment', ParseIntPipe) idEnrollment: number) {
+    return this.enrollmentsService.delete(idEnrollment);
+  }
+
+  @Permissions('enrollment.reactivate')
+  @Patch('reactivate/:idEnrollment')
+  async reactivate(@Param('idEnrollment', ParseIntPipe) idEnrollment: number) {
+    return this.enrollmentsService.reactivate(idEnrollment);
   }
 }

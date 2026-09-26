@@ -1,3 +1,4 @@
+import { UserUpdateDto } from 'src/dtos/users/users-update.dto';
 import {
   Body,
   Controller,
@@ -48,7 +49,7 @@ export class UsersController {
 
   @Permissions('user.get-one-by-id')
   @Get('id/:idUser')
-  async getOneById(@Param('idUser') idUser: number) {
+  async getOneById(@Param('idUser', ParseIntPipe) idUser: number) {
     return this.usersService.getOneById(idUser);
   }
 
@@ -71,5 +72,11 @@ export class UsersController {
   @Patch('reactivate/:idUser')
   async reactivate(@Param('idUser', ParseIntPipe) idUser: number) {
     return this.usersService.reactivate(idUser);
+  }
+
+  @Permissions('user.update')
+  @Patch(':idUser')
+  async update(@Param('idUser', ParseIntPipe) idUser: number, @Body() dto: UserUpdateDto) {
+    return this.usersService.update(idUser, dto);
   }
 }

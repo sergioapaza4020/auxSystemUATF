@@ -4,32 +4,34 @@ import { useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import { Box, Grid, Stack } from '@mui/material';
+import { Grid, Stack } from '@mui/material';
 
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 import type { IGrade } from '@/interfaces/grades/grade.interface';
-import { UserRole } from '@/enums/userRole';
-
-import { EnrollmentHeader } from './EnrollmentHeader';
-import { GradeSchemeCard } from './GradeSchemeCard';
-import { GradesCard } from './GradesCard';
-import { EnrollmentStudentsCard } from './EnrollmentStudentsCard';
 import type {
   IAssistantGradeScheme,
   IAssistantGradeSchemeCreate,
 } from '@/interfaces/grade-schemes/assistant-grade-scheme.interface';
-import { AssistantGradeSchemeCard } from './AssistantGradeSchemeCard';
+
+import { UserRole } from '@/enums/userRole';
+
 import { useGradeItems } from '@/hooks/grade-items';
-import { AssistantGradeSchemeDialog } from './AssistantGradeSchemeDialog';
 import { useActivities } from '@/hooks/activities/useActivities';
+
+import { EnrollmentHeader } from './EnrollmentHeader';
+import { GradeSchemeCard } from './GradeSchemeCard';
+import { GradesCard } from './grades-card/GradesCard';
+import { EnrollmentStudentsCard } from './EnrollmentStudentsCard';
+import { AssistantGradeSchemeCard } from './AssistantGradeSchemeCard';
+import { AssistantGradeSchemeDialog } from './AssistantGradeSchemeDialog';
 import { ActivityManagementDialog } from './ActivityManagementDialog';
 
 interface EnrollmentDetailProps {
   enrollment: IEnrollment;
   grades: IGrade[];
   students: IEnrollmentStudent[];
-  loading: boolean;
+  loadingGrades: boolean;
   loadingStudents: boolean;
 
   assistantGradeScheme: IAssistantGradeScheme | null;
@@ -49,7 +51,7 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
     enrollment,
     grades,
     students,
-    loading,
+    loadingGrades,
     loadingStudents,
     assistantGradeScheme,
     loadingAssistantGradeScheme,
@@ -61,8 +63,11 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
   const router = useRouter();
 
   const [assistantDialogOpen, setAssistantDialogOpen] = useState(false);
+
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+
   const [selectedGradeSchemeDetailId, setSelectedGradeSchemeDetailId] = useState<number | null>(null);
+
   const [selectedGradeItemName, setSelectedGradeItemName] = useState('');
 
   const { gradeItems, loading: loadingGradeItems } = useGradeItems();
@@ -79,48 +84,49 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
   const isAssistant = enrollment.role === UserRole.ASSISTANT;
 
   return (
-    <Box>
+    <Stack spacing={3}>
       <EnrollmentHeader enrollment={enrollment} />
 
-      <Grid container spacing={4} sx={{ mt: 1 }}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} lg={5}>
           <GradeSchemeCard enrollment={enrollment} />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} lg={7}>
           {isAssistant ? (
-            <Stack>
-              <AssistantGradeSchemeCard
-                scheme={assistantGradeScheme}
-                loading={loadingAssistantGradeScheme}
-                onConfigure={() => {
-                  setAssistantDialogOpen(true);
-                }}
-                onManageActivities={(idGradeSchemeDetail, gradeItemName) => {
-                  setSelectedGradeSchemeDetailId(idGradeSchemeDetail);
+            <AssistantGradeSchemeCard
+              scheme={assistantGradeScheme}
+              loading={loadingAssistantGradeScheme}
+              onConfigure={() => setAssistantDialogOpen(true)}
+              onManageActivities={(idGradeSchemeDetail, gradeItemName) => {
+                setSelectedGradeSchemeDetailId(idGradeSchemeDetail);
 
-                  setSelectedGradeItemName(gradeItemName);
+                setSelectedGradeItemName(gradeItemName);
 
-                  setActivityDialogOpen(true);
-                }}
-              />
-
-              <EnrollmentStudentsCard
-                students={students}
-                loading={loadingStudents}
-                onSelectStudent={(student) => {
-                  router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/${student.idEnrollment}`);
-                }}
-                onManageAttendance={() => {
-                  router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
-                }}
-              />
-            </Stack>
+                setActivityDialogOpen(true);
+              }}
+              onManageAttendance={() => {
+                router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
+              }}
+            />
           ) : (
-            <GradesCard enrollment={enrollment} grades={grades} loading={loading} />
+            <GradesCard enrollment={enrollment} grades={grades} loading={loadingGrades} />
           )}
         </Grid>
       </Grid>
+
+      {isAssistant && (
+        <EnrollmentStudentsCard
+          students={students}
+          loading={loadingStudents}
+          onSelectStudent={(student) => {
+            router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/${student.idEnrollment}`);
+          }}
+          onManageAttendance={() => {
+            router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
+          }}
+        />
+      )}
 
       {isAssistant && (
         <AssistantGradeSchemeDialog
@@ -139,7 +145,9 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
 
                   details: assistantGradeScheme.details.map((detail) => ({
                     percentage: detail.percentage,
+
                     order: detail.order,
+
                     gradeItem: {
                       idGradeItem: detail.gradeItem.idGradeItem,
                     },
@@ -147,9 +155,7 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
                 }
               : undefined
           }
-          onClose={() => {
-            setAssistantDialogOpen(false);
-          }}
+          onClose={() => setAssistantDialogOpen(false)}
           onSubmit={async (data) => {
             if (assistantGradeScheme) {
               await onUpdateAssistantGradeScheme(assistantGradeScheme.idGradeScheme, data);
@@ -161,6 +167,7 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
           }}
         />
       )}
+
       {isAssistant && selectedGradeSchemeDetailId !== null && (
         <ActivityManagementDialog
           open={activityDialogOpen}
@@ -179,6 +186,6 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
           onDelete={removeActivityHandler}
         />
       )}
-    </Box>
+    </Stack>
   );
 }

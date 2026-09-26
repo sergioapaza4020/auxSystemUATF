@@ -26,6 +26,15 @@ const adminPermissions: string[] = [
   'grade-scheme.get-one-by-id',
   'grade-scheme.delete',
   'grade-scheme.reactivate',
+  'career.update',
+  'course.update',
+  'grade-item.update',
+  'semester.update',
+  'user.update',
+  'enrollment.get-one-by-id',
+  'enrollment.update',
+  'enrollment.delete',
+  'enrollment.reactivate',
 ];
 
 const studentPermissions: string[] = [
@@ -75,6 +84,15 @@ const assistantPermissions: string[] = [
   'attendance.session.get-one',
   'attendance.save',
   'attendance.student.get',
+
+  'assistant-grade-scheme.delete',
+  'assistant-grade-scheme.reactivate',
+
+  'enrollment.get-one-by-id',
+
+  'attendance.session.update',
+  'attendance.session.delete',
+  'attendance.delete',
 ];
 
 const teacherPermissions: string[] = [];

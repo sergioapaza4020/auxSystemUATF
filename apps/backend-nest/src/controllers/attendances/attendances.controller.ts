@@ -1,9 +1,10 @@
+import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -62,5 +63,34 @@ export class AttendancesController {
     @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
   ) {
     return this.attendancesService.getStudentAttendance(user.idUser, idEnrollment);
+  }
+
+  @Permissions('attendance.session.update')
+  @Patch('sessions/:idSession')
+  async updateSession(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+    @Body() dto: AttendanceSessionUpdateDto,
+  ) {
+    return this.attendancesService.updateSession(user.idUser, idSession, dto);
+  }
+
+  @Permissions('attendance.session.delete')
+  @Delete('sessions/:idSession')
+  async deleteSession(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+  ) {
+    return this.attendancesService.deleteSession(user.idUser, idSession);
+  }
+
+  @Permissions('attendance.delete')
+  @Delete('sessions/:idSession/students/:idEnrollment')
+  async deleteAttendance(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+    @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+  ) {
+    return this.attendancesService.deleteAttendance(user.idUser, idSession, idEnrollment);
   }
 }

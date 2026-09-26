@@ -1,3 +1,4 @@
+import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
 import { CourseRelations } from '@common/enums/courseRelations';
 
 import {
@@ -144,7 +145,10 @@ export class AttendancesService {
       throw new ForbiddenException('No tienes permisos para gestionar esta sesión');
     }
 
-    if (!session.assistantEnrollment.isActive) {
+    if (
+      !session.assistantEnrollment.isActive ||
+      session.assistantEnrollment.role !== CourseRelations.ASSISTANT
+    ) {
       throw new ForbiddenException('La matrícula del auxiliar no está activa');
     }
 
@@ -328,5 +332,40 @@ export class AttendancesService {
       absentSessions,
       percentage,
     };
+  }
+
+  async updateSession(idUser: number, idSession: number, dto: AttendanceSessionUpdateDto) {
+    const session = await this.getSession(idUser, idSession);
+    const duplicate = await this.attendanceSessionRepository.findOne({
+      where: {
+        assistantEnrollment: { idEnrollment: session.assistantEnrollment.idEnrollment },
+        date: dto.date as unknown as Date,
+      },
+    });
+    if (duplicate && duplicate.idAttendanceSession !== idSession)
+      throw new ConflictException('Ya existe una sesión de asistencia para esta fecha');
+    session.date = dto.date as unknown as Date;
+    return this.attendanceSessionRepository.save(session);
+  }
+
+  async deleteSession(idUser: number, idSession: number) {
+    await this.getSession(idUser, idSession);
+    await this.attendanceSessionRepository.manager.transaction(async (manager) => {
+      await manager
+        .getRepository(Attendance)
+        .delete({ attendanceSession: { idAttendanceSession: idSession } });
+      await manager.getRepository(AttendanceSession).delete({ idAttendanceSession: idSession });
+    });
+    return { message: 'Sesión de asistencia eliminada' };
+  }
+
+  async deleteAttendance(idUser: number, idSession: number, idEnrollment: number) {
+    await this.getSession(idUser, idSession);
+    const result = await this.attendanceRepository.delete({
+      attendanceSession: { idAttendanceSession: idSession },
+      enrollment: { idEnrollment },
+    });
+    if (!result.affected) throw new NotFoundException('Asistencia no encontrada');
+    return { message: 'Asistencia eliminada' };
   }
 }

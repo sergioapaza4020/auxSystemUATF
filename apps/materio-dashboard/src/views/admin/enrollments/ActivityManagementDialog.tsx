@@ -1,27 +1,26 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
+  Box,
   Button,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
-  IconButton,
   Stack,
   Typography,
 } from '@mui/material';
 
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 
 import type { IActivity } from '@/interfaces/activities/activity.interface';
 import type { IActivityCreate, IActivityUpdate } from '@/api/activities.service';
 
-import { ActivityForm, type IActivityFormData } from './ActivityForm';
+import { ActivityListItem } from './ActivityListItem';
+import { ActivityFormDialog } from './ActivityFormDialog';
 
 interface ActivityManagementDialogProps {
   open: boolean;
@@ -49,162 +48,144 @@ export function ActivityManagementDialog({
   onDelete,
 }: ActivityManagementDialogProps) {
   const [formOpen, setFormOpen] = useState(false);
-
   const [editingActivity, setEditingActivity] = useState<IActivity | null>(null);
-
-  const [formData, setFormData] = useState<IActivityFormData>({
-    name: '',
-    description: '',
-    date: '',
-    order: 1,
-  });
 
   const sortedActivities = useMemo(() => [...activities].sort((a, b) => a.order - b.order), [activities]);
 
-  const handleFormChange = useCallback((data: IActivityFormData) => {
-    setFormData(data);
-  }, []);
-
   const handleCreate = () => {
     setEditingActivity(null);
-
-    setFormData({
-      name: '',
-      description: '',
-      date: '',
-      order: activities.length > 0 ? Math.max(...activities.map((activity) => activity.order)) + 1 : 1,
-    });
-
     setFormOpen(true);
   };
 
   const handleEdit = (activity: IActivity) => {
     setEditingActivity(activity);
-    setFormData({
-      name: activity.name,
-      description: activity.description ?? '',
-      date: activity.date,
-      order: activity.order,
-    });
-
     setFormOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.date || formData.order < 1) {
-      return;
-    }
-
-    if (editingActivity) {
-      await onUpdate(editingActivity.idActivity, {
-        name: formData.name,
-        description: formData.description || undefined,
-        date: formData.date,
-        order: formData.order,
-      });
-    } else {
-      await onCreate({
-        gradeSchemeDetailId: idGradeSchemeDetail,
-        name: formData.name,
-        description: formData.description || undefined,
-        date: formData.date,
-        order: formData.order,
-      });
-    }
+  const handleCloseForm = () => {
+    if (saving) return;
 
     setFormOpen(false);
     setEditingActivity(null);
   };
 
-  const handleDelete = async (activity: IActivity) => {
-    await onDelete(activity.idActivity);
-  };
-
   return (
     <>
-      <Dialog open={open} onClose={saving ? undefined : onClose} fullWidth maxWidth='md'>
-        <DialogTitle>Actividades — {gradeItemName}</DialogTitle>
+      <Dialog
+        open={open}
+        onClose={saving ? undefined : onClose}
+        fullWidth
+        maxWidth='md'
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle sx={{ px: 6, pt: 5, pb: 3 }}>
+          <Stack spacing={0.5}>
+            <Typography variant='h5' fontWeight={600}>
+              Actividades
+            </Typography>
 
-        <DialogContent>
+            <Typography variant='body2' color='text.secondary'>
+              {gradeItemName}
+            </Typography>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent
+          sx={{
+            px: 6,
+            pt: '12px !important',
+            pb: 4,
+          }}
+        >
           {loading ? (
-            <Stack alignItems='center' py={4}>
-              <CircularProgress />
+            <Stack alignItems='center' justifyContent='center' spacing={2} sx={{ minHeight: 180 }}>
+              <CircularProgress size={32} />
+
+              <Typography variant='body2' color='text.secondary'>
+                Cargando actividades...
+              </Typography>
             </Stack>
+          ) : sortedActivities.length === 0 ? (
+            <Box
+              sx={{
+                py: 8,
+                px: 3,
+                textAlign: 'center',
+                border: 1,
+                borderStyle: 'dashed',
+                borderColor: 'divider',
+                borderRadius: 2,
+              }}
+            >
+              <Typography fontWeight={600}>Aún no hay actividades</Typography>
+
+              <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
+                Registra una actividad para comenzar a evaluar este componente.
+              </Typography>
+
+              <Button variant='contained' startIcon={<AddIcon />} onClick={handleCreate} sx={{ mt: 4 }}>
+                Nueva actividad
+              </Button>
+            </Box>
           ) : (
-            <Stack spacing={2}>
-              {sortedActivities.length === 0 ? (
-                <Typography color='text.secondary'>Este componente todavía no tiene actividades.</Typography>
-              ) : (
-                sortedActivities.map((activity) => (
-                  <Stack key={activity.idActivity} spacing={1}>
-                    <Stack direction='row' justifyContent='space-between' alignItems='flex-start'>
-                      <Stack spacing={0.5}>
-                        <Typography fontWeight={600}>
-                          {activity.order}. {activity.name}
-                        </Typography>
-
-                        {activity.description && (
-                          <Typography variant='body2' color='text.secondary'>
-                            {activity.description}
-                          </Typography>
-                        )}
-
-                        <Typography variant='body2' color='text.secondary'>
-                          Fecha: {activity.date}
-                        </Typography>
-                      </Stack>
-
-                      <Stack direction='row'>
-                        <IconButton onClick={() => handleEdit(activity)} disabled={saving}>
-                          <EditIcon />
-                        </IconButton>
-
-                        <IconButton color='error' onClick={() => handleDelete(activity)} disabled={saving}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </Stack>
-                    </Stack>
-
-                    <Divider />
-                  </Stack>
-                ))
-              )}
+            <Stack
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 2,
+                overflow: 'hidden',
+              }}
+            >
+              {sortedActivities.map((activity, index) => (
+                <ActivityListItem
+                  key={activity.idActivity}
+                  activity={activity}
+                  divider={index < sortedActivities.length - 1}
+                  disabled={saving}
+                  onEdit={() => handleEdit(activity)}
+                  onDelete={() => onDelete(activity.idActivity)}
+                />
+              ))}
             </Stack>
           )}
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleCreate} variant='contained' disabled={saving}>
-            Nueva actividad
-          </Button>
-
-          <Button onClick={onClose} disabled={saving}>
+        <DialogActions
+          sx={{
+            px: 6,
+            py: 4,
+            borderTop: 1,
+            borderColor: 'divider',
+            gap: 2,
+          }}
+        >
+          <Button variant='outlined' color='inherit' onClick={onClose} disabled={saving}>
             Cerrar
           </Button>
+
+          {sortedActivities.length > 0 && (
+            <Button variant='contained' startIcon={<AddIcon />} onClick={handleCreate} disabled={saving}>
+              Nueva actividad
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
-      <Dialog open={formOpen} onClose={() => saving || setFormOpen(false)} fullWidth maxWidth='sm'>
-        <DialogTitle>{editingActivity ? 'Editar actividad' : 'Nueva actividad'}</DialogTitle>
-
-        <DialogContent>
-          <ActivityForm initialValue={editingActivity} onChange={handleFormChange} />
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={() => setFormOpen(false)} disabled={saving}>
-            Cancelar
-          </Button>
-
-          <Button
-            onClick={handleSubmit}
-            variant='contained'
-            disabled={saving || !formData.name.trim() || !formData.date || formData.order < 1}
-          >
-            {saving ? 'Guardando...' : 'Guardar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ActivityFormDialog
+        open={formOpen}
+        saving={saving}
+        activity={editingActivity}
+        nextOrder={activities.length > 0 ? Math.max(...activities.map((activity) => activity.order)) + 1 : 1}
+        idGradeSchemeDetail={idGradeSchemeDetail}
+        onClose={handleCloseForm}
+        onCreate={onCreate}
+        onUpdate={onUpdate}
+      />
     </>
   );
 }

@@ -17,7 +17,7 @@ import type { IUser } from '@/interfaces/users/user.interface';
 
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 
-import { EnrollmentCreate } from '@/views/admin/enrollments/EnrollmentForm';
+import { EnrollmentCreate } from '@/views/admin/enrollments/enrollment-form/EnrollmentForm';
 
 export default function EnrollmentsPage() {
   const snackbar = useSnackbar();

@@ -34,6 +34,9 @@ export const permissionsData: DeepPartial<Permission>[] = [
     name: 'user.reactivate',
     description: 'Reactivate an user',
   },
+  {
+    name: 'user.update',
+  },
 
   {
     name: 'sessions.get-all',
@@ -71,6 +74,9 @@ export const permissionsData: DeepPartial<Permission>[] = [
   {
     name: 'permission.reactivate',
     description: 'Reactivate a permission',
+  },
+  {
+    name: 'permission.update',
   },
 
   {
@@ -130,6 +136,9 @@ export const permissionsData: DeepPartial<Permission>[] = [
     name: 'course.reactivate',
     description: 'Reactivate a course',
   },
+  {
+    name: 'course.update',
+  },
 
   {
     name: 'faculty.get-all',
@@ -180,6 +189,9 @@ export const permissionsData: DeepPartial<Permission>[] = [
     name: 'career.reactivate',
     description: 'Reactivate a career',
   },
+  {
+    name: 'career.update',
+  },
 
   {
     name: 'grade-item.get-all',
@@ -204,6 +216,9 @@ export const permissionsData: DeepPartial<Permission>[] = [
   {
     name: 'grade-item.reactivate',
     description: 'Reactivate a grade item',
+  },
+  {
+    name: 'grade-item.update',
   },
 
   {
@@ -234,6 +249,12 @@ export const permissionsData: DeepPartial<Permission>[] = [
     name: 'grade-scheme.reactivate',
     description: 'Reactivate a grade scheme',
   },
+  {
+    name: 'assistant-grade-scheme.delete',
+  },
+  {
+    name: 'assistant-grade-scheme.reactivate',
+  },
 
   {
     name: 'semester.get-all',
@@ -259,6 +280,9 @@ export const permissionsData: DeepPartial<Permission>[] = [
     name: 'semester.reactivate',
     description: 'Reactivate a semester',
   },
+  {
+    name: 'semester.update',
+  },
 
   {
     name: 'enrollment.get-all',
@@ -283,6 +307,18 @@ export const permissionsData: DeepPartial<Permission>[] = [
   {
     name: 'enrollment.get-students-by-enrollment',
     description: 'Get sutdents by enrollment',
+  },
+  {
+    name: 'enrollment.get-one-by-id',
+  },
+  {
+    name: 'enrollment.update',
+  },
+  {
+    name: 'enrollment.delete',
+  },
+  {
+    name: 'enrollment.reactivate',
   },
 
   {
@@ -354,5 +390,14 @@ export const permissionsData: DeepPartial<Permission>[] = [
   {
     name: 'attendance.student.get',
     description: 'Get student attendance',
+  },
+  {
+    name: 'attendance.session.update',
+  },
+  {
+    name: 'attendance.session.delete',
+  },
+  {
+    name: 'attendance.delete',
   },
 ];

@@ -1,3 +1,4 @@
+import { PermissionUpdateDto } from 'src/dtos/permissions/permissions-update.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PermissionCreateDto } from 'src/dtos/permissions/permissions.dto';
@@ -12,7 +13,10 @@ export class PermissionsService {
   ) {}
 
   async create(permissionCreateDto: PermissionCreateDto, authorId: number): Promise<Permission> {
-    const permission = await this.getOneByName(permissionCreateDto.name);
+    permissionCreateDto.name = permissionCreateDto.name.toLowerCase().trim().replace(/\s+/g, '.');
+    const permission = await this.permissionRepository.findOne({
+      where: { name: permissionCreateDto.name },
+    });
     if (permission) throw new BadRequestException('Permission already exists');
 
     const permissionCreated = this.permissionRepository.create(permissionCreateDto);
@@ -53,5 +57,22 @@ export class PermissionsService {
     if (!permission) throw new BadRequestException('Permission not found');
     permission.isActive = true;
     return this.permissionRepository.save(permission);
+  }
+
+  async update(idPermission: number, dto: PermissionUpdateDto) {
+    const record = await this.permissionRepository.findOne({
+      where: { idPermission, isActive: true },
+    });
+    if (!record) throw new BadRequestException('Permission not found');
+    const name =
+      dto.name === undefined ? undefined : dto.name.toLowerCase().trim().replace(/\s+/g, '.');
+    if (name !== undefined) {
+      const duplicate = await this.permissionRepository.findOne({ where: { name } });
+      if (duplicate && duplicate.idPermission !== idPermission)
+        throw new BadRequestException('Permission already exists');
+    }
+
+    this.permissionRepository.merge(record, dto, name === undefined ? {} : { name });
+    return this.permissionRepository.save(record);
   }
 }

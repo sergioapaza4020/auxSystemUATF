@@ -1,7 +1,17 @@
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   AssistantGradeSchemeCreateDto,
@@ -43,5 +53,23 @@ export class AssistantGradeSchemesController {
     @Body() dto: AssistantGradeSchemeUpdateDto,
   ) {
     return this.assistantGradeSchemesService.update(user.idUser, idAssistantGradeScheme, dto);
+  }
+
+  @Permissions('assistant-grade-scheme.delete')
+  @Delete(':idAssistantGradeScheme')
+  async delete(
+    @CurrentUser() user: JwtPayload,
+    @Param('idAssistantGradeScheme', ParseIntPipe) id: number,
+  ) {
+    return this.assistantGradeSchemesService.delete(user.idUser, id);
+  }
+
+  @Permissions('assistant-grade-scheme.reactivate')
+  @Patch('reactivate/:idAssistantGradeScheme')
+  async reactivate(
+    @CurrentUser() user: JwtPayload,
+    @Param('idAssistantGradeScheme', ParseIntPipe) id: number,
+  ) {
+    return this.assistantGradeSchemesService.reactivate(user.idUser, id);
   }
 }

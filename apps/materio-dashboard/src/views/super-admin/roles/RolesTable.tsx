@@ -13,8 +13,6 @@ import { roleHeadCellsData } from './data/head-cells.data';
 import { EnhancedTableHead, PaginationTable } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 
-import { useSettings } from '@/@core/hooks/useSettings';
-
 import { useDialog } from '@/hooks/useDialog';
 import { useDataTable } from '@/hooks/table';
 
@@ -25,8 +23,6 @@ import { RoleRow } from './components/RoleRow';
 import { RoleEditDialog } from './components/RoleEditDialog';
 
 export const RolesTable = () => {
-  const { settings } = useSettings();
-
   const dialog = useDialog();
 
   const { roles, loading, load: loadRoles } = useRoles();
@@ -191,7 +187,6 @@ export const RolesTable = () => {
           rowsPerPage={rowsPerPage}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          darkMode={settings.mode === 'dark'}
         />
       </Paper>
 

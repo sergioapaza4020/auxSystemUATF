@@ -1,3 +1,4 @@
+import { UserUpdateDto } from 'src/dtos/users/users-update.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserCreateDto } from 'src/dtos/users/users.dto';
@@ -20,18 +21,19 @@ export class UsersService {
     const qb = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.careers', 'career')
-      .leftJoinAndSelect('user.roles', 'roles');
+      .leftJoinAndSelect('user.roles', 'roles')
+      .where('user.isActive = :isActive', { isActive: true });
 
     if (careerId) qb.andWhere('career.idCareer = :careerId', { careerId });
 
     if (search)
       qb.andWhere(
         `
-        user.username ILIKE :search
+        (user.username ILIKE :search
         OR user.name ILIKE :search
         OR user.lastname ILIKE :search
         OR user.ru ILIKE :search
-        OR user.ci ILIKE :search
+        OR user.ci ILIKE :search)
         `,
         { search: `%${search}%` },
       );
@@ -59,16 +61,24 @@ export class UsersService {
   }
 
   async create(userCreateDto: UserCreateDto): Promise<User> {
-    const user =
-      (await this.getOneByEmail(userCreateDto.email)) ||
-      (await this.getOneByUsername(userCreateDto.username));
+    const user = await this.userRepository.findOne({
+      where: [{ email: userCreateDto.email }, { username: userCreateDto.username }],
+    });
     if (user) throw new BadRequestException('User already exists');
 
+    const roles = await Promise.all(
+      userCreateDto.roleNames.map(async (name) => {
+        const role = await this.rolesService.getOneByName(name.toUpperCase());
+        if (!role) throw new BadRequestException(`Role not found: ${name}`);
+        return role;
+      }),
+    );
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(userCreateDto.password, salt);
     const userCreated = this.userRepository.create({
       ...userCreateDto,
       password: hash,
+      roles,
     });
     userCreated.createdBy = 0;
     return this.userRepository.save(userCreated);
@@ -144,5 +154,32 @@ export class UsersService {
     if (!user) throw new BadRequestException('User not found');
     user.isActive = true;
     return this.userRepository.save(user);
+  }
+
+  async update(idUser: number, dto: UserUpdateDto) {
+    const user = await this.userRepository.findOne({ where: { idUser, isActive: true } });
+    if (!user) throw new BadRequestException('User not found');
+    for (const field of ['email', 'username'] as const) {
+      if (dto[field] !== undefined) {
+        const duplicate = await this.userRepository.findOne({ where: { [field]: dto[field] } });
+        if (duplicate && duplicate.idUser !== idUser)
+          throw new BadRequestException(`${field} already exists`);
+      }
+    }
+    // Explicit fields keep role assignment behind its own permission.
+    const { email, username, name, lastname, ci, ru, password } = dto;
+    this.userRepository.merge(user, { email, username, name, lastname, ci, ru });
+    if (password !== undefined) user.password = await bcrypt.hash(password, 10);
+    const saved = await this.userRepository.save(user);
+    return {
+      idUser: saved.idUser,
+      email: saved.email,
+      username: saved.username,
+      name: saved.name,
+      lastname: saved.lastname,
+      ci: saved.ci,
+      ru: saved.ru,
+      isActive: saved.isActive,
+    };
   }
 }

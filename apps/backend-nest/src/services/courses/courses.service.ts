@@ -1,3 +1,4 @@
+import { CourseUpdateDto } from 'src/dtos/courses/courses-update.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CourseCreateDto } from 'src/dtos/courses/courses.dto';
@@ -17,12 +18,15 @@ export class CoursesService {
   }
 
   async create(courseCreateDto: CourseCreateDto, authorId: number) {
-    const course = await this.getOneByName(courseCreateDto.name);
+    courseCreateDto.code = courseCreateDto.code.toUpperCase().trim();
+    const course = await this.courseRepository.findOne({
+      where: [{ name: courseCreateDto.name }, { code: courseCreateDto.code }],
+    });
     if (course) throw new BadRequestException('Course already exists');
 
-    const courseCreated = this.courseRepository.create();
+    const courseCreated = this.courseRepository.create(courseCreateDto);
     courseCreated.createdBy = authorId;
-    return courseCreated;
+    return this.courseRepository.save(courseCreated);
   }
 
   async getOneById(idCourse: number): Promise<Course | null> {
@@ -59,5 +63,28 @@ export class CoursesService {
     if (!course) throw new BadRequestException('Course not found');
     course.isActive = true;
     return this.courseRepository.save(course);
+  }
+
+  async update(idCourse: number, dto: CourseUpdateDto) {
+    const record = await this.courseRepository.findOne({ where: { idCourse, isActive: true } });
+    if (!record) throw new BadRequestException('Course not found');
+    const name = dto.name;
+    if (name !== undefined) {
+      const duplicate = await this.courseRepository.findOne({ where: { name } });
+      if (duplicate && duplicate.idCourse !== idCourse)
+        throw new BadRequestException('Course already exists');
+    }
+
+    if (dto.code !== undefined) {
+      const duplicate = await this.courseRepository.findOne({
+        where: { code: dto.code.toUpperCase().trim() },
+      });
+      if (duplicate && duplicate.idCourse !== idCourse)
+        throw new BadRequestException('Course code already exists');
+      dto.code = dto.code.toUpperCase().trim();
+    }
+
+    this.courseRepository.merge(record, dto, name === undefined ? {} : { name });
+    return this.courseRepository.save(record);
   }
 }

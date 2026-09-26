@@ -1,3 +1,4 @@
+import { SemesterUpdateDto } from 'src/dtos/semesters/semesters-update.dto';
 import { SemesterNumber } from '@common/enums/semesterNumber';
 import {
   BadRequestException,
@@ -29,6 +30,7 @@ export class SemestersService {
 
     if (semester) throw new ConflictException('Semestre ya registrado');
 
+    this.validateDates(semesterCreateDto.startDate, semesterCreateDto.endDate);
     const semesterCreated = this.semesterRepository.create(semesterCreateDto);
     semesterCreated.createdBy = 0;
 
@@ -81,6 +83,25 @@ export class SemestersService {
     if (!semester) throw new BadRequestException('Semester not found');
     semester.isActive = true;
 
+    return this.semesterRepository.save(semester);
+  }
+
+  private validateDates(startDate: Date, endDate: Date) {
+    if (new Date(startDate).getTime() > new Date(endDate).getTime()) {
+      throw new BadRequestException('La fecha de inicio no puede ser posterior a la fecha de fin');
+    }
+  }
+
+  async update(idSemester: number, dto: SemesterUpdateDto) {
+    const semester = await this.getOneById(idSemester);
+    if (!semester) throw new NotFoundException('Semester not found');
+    this.semesterRepository.merge(semester, dto);
+    this.validateDates(semester.startDate, semester.endDate);
+    const duplicate = await this.semesterRepository.findOne({
+      where: { period: semester.period, year: semester.year },
+    });
+    if (duplicate && duplicate.idSemester !== idSemester)
+      throw new ConflictException('Semestre ya registrado');
     return this.semesterRepository.save(semester);
   }
 }

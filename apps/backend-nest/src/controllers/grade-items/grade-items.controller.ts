@@ -1,6 +1,7 @@
+import { GradeItemUpdateDto } from 'src/dtos/grade-items/grade-items-update.dto';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { GradeItemCreateDto } from 'src/dtos/grade-items/grade-items.dto';
 import { User } from 'src/entities/users/users.entity';
@@ -32,19 +33,28 @@ export class GradeItemsController {
 
   @Permissions('grade-item.get-one-by-id')
   @Get('id/:idGradeSchemeItem')
-  async getOneById(@Param('idGradeSchemeItem') idGradeSchemeItem: number) {
+  async getOneById(@Param('idGradeSchemeItem', ParseIntPipe) idGradeSchemeItem: number) {
     return await this.GradeItemsService.getOneById(idGradeSchemeItem);
   }
 
   @Permissions('grade-item.delete')
   @Delete(':idGradeSchemeItem')
-  async delete(@Param('idGradeSchemeItem') idGradeSchemeItem: number) {
+  async delete(@Param('idGradeSchemeItem', ParseIntPipe) idGradeSchemeItem: number) {
     return await this.GradeItemsService.delete(idGradeSchemeItem);
   }
 
   @Permissions('grade-item.reactivate')
   @Patch('reactivate/:idGradeSchemeItem')
-  async reactivate(@Param('idGradeSchemeItem') idGradeSchemeItem: number) {
+  async reactivate(@Param('idGradeSchemeItem', ParseIntPipe) idGradeSchemeItem: number) {
     return await this.GradeItemsService.reactivate(idGradeSchemeItem);
+  }
+
+  @Permissions('grade-item.update')
+  @Patch(':idGradeItem')
+  async update(
+    @Param('idGradeItem', ParseIntPipe) idGradeItem: number,
+    @Body() dto: GradeItemUpdateDto,
+  ) {
+    return this.GradeItemsService.update(idGradeItem, dto);
   }
 }

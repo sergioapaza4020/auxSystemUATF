@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsString } from 'class-validator';
+import { ArrayUnique, IsArray, IsInt, IsString, Min } from 'class-validator';
 
 export class CareerCreateDto {
   @ApiProperty()
@@ -7,14 +7,19 @@ export class CareerCreateDto {
   name: string;
 
   @ApiProperty()
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   idFaculty: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   idDirector: number;
 
   @ApiProperty()
   @IsArray()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
   idMembers: number[];
 }

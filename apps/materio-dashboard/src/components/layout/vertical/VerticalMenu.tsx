@@ -1,4 +1,9 @@
+'use client';
+
 // MUI Imports
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 
 // Third-party Imports
@@ -22,7 +27,12 @@ import menuSectionStyles from '@core/styles/vertical/menuSectionStyles';
 
 type RenderExpandIconProps = {
   open?: boolean;
+
   transitionDuration?: VerticalMenuContextProps['transitionDuration'];
+};
+
+type VerticalMenuProps = {
+  scrollMenu: (container: any, isPerfectScrollbar: boolean) => void;
 };
 
 const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) => (
@@ -31,120 +41,98 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
   </StyledVerticalNavExpandIcon>
 );
 
-const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectScrollbar: boolean) => void }) => {
-  // Hooks
+const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
   const theme = useTheme();
+
   const { isBreakpointReached, transitionDuration } = useVerticalNav();
 
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar;
 
   return (
-    // eslint-disable-next-line lines-around-comment
-    /* Custom scrollbar instead of browser scroll, remove if you want browser scroll only */
     <ScrollWrapper
       {...(isBreakpointReached
         ? {
             className: 'bs-full overflow-y-auto overflow-x-hidden',
+
             onScroll: (container) => scrollMenu(container, false),
           }
         : {
-            options: { wheelPropagation: false, suppressScrollX: true },
+            options: {
+              wheelPropagation: false,
+              suppressScrollX: true,
+            },
+
             onScrollY: (container) => scrollMenu(container, true),
           })}
     >
-      {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
-      {/* Vertical Menu */}
-      <Menu
-        menuItemStyles={menuItemStyles(theme)}
-        renderExpandIcon={({ open }) => <RenderExpandIcon open={open} transitionDuration={transitionDuration} />}
-        renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-line' /> }}
-        menuSectionStyles={menuSectionStyles(theme)}
+      <Box
+        sx={{
+          minHeight: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+
+          pt: 1.5,
+          pb: 3,
+        }}
       >
-        <MenuSection label='Super-Admin'>
-          <MenuItem href='/dashboard/super-admin/sessions' icon={<i className='ri-admin-line' />}>
-            Sesiones
+        <Menu
+          menuItemStyles={menuItemStyles(theme)}
+          menuSectionStyles={menuSectionStyles(theme)}
+          renderExpandIcon={({ open }) => <RenderExpandIcon open={open} transitionDuration={transitionDuration} />}
+          renderExpandedMenuItemIcon={{
+            icon: <i className='ri-circle-line' />,
+          }}
+        >
+          {/* Inicio */}
+          <MenuItem href='/dashboard' icon={<i className='ri-home-5-line' />}>
+            Inicio
           </MenuItem>
-          <MenuItem href='/dashboard/super-admin/roles' icon={<i className='ri-user-2-line' />}>
-            Roles
-          </MenuItem>
-        </MenuSection>
-        <MenuSection label='Admin'>
-          <MenuItem href='/dashboard/admin/grade-schemes' icon={<i className='ri-article-line' />}>
-            Esquema de notas
-          </MenuItem>
-          <MenuItem href='/dashboard/admin/grade-schemes/create' icon={<i className='ri-add-line' />}>
-            Registrar esquema de notas
-          </MenuItem>
-          <MenuItem href='/dashboard/admin/enrollments' icon={<i className='ri-account-circle-line' />}>
-            Matriculaciones
-          </MenuItem>
-        </MenuSection>
-        {/* <MenuSection label='Ejemplos'>
-          <MenuItem href='/dashboard/account-settings' icon={<i className='ri-user-settings-line' />}>
-            Configuración de cuenta
-          </MenuItem>
-          <SubMenu label='Autenticación' icon={<i className='ri-shield-keyhole-line' />}>
-            <MenuItem href='/login' target='_blank'>
-              Inicio de sesión
+
+          {/* SUPER ADMIN */}
+          <MenuSection label='Super Admin'>
+            <MenuItem href='/dashboard/super-admin/sessions' icon={<i className='ri-shield-user-line' />}>
+              Sesiones
             </MenuItem>
-            <MenuItem href='/register' target='_blank'>
-              Registro de usuario
+
+            <MenuItem href='/dashboard/super-admin/roles' icon={<i className='ri-user-settings-line' />}>
+              Roles
             </MenuItem>
-            <MenuItem href='/forgot-password' target='_blank'>
-              Olvidé mi contraseña
+          </MenuSection>
+
+          {/* ADMINISTRACIÓN */}
+          <MenuSection label='Administración'>
+            <MenuItem href='/dashboard/admin/grade-schemes' icon={<i className='ri-file-list-3-line' />}>
+              Formas de calificar
             </MenuItem>
-          </SubMenu>
-          <SubMenu label='Miscelánea' icon={<i className='ri-question-line' />}>
-            <MenuItem href='/error' target='_blank'>
-              Error
+
+            <MenuItem href='/dashboard/admin/enrollments' icon={<i className='ri-group-line' />}>
+              Matriculaciones
             </MenuItem>
-            <MenuItem href='/under-maintenance' target='_blank'>
-              Bajo mantenimiento
-            </MenuItem>
-          </SubMenu>
-          <MenuItem href='/dashboard/card-basic' icon={<i className='ri-bar-chart-box-line' />}>
-            Tarjetas
-          </MenuItem>
-          <MenuItem href='/dashboard/form-layouts' icon={<i className='ri-layout-4-line' />}>
-            Diseño de formularios
-          </MenuItem>
-          <MenuItem suffix={<Chip label='Ejemplo' size='small' color='primary' />}>Item con chip</MenuItem>
-          <SubMenu label='Niveles de menú'>
-            <MenuItem>Nivel de menú 2</MenuItem>
-            <SubMenu label='Nivel de menú 2'>
-              <MenuItem>Nivel de menú 3</MenuItem>
-              <MenuItem>Nivel de menú 3</MenuItem>
-            </SubMenu>
-          </SubMenu>
-          <MenuItem disabled>Menú deshabilitado</MenuItem>
-        </MenuSection>
-        <MenuSection label='Enlaces'>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_DOCS_URL}/docs/user-interface/components`}
-            icon={<i className='ri-toggle-line' />}
-            suffix={<i className='ri-external-link-line text-xl' />}
-            target='_blank'
+          </MenuSection>
+        </Menu>
+
+        {/* Información inferior */}
+        <Box
+          sx={{
+            mt: 'auto',
+            px: 4,
+            pt: 4,
+          }}
+        >
+          <Divider sx={{ mb: 2.5 }} />
+
+          <Typography
+            variant='caption'
+            color='text.disabled'
+            sx={{
+              display: 'block',
+              lineHeight: 1.5,
+            }}
           >
-            Componentes
-          </MenuItem>
-          <MenuItem
-            href={`${process.env.NEXT_PUBLIC_DOCS_URL}/docs/menu-examples/overview`}
-            icon={<i className='ri-menu-search-line' />}
-            suffix={<i className='ri-external-link-line text-xl' />}
-            target='_blank'
-          >
-            Ejemplos de menú
-          </MenuItem>
-          <MenuItem
-            href={process.env.NEXT_PUBLIC_DOCS_URL}
-            icon={<i className='ri-book-line' />}
-            suffix={<i className='ri-external-link-line text-xl' />}
-            target='_blank'
-          >
-            Documentación
-          </MenuItem>
-        </MenuSection> */}
-      </Menu>
+            Sistema Auxiliares UATF
+          </Typography>
+        </Box>
+      </Box>
     </ScrollWrapper>
   );
 };

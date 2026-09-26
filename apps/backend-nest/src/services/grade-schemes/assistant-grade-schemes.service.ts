@@ -120,6 +120,8 @@ export class AssistantGradeSchemesService {
       where: {
         idGradeScheme: idAssistantGradeScheme,
         assistantEnrollment: {
+          isActive: true,
+          role: CourseRelations.ASSISTANT,
           user: {
             idUser: idAssistant,
           },
@@ -215,5 +217,30 @@ export class AssistantGradeSchemesService {
     if (dto.assistantPercentage > 100) {
       throw new BadRequestException('El porcentaje del auxiliar no puede superar el 100%.');
     }
+  }
+
+  private async setActive(idAssistant: number, idGradeScheme: number, isActive: boolean) {
+    const scheme = await this.gradeSchemeRepository.findOne({
+      where: {
+        idGradeScheme,
+        isActive: !isActive,
+        assistantEnrollment: {
+          user: { idUser: idAssistant },
+          role: CourseRelations.ASSISTANT,
+          isActive: true,
+        },
+      },
+    });
+    if (!scheme) throw new NotFoundException('Configuración del auxiliar no encontrada');
+    scheme.isActive = isActive;
+    return this.gradeSchemeRepository.save(scheme);
+  }
+
+  async delete(idAssistant: number, idGradeScheme: number) {
+    return this.setActive(idAssistant, idGradeScheme, false);
+  }
+
+  async reactivate(idAssistant: number, idGradeScheme: number) {
+    return this.setActive(idAssistant, idGradeScheme, true);
   }
 }

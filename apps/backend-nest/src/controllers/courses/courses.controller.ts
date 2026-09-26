@@ -1,6 +1,7 @@
+import { CourseUpdateDto } from 'src/dtos/courses/courses-update.dto';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CourseCreateDto } from 'src/dtos/courses/courses.dto';
 import { User } from 'src/entities/users/users.entity';
@@ -32,19 +33,25 @@ export class CoursesController {
 
   @Permissions('course.get-one-by-id')
   @Get('id/:idCourse')
-  async getOneById(@Param('idCourse') idCourse: number) {
+  async getOneById(@Param('idCourse', ParseIntPipe) idCourse: number) {
     return this.coursesService.getOneById(idCourse);
   }
 
   @Permissions('course.delete')
   @Delete(':idCourse')
-  async delete(@Param('idCourse') idCourse: number) {
+  async delete(@Param('idCourse', ParseIntPipe) idCourse: number) {
     return this.coursesService.delete(idCourse);
   }
 
   @Permissions('course.reactivate')
   @Patch('reactivate/:idCourse')
-  async reactivate(@Param('idCourse') idCourse: number) {
+  async reactivate(@Param('idCourse', ParseIntPipe) idCourse: number) {
     return this.coursesService.reactivate(idCourse);
+  }
+
+  @Permissions('course.update')
+  @Patch(':idCourse')
+  async update(@Param('idCourse', ParseIntPipe) idCourse: number, @Body() dto: CourseUpdateDto) {
+    return this.coursesService.update(idCourse, dto);
   }
 }

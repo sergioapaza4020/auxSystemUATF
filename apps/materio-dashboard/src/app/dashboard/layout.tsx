@@ -9,7 +9,6 @@ import VerticalLayout from '@layouts/VerticalLayout';
 import Providers from '@components/Providers';
 import Navigation from '@components/layout/vertical/Navigation';
 import Navbar from '@components/layout/vertical/Navbar';
-import VerticalFooter from '@components/layout/vertical/Footer';
 
 const Layout = async ({ children }: ChildrenType) => {
   // Vars
@@ -19,7 +18,7 @@ const Layout = async ({ children }: ChildrenType) => {
     <Providers direction={direction}>
       <LayoutWrapper
         verticalLayout={
-          <VerticalLayout navigation={<Navigation />} navbar={<Navbar />} footer={<VerticalFooter />}>
+          <VerticalLayout navigation={<Navigation />} navbar={<Navbar />}>
             {children}
           </VerticalLayout>
         }

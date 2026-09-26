@@ -1,6 +1,7 @@
+import { CareerUpdateDto } from 'src/dtos/careers/careers-update.dto';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CareerCreateDto } from 'src/dtos/careers/careers.dto';
 import { User } from 'src/entities/users/users.entity';
@@ -32,19 +33,25 @@ export class CareersController {
 
   @Permissions('career.get-one-by-id')
   @Get('id/:idCareer')
-  async getOneById(@Param('idCareer') idCareer: number) {
+  async getOneById(@Param('idCareer', ParseIntPipe) idCareer: number) {
     return this.careersService.getOneById(idCareer);
   }
 
   @Permissions('career.delete')
   @Delete(':idCareer')
-  async delete(@Param('idCareer') idCareer: number) {
+  async delete(@Param('idCareer', ParseIntPipe) idCareer: number) {
     return this.careersService.delete(idCareer);
   }
 
   @Permissions('career.reactivate')
   @Patch('reactivate/:idCareer')
-  async reactivate(@Param('idCareer') idCareer: number) {
+  async reactivate(@Param('idCareer', ParseIntPipe) idCareer: number) {
     return this.careersService.reactivate(idCareer);
+  }
+
+  @Permissions('career.update')
+  @Patch(':idCareer')
+  async update(@Param('idCareer', ParseIntPipe) idCareer: number, @Body() dto: CareerUpdateDto) {
+    return this.careersService.update(idCareer, dto);
   }
 }

@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { PermissionUpdateDto } from 'src/dtos/permissions/permissions-update.dto';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PermissionCreateDto } from 'src/dtos/permissions/permissions.dto';
 import { PermissionsService } from 'src/services/permissions/permissions.service';
@@ -32,19 +33,28 @@ export class PermissionsController {
 
   @Permissions('permission.get-one-by-id')
   @Get('id/:idPermission')
-  async getOneById(@Param('idPermission') idPermission: number) {
+  async getOneById(@Param('idPermission', ParseIntPipe) idPermission: number) {
     return this.permissionsService.getOneById(idPermission);
   }
 
   @Permissions('permission.delete')
   @Delete(':idPermission')
-  async delete(@Param('idPermission') idPermission: number) {
+  async delete(@Param('idPermission', ParseIntPipe) idPermission: number) {
     return this.permissionsService.delete(idPermission);
   }
 
   @Permissions('permission.reactivate')
   @Patch('reactivate/:idPermission')
-  async reactivate(@Param('idPermission') idPermission: number) {
+  async reactivate(@Param('idPermission', ParseIntPipe) idPermission: number) {
     return this.permissionsService.reactivate(idPermission);
+  }
+
+  @Permissions('permission.update')
+  @Patch(':idPermission')
+  async update(
+    @Param('idPermission', ParseIntPipe) idPermission: number,
+    @Body() dto: PermissionUpdateDto,
+  ) {
+    return this.permissionsService.update(idPermission, dto);
   }
 }

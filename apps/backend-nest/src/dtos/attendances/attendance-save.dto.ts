@@ -1,6 +1,7 @@
+import { Type } from 'class-transformer';
 import { AttendanceStatus } from '@common/enums/attendanceStatus';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt } from 'class-validator';
+import { IsArray, IsEnum, IsInt, Min, ValidateNested } from 'class-validator';
 
 export class AttendanceRecordDto {
   @ApiProperty({
@@ -8,6 +9,7 @@ export class AttendanceRecordDto {
     description: 'ID de la matrícula del estudiante',
   })
   @IsInt()
+  @Min(1)
   enrollmentId: number;
 
   @ApiProperty({
@@ -32,5 +34,8 @@ export class AttendanceSaveDto {
       },
     ],
   })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AttendanceRecordDto)
   attendances: AttendanceRecordDto[];
 }

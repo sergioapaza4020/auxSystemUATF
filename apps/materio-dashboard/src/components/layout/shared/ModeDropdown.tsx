@@ -1,7 +1,7 @@
 'use client';
 
 // React Imports
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 // MUI Imports
 import Tooltip from '@mui/material/Tooltip';
@@ -11,47 +11,45 @@ import IconButton from '@mui/material/IconButton';
 import { useSettings } from '@core/hooks/useSettings';
 
 const ModeDropdown = () => {
-  // States
   const [tooltipOpen, setTooltipOpen] = useState(false);
 
-  // Refs
-  const anchorRef = useRef<HTMLButtonElement>(null);
-
-  // Hooks
   const { settings, updateSettings } = useSettings();
 
+  const isDarkMode = settings.mode === 'dark';
+
   const handleToggle = () => {
-    if (settings.mode === 'dark') {
-      updateSettings({ mode: 'light' });
-    }
-
-    if (settings.mode === 'light') {
-      updateSettings({ mode: 'dark' });
-    }
-  };
-
-  const getModeIcon = () => {
-    if (settings.mode === 'dark') {
-      return 'ri-moon-clear-line';
-    } else {
-      return 'ri-sun-line';
-    }
+    updateSettings({
+      mode: isDarkMode ? 'light' : 'dark',
+    });
   };
 
   return (
-    <>
-      <Tooltip
-        title={settings.mode + ' Mode'}
-        onOpen={() => setTooltipOpen(true)}
-        onClose={() => setTooltipOpen(false)}
-        open={tooltipOpen}
-        PopperProps={{ className: 'capitalize' }}
+    <Tooltip
+      title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      onOpen={() => setTooltipOpen(true)}
+      onClose={() => setTooltipOpen(false)}
+      open={tooltipOpen}
+    >
+      <IconButton
+        aria-label={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        onClick={handleToggle}
+        sx={{
+          width: 40,
+          height: 40,
+
+          borderRadius: 2.5,
+
+          color: 'text.secondary',
+
+          '&:hover': {
+            color: 'primary.main',
+            bgcolor: 'action.hover',
+          },
+        }}
       >
-        <IconButton ref={anchorRef} onClick={handleToggle} className='text-textPrimary'>
-          <i className={getModeIcon()} />
-        </IconButton>
-      </Tooltip>
-    </>
+        <i className={isDarkMode ? 'ri-sun-line text-xl' : 'ri-moon-clear-line text-xl'} />
+      </IconButton>
+    </Tooltip>
   );
 };
 

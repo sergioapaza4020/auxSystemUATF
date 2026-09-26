@@ -6,8 +6,11 @@ import type { SortableIds } from '@/components/table/types/sortableIds';
 
 interface EnhancedTableHeadProps<T, TColumns extends readonly HeadCell<T>[]> {
   headCells: TColumns;
+
   onRequestSort: (event: React.MouseEvent<unknown>, property: SortableIds<T, TColumns>) => void;
+
   order: Order;
+
   orderBy: SortableIds<T, TColumns>;
 }
 
@@ -30,12 +33,44 @@ export function EnhancedTableHead<T, const TColumns extends readonly HeadCell<T>
             align={headCell.align}
             padding={headCell.disablePadding ? 'none' : 'normal'}
             width={headCell.width}
+            sx={{
+              py: 2,
+
+              bgcolor: 'action.hover',
+
+              color: 'text.secondary',
+
+              fontSize: '0.75rem',
+
+              fontWeight: 700,
+
+              letterSpacing: '0.02em',
+
+              whiteSpace: 'nowrap',
+
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+            }}
           >
             {headCell.sortable ? (
               <TableSortLabel
                 active={orderBy === headCell.id}
                 direction={orderBy === headCell.id ? order : 'asc'}
                 onClick={createSortHandler(headCell.id)}
+                sx={{
+                  color: 'inherit',
+
+                  '&:hover': {
+                    color: 'text.primary',
+                  },
+
+                  '&.Mui-active': {
+                    color: 'text.primary',
+                  },
+
+                  '& .MuiTableSortLabel-icon': {
+                    fontSize: '1.1rem',
+                  },
+                }}
               >
                 {headCell.label}
               </TableSortLabel>

@@ -8,8 +8,6 @@ import { deepmerge } from '@mui/utils';
 import {
   Experimental_CssVarsProvider as CssVarsProvider,
   experimental_extendTheme as extendTheme,
-  lighten,
-  darken,
 } from '@mui/material/styles';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -45,23 +43,28 @@ const ThemeProvider = (props: Props) => {
 
   // Merge the primary color scheme override with the core theme
   const theme = useMemo(() => {
+    const primaryColor = primaryColorConfig[0];
+
     const newColorScheme = {
       colorSchemes: {
         light: {
           palette: {
             primary: {
-              main: primaryColorConfig[0].main,
-              light: lighten(primaryColorConfig[0].main as string, 0.2),
-              dark: darken(primaryColorConfig[0].main as string, 0.1),
+              main: primaryColor.light.main,
+              light: primaryColor.light.light,
+              dark: primaryColor.light.dark,
+              contrastText: '#FFFFFF',
             },
           },
         },
+
         dark: {
           palette: {
             primary: {
-              main: primaryColorConfig[0].main,
-              light: lighten(primaryColorConfig[0].main as string, 0.2),
-              dark: darken(primaryColorConfig[0].main as string, 0.1),
+              main: primaryColor.dark.main,
+              light: primaryColor.dark.light,
+              dark: primaryColor.dark.dark,
+              contrastText: '#FFFFFF',
             },
           },
         },

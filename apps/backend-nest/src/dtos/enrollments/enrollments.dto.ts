@@ -1,6 +1,6 @@
 import { CourseRelations } from '@common/enums/courseRelations';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsString, Matches } from 'class-validator';
 
 export class EnrollmentCreateDto {
   @ApiProperty()
@@ -9,6 +9,7 @@ export class EnrollmentCreateDto {
 
   @ApiProperty()
   @IsString()
+  @Matches(/^(I|II)-\d{4}$/i)
   semester: string;
 
   @ApiProperty()

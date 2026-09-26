@@ -10,7 +10,7 @@ export class Role extends BaseEntity {
   @Column({ unique: true, name: 'name' })
   name: string;
 
-  @Column({ nullable: true, name: 'description' })
+  @Column({ nullable: true, type: 'varchar', name: 'description' })
   description: string | null;
 
   @ManyToMany(() => Permission, (permission) => permission.roles)

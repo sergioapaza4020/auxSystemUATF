@@ -5,8 +5,6 @@ import { Paper, Table, TableBody, TableContainer } from '@mui/material';
 import { revokeSessionById } from '@/api/sessions.service';
 import type { ISession } from '@/interfaces/sessions/session.interface';
 
-import { useSettings } from '@/@core/hooks/useSettings';
-
 import { sessionHeadCellsData } from '@/views/super-admin/sessions/data/head-cells.data';
 
 import { EnhancedTableHead } from '@/components/table/components/HeaderTable';
@@ -21,8 +19,6 @@ import { useDataTable } from '@/hooks/table';
 import { useSessions } from '@/hooks/sessions';
 
 export const SessionsTable = () => {
-  const { settings } = useSettings();
-
   const { user } = useAuth();
   const dialog = useDialog();
 
@@ -89,7 +85,6 @@ export const SessionsTable = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        darkMode={settings.mode === 'dark'}
       />
     </Paper>
   );

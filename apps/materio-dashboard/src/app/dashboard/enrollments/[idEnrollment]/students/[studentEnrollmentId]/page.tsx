@@ -8,7 +8,7 @@ import { useEnrollmentGrades } from '@/hooks/grades/useEnrollmentGrades';
 
 import { EnrollmentHeader } from '@/views/admin/enrollments/EnrollmentHeader';
 import { GradeSchemeCard } from '@/views/admin/enrollments/GradeSchemeCard';
-import { GradesCard } from '@/views/admin/enrollments/GradesCard';
+import { GradesCard } from '@/views/admin/enrollments/grades-card/GradesCard';
 import { useManagedEnrollment } from '@/hooks/enrollments/useManagedEnrollment';
 import { useAssistantGradeScheme } from '@/hooks/assistant-grade-schemes/useAssistantGradeScheme';
 import { useStudentAttendance } from '@/hooks/attendances/useStudentAttendance';
@@ -65,7 +65,6 @@ export default function StudentEnrollmentDetailPage() {
             isEditable
             gradeScheme={assistantGradeScheme ?? undefined}
             schemeMultiplier={assistantGradeScheme ? Number(assistantGradeScheme.assistantPercentage) / 100 : 1}
-            assistantMode
             assistantPercentage={assistantGradeScheme ? Number(assistantGradeScheme.assistantPercentage) : undefined}
             attendance={attendance}
             attendanceLoading={loadingAttendance}

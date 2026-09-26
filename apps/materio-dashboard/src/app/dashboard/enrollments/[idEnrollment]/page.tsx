@@ -35,7 +35,7 @@ export default function EnrollmentDetailPage() {
     update: updateAssistantGradeScheme,
   } = useAssistantGradeScheme(enrollment?.role === UserRole.ASSISTANT ? enrollment.course.idCourse : null);
 
-  const { grades } = useEnrollmentGrades(idEnrollment);
+  const { grades, loading: loadingGrades } = useEnrollmentGrades(idEnrollment);
 
   const snackbar = useSnackbar();
 
@@ -74,7 +74,7 @@ export default function EnrollmentDetailPage() {
       enrollment={enrollment}
       grades={grades}
       students={students}
-      loading={loadingStudents}
+      loadingGrades={loadingGrades}
       loadingStudents={loadingStudents}
       assistantGradeScheme={assistantGradeScheme}
       loadingAssistantGradeScheme={loadingAssistantGradeScheme}

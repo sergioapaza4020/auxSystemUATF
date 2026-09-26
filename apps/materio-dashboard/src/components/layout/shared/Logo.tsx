@@ -25,11 +25,19 @@ const LogoText = styled.span<LogoTextProps>`
   margin-inline-start: 10px;
 `;
 
-const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
+const Logo = ({
+  color,
+  justLogo,
+  logoSize,
+}: {
+  color?: CSSProperties['color'];
+  justLogo?: boolean;
+  logoSize?: number;
+}) => {
   return (
     <div className='flex items-center min-bs-[24px]'>
-      <Image src='/images/logos/logo.webp' alt='Logo' width={50} height={50} />
-      <LogoText color={color}>{themeConfig.templateName}</LogoText>
+      <Image src='/images/logos/logo.webp' alt='Logo' width={logoSize ?? 50} height={logoSize ?? 50} />
+      {!justLogo ? <LogoText color={color}>{themeConfig.templateName}</LogoText> : <></>}
     </div>
   );
 };

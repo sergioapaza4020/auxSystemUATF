@@ -1,3 +1,8 @@
+import { Grade } from 'src/entities/grades/grades.entity';
+import { Attendance } from 'src/entities/attendance/attendance.entity';
+import { AttendanceSession } from 'src/entities/attendance/attendance-session.entity';
+import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
+import { EnrollmentUpdateDto } from 'src/dtos/enrollments/enrollments-update.dto';
 import { CourseRelations } from '@common/enums/courseRelations';
 import {
   BadRequestException,
@@ -35,8 +40,10 @@ export class EnrollmentsService {
     });
   }
 
-  async create(dto: EnrollmentCreateDto) {
+  private async resolveEnrollment(dto: EnrollmentCreateDto) {
     dto.semester = dto.semester.toUpperCase();
+    if (!/^(I|II)-\d{4}$/.test(dto.semester))
+      throw new BadRequestException('Formato de semestre inválido');
     dto.courseCode = dto.courseCode.toUpperCase();
 
     const user = await this.usersService.getOneByUsername(dto.username);
@@ -58,21 +65,95 @@ export class EnrollmentsService {
         `El usuario ${dto.username} no tiene el rol necesario (${dto.role}) para esta inscripción`,
       );
 
-    const existingEnrollment = await this.enrollmentRepository.findOne({
-      where: { user, semester, course },
+    return { user, semester, course, role: dto.role };
+  }
+
+  async create(dto: EnrollmentCreateDto) {
+    const data = await this.resolveEnrollment({ ...dto });
+    const existing = await this.enrollmentRepository.findOne({
+      where: {
+        user: { idUser: data.user.idUser },
+        semester: { idSemester: data.semester.idSemester },
+        course: { idCourse: data.course.idCourse },
+      },
     });
-    if (existingEnrollment)
+    if (existing)
       throw new ConflictException(
-        'El estudiante ya está matriculado en esta materia durante este semestre',
+        'El usuario ya está matriculado en esta materia durante este semestre',
       );
+    return this.enrollmentRepository.save(this.enrollmentRepository.create(data));
+  }
 
-    const enrollment = this.enrollmentRepository.create({
-      user,
-      semester,
-      course,
-      role: dto.role,
+  async getOneById(idEnrollment: number) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { idEnrollment, isActive: true },
+      relations: { user: true, semester: true, course: true },
     });
+    if (!enrollment) throw new NotFoundException('Matrícula no encontrada');
+    return enrollment;
+  }
 
+  async update(idEnrollment: number, dto: EnrollmentUpdateDto) {
+    const enrollment = await this.getOneById(idEnrollment);
+    const data = await this.resolveEnrollment({
+      username: dto.username ?? enrollment.user.username,
+      semester:
+        dto.semester ??
+        `${enrollment.semester.period === SemesterNumber.I ? 'I' : 'II'}-${enrollment.semester.year}`,
+      courseCode: dto.courseCode ?? enrollment.course.code,
+      role: dto.role ?? enrollment.role,
+    });
+    const duplicate = await this.enrollmentRepository.findOne({
+      where: {
+        user: { idUser: data.user.idUser },
+        semester: { idSemester: data.semester.idSemester },
+        course: { idCourse: data.course.idCourse },
+      },
+    });
+    if (duplicate && duplicate.idEnrollment !== idEnrollment)
+      throw new ConflictException('La matrícula ya existe');
+    const changesIdentity =
+      enrollment.user.idUser !== data.user.idUser ||
+      enrollment.course.idCourse !== data.course.idCourse ||
+      enrollment.semester.idSemester !== data.semester.idSemester ||
+      enrollment.role !== data.role;
+    if (changesIdentity) {
+      const manager = this.enrollmentRepository.manager;
+      const records = await Promise.all([
+        manager.getRepository(Grade).countBy({ enrollment: { idEnrollment } }),
+        manager.getRepository(Attendance).countBy({ enrollment: { idEnrollment } }),
+        manager.getRepository(AttendanceSession).countBy({ assistantEnrollment: { idEnrollment } }),
+        manager.getRepository(GradeScheme).countBy({ assistantEnrollment: { idEnrollment } }),
+      ]);
+      if (records.some((count) => count > 0)) {
+        throw new ConflictException(
+          'No se puede reasignar una matrícula con notas, asistencias o configuraciones registradas',
+        );
+      }
+    }
+    this.enrollmentRepository.merge(enrollment, data);
+    return this.enrollmentRepository.save(enrollment);
+  }
+
+  async delete(idEnrollment: number) {
+    const enrollment = await this.getOneById(idEnrollment);
+    enrollment.isActive = false;
+    return this.enrollmentRepository.save(enrollment);
+  }
+
+  async reactivate(idEnrollment: number) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { idEnrollment, isActive: false },
+      relations: { user: true, semester: true, course: true },
+    });
+    if (!enrollment) throw new NotFoundException('Matrícula inactiva no encontrada');
+    await this.resolveEnrollment({
+      username: enrollment.user.username,
+      semester: `${enrollment.semester.period === SemesterNumber.I ? 'I' : 'II'}-${enrollment.semester.year}`,
+      courseCode: enrollment.course.code,
+      role: enrollment.role,
+    });
+    enrollment.isActive = true;
     return this.enrollmentRepository.save(enrollment);
   }
 
@@ -86,12 +167,14 @@ export class EnrollmentsService {
           user: {
             idUser: user.idUser,
           },
+          isActive: true,
           role: CourseRelations.STUDENT,
         },
         {
           user: {
             idUser: user.idUser,
           },
+          isActive: true,
           role: CourseRelations.ASSISTANT,
         },
       ],
@@ -124,6 +207,7 @@ export class EnrollmentsService {
         user: {
           idUser,
         },
+        isActive: true,
         role: In([CourseRelations.STUDENT, CourseRelations.ASSISTANT]),
       },
       relations: {
@@ -153,6 +237,7 @@ export class EnrollmentsService {
     const fullEnrollment = await this.enrollmentRepository.findOne({
       where: {
         idEnrollment: enrollment.idEnrollment,
+        isActive: true,
       },
       relations: {
         user: true,
@@ -179,6 +264,7 @@ export class EnrollmentsService {
     const enrollment = await this.enrollmentRepository.findOne({
       where: {
         idEnrollment,
+        isActive: true,
         role: CourseRelations.ASSISTANT,
       },
       relations: {
@@ -195,6 +281,7 @@ export class EnrollmentsService {
       where: {
         idEnrollment: enrollment.idEnrollment,
         user: { idUser: idAssistant },
+        isActive: true,
         role: CourseRelations.ASSISTANT,
       },
     });
@@ -211,6 +298,7 @@ export class EnrollmentsService {
         semester: {
           idSemester: enrollment.semester.idSemester,
         },
+        isActive: true,
         role: CourseRelations.STUDENT,
       },
       relations: {
@@ -231,6 +319,7 @@ export class EnrollmentsService {
     const enrollment = await this.enrollmentRepository.findOne({
       where: {
         idEnrollment,
+        isActive: true,
         role: CourseRelations.STUDENT,
       },
       relations: {
@@ -252,6 +341,7 @@ export class EnrollmentsService {
         semester: {
           idSemester: enrollment.semester.idSemester,
         },
+        isActive: true,
         role: CourseRelations.ASSISTANT,
       },
     });

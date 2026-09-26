@@ -1,21 +1,24 @@
+import { Type } from 'class-transformer';
 import { SemesterNumber } from '@common/enums/semesterNumber';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsNumber } from 'class-validator';
+import { IsDate, IsEnum, IsInt } from 'class-validator';
 
 export class SemesterCreateDto {
   @ApiProperty()
-  @IsNumber()
+  @IsInt()
   year: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsEnum(SemesterNumber)
   period: SemesterNumber;
 
   @ApiProperty()
+  @Type(() => Date)
   @IsDate()
   startDate: Date;
 
   @ApiProperty()
+  @Type(() => Date)
   @IsDate()
   endDate: Date;
 }

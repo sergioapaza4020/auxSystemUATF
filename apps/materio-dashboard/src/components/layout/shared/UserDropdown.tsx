@@ -8,96 +8,218 @@ import type { MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 // MUI Imports
-import { styled } from '@mui/material/styles';
-import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
-import Popper from '@mui/material/Popper';
-import Fade from '@mui/material/Fade';
-import Paper from '@mui/material/Paper';
-import ClickAwayListener from '@mui/material/ClickAwayListener';
-import MenuList from '@mui/material/MenuList';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import MenuItem from '@mui/material/MenuItem';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import Divider from '@mui/material/Divider';
+import Fade from '@mui/material/Fade';
+import MenuItem from '@mui/material/MenuItem';
+import MenuList from '@mui/material/MenuList';
+import Paper from '@mui/material/Paper';
+import Popper from '@mui/material/Popper';
+import Typography from '@mui/material/Typography';
 
 import capitalize from '@mui/utils/capitalize';
 
-import { CircularProgress } from '@mui/material';
-
+// Hooks
 import { useAuth } from '@/hooks/useAuth';
 
-// Styled component for badge content
-const BadgeContentSpan = styled('span')({
-  width: 8,
-  height: 8,
-  borderRadius: '50%',
-  cursor: 'pointer',
-  backgroundColor: 'var(--mui-palette-success-main)',
-  boxShadow: '0 0 0 2px var(--mui-palette-background-paper)',
-});
-
 const UserDropdown = () => {
-  // States
   const [open, setOpen] = useState(false);
 
-  // Refs
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  // Hooks
   const router = useRouter();
 
   const { user, loading, logout } = useAuth();
 
-  const handleDropdownOpen = () => {
-    !open ? setOpen(true) : setOpen(false);
+  const username = capitalize(user?.username ?? 'Usuario');
+
+  const role = user?.roles?.[0] ?? 'Usuario';
+
+  /**
+   * Iniciales.
+   *
+   * "sergio apaza" -> "SA"
+   * "sergio"       -> "SE"
+   */
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ').filter(Boolean);
+
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    return name.slice(0, 2).toUpperCase();
   };
 
-  const handleDropdownClose = async (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {
+  const handleDropdownOpen = () => {
+    setOpen((current) => !current);
+  };
+
+  const handleDropdownClose = async (event?: MouseEvent<HTMLLIElement> | MouseEvent | TouchEvent, url?: string) => {
     if (url === '/login') {
+      setOpen(false);
+
       await logout();
-      router.replace(url);
+
+      router.replace('/login');
 
       return;
     }
 
     if (url) {
+      setOpen(false);
+
       router.push(url);
 
       return;
     }
 
-    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) return;
+    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
+      return;
+    }
 
     setOpen(false);
   };
 
-  if (loading) return <CircularProgress aria-label='loading...' />;
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          width: 48,
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress size={22} aria-label='Cargando usuario' />
+      </Box>
+    );
+  }
 
   return (
     <>
-      <Badge
+      {/* Trigger */}
+      <Box
         ref={anchorRef}
-        overlap='circular'
-        badgeContent={<BadgeContentSpan onClick={handleDropdownOpen} />}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        className='mis-2'
+        onClick={handleDropdownOpen}
+        role='button'
+        tabIndex={0}
+        sx={{
+          ml: {
+            xs: 0.5,
+            sm: 1,
+          },
+
+          display: 'flex',
+          alignItems: 'center',
+
+          gap: 1.25,
+
+          p: 0.5,
+
+          pr: {
+            xs: 0.5,
+            md: 1,
+          },
+
+          borderRadius: 2.5,
+
+          cursor: 'pointer',
+
+          transition: (theme) =>
+            theme.transitions.create('background-color', {
+              duration: theme.transitions.duration.shorter,
+            }),
+
+          '&:hover': {
+            bgcolor: 'action.hover',
+          },
+        }}
       >
         <Avatar
-          ref={anchorRef}
-          alt='John Doe'
-          src='/images/avatars/1.png'
-          onClick={handleDropdownOpen}
-          className='cursor-pointer bs-[38px] is-[38px]'
+          sx={{
+            width: 40,
+            height: 40,
+
+            bgcolor: 'primary.main',
+
+            color: 'primary.contrastText',
+
+            fontSize: '0.875rem',
+            fontWeight: 600,
+          }}
+        >
+          {getInitials(username)}
+        </Avatar>
+
+        {/* Información visible solo en escritorio */}
+        <Box
+          sx={{
+            display: {
+              xs: 'none',
+              md: 'block',
+            },
+
+            minWidth: 0,
+            maxWidth: 150,
+          }}
+        >
+          <Typography
+            variant='body2'
+            color='text.primary'
+            noWrap
+            sx={{
+              fontWeight: 600,
+              lineHeight: 1.4,
+            }}
+          >
+            {username}
+          </Typography>
+
+          <Typography
+            variant='caption'
+            color='text.secondary'
+            noWrap
+            sx={{
+              display: 'block',
+              lineHeight: 1.4,
+            }}
+          >
+            {role}
+          </Typography>
+        </Box>
+
+        <Box
+          component='i'
+          className={open ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'}
+          sx={{
+            display: {
+              xs: 'none',
+              md: 'block',
+            },
+
+            fontSize: '1.15rem',
+
+            color: 'text.disabled',
+          }}
         />
-      </Badge>
+      </Box>
+
+      {/* Dropdown */}
       <Popper
         open={open}
         transition
         disablePortal
         placement='bottom-end'
         anchorEl={anchorRef.current}
-        className='min-is-[240px] !mbs-4 z-[1]'
+        sx={{
+          zIndex: (theme) => theme.zIndex.appBar + 10,
+
+          mt: '10px !important',
+        }}
       >
         {({ TransitionProps, placement }) => (
           <Fade
@@ -106,36 +228,142 @@ const UserDropdown = () => {
               transformOrigin: placement === 'bottom-end' ? 'right top' : 'left top',
             }}
           >
-            <Paper className='shadow-lg'>
-              <ClickAwayListener onClickAway={(e) => handleDropdownClose(e as MouseEvent | TouchEvent)}>
-                <MenuList>
-                  <div className='flex items-center plb-2 pli-4 gap-2' tabIndex={-1}>
-                    <Avatar alt='John Doe' src='/images/avatars/1.png' />
-                    <div className='flex items-start flex-col'>
-                      <Typography className='font-medium' color='text.primary'>
-                        {capitalize(user?.username ?? 'Usuario')}
+            <Paper
+              elevation={0}
+              sx={{
+                width: 280,
+
+                overflow: 'hidden',
+
+                borderRadius: 3,
+
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+
+                boxShadow: '0 12px 40px rgba(24, 39, 75, 0.12)',
+              }}
+            >
+              <ClickAwayListener onClickAway={(event) => handleDropdownClose(event as MouseEvent | TouchEvent)}>
+                <MenuList
+                  disablePadding
+                  sx={{
+                    py: 1,
+                  }}
+                >
+                  {/* Usuario */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+
+                      gap: 1.5,
+
+                      px: 2,
+                      py: 2,
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 44,
+                        height: 44,
+
+                        bgcolor: 'primary.main',
+
+                        color: 'primary.contrastText',
+
+                        fontWeight: 600,
+                      }}
+                    >
+                      {getInitials(username)}
+                    </Avatar>
+
+                    <Box
+                      sx={{
+                        minWidth: 0,
+                      }}
+                    >
+                      <Typography
+                        variant='body2'
+                        color='text.primary'
+                        noWrap
+                        sx={{
+                          fontWeight: 600,
+                        }}
+                      >
+                        {username}
                       </Typography>
-                      <Typography variant='caption'>{user?.roles[0]}</Typography>
-                    </div>
-                  </div>
-                  <Divider className='mlb-1' />
-                  <MenuItem className='gap-3' onClick={(e) => handleDropdownClose(e)}>
-                    <i className='ri-user-3-line' />
-                    <Typography color='text.primary'>Mi perfil</Typography>
-                  </MenuItem>
-                  <div className='flex items-center plb-2 pli-4'>
+
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        noWrap
+                        sx={{
+                          display: 'block',
+                          mt: 0.25,
+                        }}
+                      >
+                        {role}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Divider />
+
+                  {/* Perfil */}
+                  <Box sx={{ py: 1 }}>
+                    <MenuItem
+                      onClick={(event) => handleDropdownClose(event, '/dashboard/profile')}
+                      sx={{
+                        mx: 1,
+                        minHeight: 44,
+
+                        gap: 1.5,
+
+                        borderRadius: 2,
+                      }}
+                    >
+                      <i className='ri-user-3-line text-xl' />
+
+                      <Typography variant='body2' color='text.primary'>
+                        Mi perfil
+                      </Typography>
+                    </MenuItem>
+
+                    <MenuItem
+                      onClick={(event) => handleDropdownClose(event, '/dashboard/settings')}
+                      sx={{
+                        mx: 1,
+                        minHeight: 44,
+
+                        gap: 1.5,
+
+                        borderRadius: 2,
+                      }}
+                    >
+                      <i className='ri-settings-3-line text-xl' />
+
+                      <Typography variant='body2' color='text.primary'>
+                        Configuración
+                      </Typography>
+                    </MenuItem>
+                  </Box>
+
+                  <Divider />
+
+                  {/* Logout */}
+                  <Box sx={{ p: 1.5 }}>
                     <Button
                       fullWidth
-                      variant='contained'
                       color='error'
-                      size='small'
-                      endIcon={<i className='ri-logout-box-r-line' />}
-                      onClick={(e) => handleDropdownClose(e, '/login')}
-                      sx={{ '& .MuiButton-endIcon': { marginInlineStart: 1.5 } }}
+                      startIcon={<i className='ri-logout-box-r-line' />}
+                      onClick={(event) => handleDropdownClose(event, '/login')}
+                      sx={{
+                        minHeight: 42,
+                        borderRadius: 2,
+                      }}
                     >
                       Cerrar sesión
                     </Button>
-                  </div>
+                  </Box>
                 </MenuList>
               </ClickAwayListener>
             </Paper>
