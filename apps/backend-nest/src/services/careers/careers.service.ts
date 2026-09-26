@@ -1,3 +1,5 @@
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 import { CareerUpdateDto } from 'src/dtos/careers/careers-update.dto';
 import { Faculty } from 'src/entities/faculties/faculties.entity';
 import { User } from 'src/entities/users/users.entity';
@@ -11,9 +13,10 @@ import { In, Repository } from 'typeorm';
 export class CareersService {
   constructor(@InjectRepository(Career) private readonly careerRepository: Repository<Career>) {}
 
-  async getAll(): Promise<Career[]> {
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<Career[]> {
     return this.careerRepository.find({
-      where: { isActive: true },
+      where: statusFilter(status),
+      relations: { faculty: true, director: true },
     });
   }
 

@@ -21,12 +21,13 @@ export class AuthService {
   async validateUser(loginDto: LoginDto): Promise<User> {
     const { username, password } = loginDto;
 
-    const user = await this.userService.getOneByUsername(username);
+    const user = await this.userService.getForAuthentication(username);
     if (!user) throw new UnauthorizedException('User not found');
 
     const checkPassword = await bcrypt.compare(password, user.password);
     if (!checkPassword) throw new UnauthorizedException('Wrong password');
 
+    Reflect.deleteProperty(user, 'password');
     return user;
   }
 
@@ -91,6 +92,7 @@ export class AuthService {
     return {
       idUser: user.idUser,
       idSession,
+      name: user.name,
       username: user.username,
       email: user.email,
       roles,

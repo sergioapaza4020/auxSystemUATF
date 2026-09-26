@@ -9,5 +9,5 @@ export interface IGradeSchemeCreateOrEdit {
 export interface IGradeSchemeDetailCreateOrEdit {
   percentage: number;
   order: number;
-  gradeItem: IGradeItem;
+  gradeItem: Pick<IGradeItem, 'idGradeItem'>;
 }

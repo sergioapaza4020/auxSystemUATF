@@ -17,6 +17,8 @@ import { Menu, MenuItem, MenuSection } from '@menu/vertical-menu';
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav';
+import { useAuth } from '@/hooks/useAuth';
+import { hasPermission } from '@/utils/hasPermission';
 
 // Styled Component Imports
 import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon';
@@ -43,6 +45,7 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
 
 const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
   const theme = useTheme();
+  const { user } = useAuth();
 
   const { isBreakpointReached, transitionDuration } = useVerticalNav();
 
@@ -89,7 +92,12 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
           </MenuItem>
 
           {/* SUPER ADMIN */}
-          <MenuSection label='Super Admin'>
+          <MenuSection label='Super Admininistración'>
+            {hasPermission(user, 'permission.get-all') && (
+              <MenuItem href='/dashboard/super-admin/permissions' icon={<i className='ri-key-2-line' />}>
+                Permisos
+              </MenuItem>
+            )}
             <MenuItem href='/dashboard/super-admin/sessions' icon={<i className='ri-shield-user-line' />}>
               Sesiones
             </MenuItem>
@@ -97,10 +105,40 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
             <MenuItem href='/dashboard/super-admin/roles' icon={<i className='ri-user-settings-line' />}>
               Roles
             </MenuItem>
+            {hasPermission(user, 'faculty.get-all') && (
+              <MenuItem href='/dashboard/admin/faculties' icon={<i className='ri-community-line' />}>
+                Facultades
+              </MenuItem>
+            )}
+            {hasPermission(user, 'career.get-all') && (
+              <MenuItem href='/dashboard/admin/careers' icon={<i className='ri-bookmark-3-line' />}>
+                Carreras
+              </MenuItem>
+            )}
+            {hasPermission(user, 'course.get-all') && (
+              <MenuItem href='/dashboard/admin/courses' icon={<i className='ri-book-2-line' />}>
+                Cursos
+              </MenuItem>
+            )}
+            {hasPermission(user, 'semester.get-all') && (
+              <MenuItem href='/dashboard/admin/semesters' icon={<i className='ri-calendar-line' />}>
+                Semestres
+              </MenuItem>
+            )}
           </MenuSection>
 
           {/* ADMINISTRACIÓN */}
           <MenuSection label='Administración'>
+            {hasPermission(user, 'user.get-all') && (
+              <MenuItem href='/dashboard/super-admin/users' icon={<i className='ri-user-line' />}>
+                Usuarios
+              </MenuItem>
+            )}
+            {hasPermission(user, 'grade-item.get-all') && (
+              <MenuItem href='/dashboard/admin/grade-items' icon={<i className='ri-list-check' />}>
+                Ítems de calificación
+              </MenuItem>
+            )}
             <MenuItem href='/dashboard/admin/grade-schemes' icon={<i className='ri-file-list-3-line' />}>
               Formas de calificar
             </MenuItem>

@@ -4,3 +4,10 @@ export interface IPermission {
   description?: string;
   isActive: boolean;
 }
+
+export interface IPermissionCreate {
+  name: string;
+  description: string;
+}
+
+export type IPermissionUpdate = Pick<IPermissionCreate, 'description'>;

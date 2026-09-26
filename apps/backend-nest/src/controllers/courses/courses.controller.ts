@@ -1,3 +1,5 @@
+import { Query } from '@nestjs/common';
+import { StatusQueryDto } from 'src/dtos/common/status-query.dto';
 import { CourseUpdateDto } from 'src/dtos/courses/courses-update.dto';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
@@ -15,8 +17,8 @@ export class CoursesController {
 
   @Permissions('course.get-all')
   @Get()
-  async getAll() {
-    return this.coursesService.getAll();
+  async getAll(@Query() query: StatusQueryDto) {
+    return this.coursesService.getAll(query.status);
   }
 
   @Permissions('course.create')

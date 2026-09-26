@@ -1,3 +1,5 @@
+import { Query } from '@nestjs/common';
+import { StatusQueryDto } from 'src/dtos/common/status-query.dto';
 import { SemesterUpdateDto } from 'src/dtos/semesters/semesters-update.dto';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
@@ -13,8 +15,8 @@ export class SemestersController {
 
   @Permissions('semester.get-all')
   @Get()
-  async getAll() {
-    return this.semestersService.getAll();
+  async getAll(@Query() query: StatusQueryDto) {
+    return this.semestersService.getAll(query.status);
   }
 
   @Permissions('semester.create')

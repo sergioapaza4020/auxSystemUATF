@@ -1,20 +1,22 @@
+import type { ApiResponse } from '@/interfaces/apiResponse';
+import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
 import { instance } from './config/config';
 import type { IGradeSchemeCreateOrEdit } from '@/interfaces/grade-schemes/grade-scheme-edit.interface';
 
-export const getGradeSchemes = async (): Promise<any> => {
-  const gradeSchemes = await instance.get('/grade-schemes');
+export const getGradeSchemes = async (): Promise<IGradeScheme[]> => {
+  const gradeSchemes = await instance.get<ApiResponse<IGradeScheme[]>>('/grade-schemes');
 
   return gradeSchemes.data.data;
 };
 
-export const createGradeScheme = async (gradeScheme: IGradeSchemeCreateOrEdit): Promise<any> => {
-  const newGradeScheme = await instance.post('/grade-schemes', gradeScheme);
+export const createGradeScheme = async (gradeScheme: IGradeSchemeCreateOrEdit): Promise<IGradeScheme> => {
+  const newGradeScheme = await instance.post<ApiResponse<IGradeScheme>>('/grade-schemes', gradeScheme);
 
   return newGradeScheme.data.data;
 };
 
-export const getGradeSchemeById = async (idGradeScheme: number): Promise<any> => {
-  const gradeScheme = await instance.get(`/grade-schemes/id/${idGradeScheme}`);
+export const getGradeSchemeById = async (idGradeScheme: number): Promise<IGradeScheme> => {
+  const gradeScheme = await instance.get<ApiResponse<IGradeScheme>>(`/grade-schemes/id/${idGradeScheme}`);
 
   return gradeScheme.data.data;
 };

@@ -1,21 +1,35 @@
-import { CourseRelations } from '@common/enums/courseRelations';
+import { Transform, Type } from 'class-transformer';
+import { StatusQueryDto } from '../common/status-query.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
-export class UserQueryDto {
+export class UserQueryDto extends StatusQueryDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
+  @Min(1)
   careerId?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
   search?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Type(() => Number)
   page?: number = 1;
 
   @ApiPropertyOptional()
@@ -23,11 +37,21 @@ export class UserQueryDto {
   @IsInt()
   @Min(1)
   @Max(100)
+  @Type(() => Number)
   limit?: number = 20;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    type: String,
+    example: 'STUDENT,ASSISTANT',
+    description: 'Role names separated by commas',
+  })
   @IsOptional()
-  @IsEnum(CourseRelations)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.split(',').map((role) => role.trim()) : value,
+  )
   @IsArray()
-  role?: CourseRelations;
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  role?: string[];
 }

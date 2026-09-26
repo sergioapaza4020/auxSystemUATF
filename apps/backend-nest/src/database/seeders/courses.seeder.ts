@@ -51,7 +51,7 @@ export class CourseSeeder {
       name: data.name,
       group: data.group,
       gradeScheme: gradeScheme,
-      career: career,
+      career: [career],
     });
 
     await this.repository.save(course);

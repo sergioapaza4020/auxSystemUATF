@@ -32,9 +32,11 @@ import { RolesService } from './roles/roles.service';
 import { EnrollmentsService } from './enrollments/enrollments.service';
 import { AssistantGradeSchemesService } from './grade-schemes/assistant-grade-schemes.service';
 import { AttendancesService } from './attendances/attendances.service';
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
 
 function repositoryMock() {
   return {
+    createQueryBuilder: jest.fn(),
     findOne: jest.fn(),
     find: jest.fn(),
     create: jest.fn((data: object) => ({ ...data })),
@@ -106,6 +108,77 @@ describe('CRUD service behavior', () => {
     enrollments = module.get(EnrollmentsService);
     schemes = module.get(AssistantGradeSchemesService);
     attendances = module.get(AttendancesService);
+  });
+
+  it.each([undefined, RecordStatus.ACTIVE, RecordStatus.INACTIVE, RecordStatus.ALL])(
+    'filters administrative lists by status %s',
+    async (status) => {
+      const services = [careers, courses, items, permissions, semesters, enrollments];
+      const listEntities = [Career, Course, GradeItem, Permission, Semester, Enrollment];
+      for (const [index, service] of services.entries()) {
+        await service.getAll(status);
+        expect(repo(listEntities[index]).find).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where:
+              status === RecordStatus.ALL ? {} : { isActive: status !== RecordStatus.INACTIVE },
+          }),
+        );
+      }
+    },
+  );
+
+  it.each([undefined, RecordStatus.ACTIVE, RecordStatus.INACTIVE, RecordStatus.ALL])(
+    'paginates users with state %s and keeps metadata',
+    async (status) => {
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[{ idUser: 21 }], 25]),
+      };
+      repo(User).createQueryBuilder.mockReturnValue(qb);
+      expect(
+        await users.getAll({
+          page: 2,
+          limit: 20,
+          status,
+          role: ['CUSTOM'],
+          search: 'test',
+          careerId: 1,
+        }),
+      ).toEqual({ data: [{ idUser: 21 }], meta: { page: 2, limit: 20, total: 25, totalPages: 2 } });
+      expect(qb.where).toHaveBeenCalledWith(
+        status === RecordStatus.ALL ? {} : { isActive: status !== RecordStatus.INACTIVE },
+      );
+      expect(qb.skip).toHaveBeenCalledWith(20);
+      expect(qb.take).toHaveBeenCalledWith(20);
+      expect(qb.orderBy).toHaveBeenCalledWith('user.idUser', 'ASC');
+      expect(qb.andWhere).toHaveBeenCalledWith('roles.name IN (:...roles)', { roles: ['CUSTOM'] });
+    },
+  );
+
+  it('selects the credential explicitly only for authentication', async () => {
+    const qb = {
+      addSelect: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ password: 'hash' }),
+    };
+    repo(User).createQueryBuilder.mockReturnValue(qb);
+    await users.getForAuthentication('test');
+    expect(qb.addSelect).toHaveBeenCalledWith('user.password');
+    expect(qb.where).toHaveBeenCalledWith(
+      'user.username = :username AND user.isActive = :isActive',
+      { username: 'test', isActive: true },
+    );
+    await users.getOneByUsername('test');
+    expect(repo(User).findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { username: 'test', isActive: true } }),
+    );
+    expect(repo(User).createQueryBuilder).toHaveBeenCalledTimes(1);
   });
 
   it('persists careers with their faculty, director and members', async () => {

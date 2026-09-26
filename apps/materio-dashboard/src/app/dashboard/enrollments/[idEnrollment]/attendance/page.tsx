@@ -1,51 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CircularProgress,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material';
-
-import { ArrowBack } from '@mui/icons-material';
+import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { useEnrollment } from '@/hooks/enrollments/useEnrollment';
-import { getEnrollmentStudents } from '@/api/enrollments.service';
+import { useAttendances } from '@/hooks/attendances/useAttendances';
 
-import { EnrollmentHeader } from '@/views/admin/enrollments/EnrollmentHeader';
+import { getEnrollmentStudents } from '@/api/enrollments.service';
 
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 
-import { useAttendances } from '@/hooks/attendances/useAttendances';
 import { AttendanceStatus } from '@/enums/attendanceStatus';
+import { AttendancePageHeader } from '@/views/attendance/AttendancePageHeader';
+import { AttendanceSessionToolbar } from '@/views/attendance/AttendanceSessionToolbar';
+import { AttendanceSheet } from '@/views/attendance/AttendanceSheet';
+import { AttendanceHistory } from '@/views/attendance/AttendanceHistory';
 
 export default function AttendancePage() {
   const params = useParams();
   const router = useRouter();
 
   const idEnrollment = Number(params.idEnrollment);
-
-  const [students, setStudents] = useState<IEnrollmentStudent[]>([]);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const snackbar = useSnackbar();
 
@@ -61,13 +40,41 @@ export default function AttendancePage() {
     session,
   } = useAttendances(idEnrollment);
 
+  const [students, setStudents] = useState<IEnrollmentStudent[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+      2,
+      '0',
+    )}-${String(now.getDate()).padStart(2, '0')}`;
+  });
+
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
   const [attendance, setAttendance] = useState<Record<number, AttendanceStatus>>({});
 
+  /*
+   * Snapshot de los datos guardados.
+   * Nos permite saber si existen cambios y cancelar.
+   */
+  const [savedAttendance, setSavedAttendance] = useState<Record<number, AttendanceStatus>>({});
+
+  const [search, setSearch] = useState('');
+
+  /*
+   * ============================
+   * CARGAR ESTUDIANTES
+   * ============================
+   */
+
   useEffect(() => {
     const loadStudents = async () => {
-      if (!enrollment) return;
+      if (!enrollment) {
+        return;
+      }
 
       setLoadingStudents(true);
 
@@ -75,7 +82,7 @@ export default function AttendancePage() {
         const data = await getEnrollmentStudents(enrollment.idEnrollment);
 
         setStudents(data);
-      } catch (error) {
+      } catch {
         snackbar.error('No se pudieron cargar los estudiantes.');
       } finally {
         setLoadingStudents(false);
@@ -85,8 +92,16 @@ export default function AttendancePage() {
     void loadStudents();
   }, [enrollment, snackbar]);
 
+  /*
+   * ============================
+   * CARGAR ASISTENCIA DE SESIÓN
+   * ============================
+   */
+
   useEffect(() => {
-    if (!session || students.length === 0) return;
+    if (!session || students.length === 0) {
+      return;
+    }
 
     const initialAttendance: Record<number, AttendanceStatus> = {};
 
@@ -99,7 +114,57 @@ export default function AttendancePage() {
     });
 
     setAttendance(initialAttendance);
+    setSavedAttendance(initialAttendance);
   }, [session, students]);
+
+  /*
+   * ============================
+   * DERIVADOS
+   * ============================
+   */
+
+  const filteredStudents = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      return students;
+    }
+
+    return students.filter((student) => {
+      const user = student.user;
+
+      const searchable = [user.name, user.lastname, user.ci, user.ru, user.username]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  }, [students, search]);
+
+  const presentCount = useMemo(
+    () => students.filter((student) => attendance[student.idEnrollment] === AttendanceStatus.PRESENT).length,
+    [students, attendance],
+  );
+
+  const absentCount = useMemo(
+    () => students.filter((student) => attendance[student.idEnrollment] === AttendanceStatus.ABSENT).length,
+    [students, attendance],
+  );
+
+  const hasChanges = useMemo(() => {
+    if (!selectedSessionId) {
+      return false;
+    }
+
+    return students.some((student) => attendance[student.idEnrollment] !== savedAttendance[student.idEnrollment]);
+  }, [attendance, savedAttendance, students, selectedSessionId]);
+
+  /*
+   * ============================
+   * SESIONES
+   * ============================
+   */
 
   const handleCreateSession = async () => {
     if (!selectedDate) {
@@ -108,16 +173,20 @@ export default function AttendancePage() {
       return;
     }
 
-    const existingSession = sessions.find((item) => item.date === selectedDate);
+    const existingSession = sessions.find((item) => item.date.slice(0, 10) === selectedDate);
 
+    /*
+     * Evitamos duplicados.
+     * Si ya existe, simplemente abrimos la sesión.
+     */
     if (existingSession) {
-      setSelectedSessionId(existingSession.idAttendanceSession);
-
       try {
+        setSelectedSessionId(existingSession.idAttendanceSession);
+
         await loadSession(existingSession.idAttendanceSession);
 
         snackbar.success('Se abrió la sesión de asistencia existente.');
-      } catch (error) {
+      } catch {
         snackbar.error('No se pudo cargar la sesión de asistencia.');
       }
 
@@ -132,20 +201,38 @@ export default function AttendancePage() {
       await loadSession(newSession.idAttendanceSession);
 
       snackbar.success('Sesión de asistencia creada.');
-    } catch (error) {
+    } catch {
       snackbar.error('No se pudo crear la sesión de asistencia.');
     }
   };
 
   const handleSelectSession = async (idSession: number) => {
-    setSelectedSessionId(idSession);
+    /*
+     * Más adelante podemos sustituir esto por
+     * un Dialog de confirmación si hasChanges.
+     */
+    if (hasChanges) {
+      const confirmed = window.confirm('Tienes cambios sin guardar. ¿Deseas descartarlos y abrir otra sesión?');
+
+      if (!confirmed) {
+        return;
+      }
+    }
 
     try {
+      setSelectedSessionId(idSession);
+
       await loadSession(idSession);
-    } catch (error) {
+    } catch {
       snackbar.error('No se pudo cargar la sesión de asistencia.');
     }
   };
+
+  /*
+   * ============================
+   * ASISTENCIA
+   * ============================
+   */
 
   const handleChangeAttendance = (idStudentEnrollment: number, status: AttendanceStatus) => {
     setAttendance((current) => ({
@@ -154,193 +241,116 @@ export default function AttendancePage() {
     }));
   };
 
+  const handleMarkAll = (status: AttendanceStatus) => {
+    setAttendance((current) => {
+      const updated = { ...current };
+
+      /*
+       * Aplicamos la acción a TODOS los estudiantes,
+       * no solamente a los filtrados.
+       */
+      students.forEach((student) => {
+        updated[student.idEnrollment] = status;
+      });
+
+      return updated;
+    });
+  };
+
+  const handleCancelChanges = () => {
+    setAttendance({ ...savedAttendance });
+  };
+
   const handleSave = async () => {
-    if (!selectedSessionId) return;
+    if (!selectedSessionId) {
+      return;
+    }
 
     try {
       await saveSessionAttendances(selectedSessionId, {
         attendances: students.map((student) => ({
           enrollmentId: student.idEnrollment,
-          status: attendance[student.idEnrollment] ?? 'ABSENT',
+
+          status: attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT,
         })),
       });
 
+      setSavedAttendance({ ...attendance });
+
       snackbar.success('Asistencia guardada correctamente.');
-    } catch (error) {
+    } catch {
       snackbar.error('No se pudo guardar la asistencia.');
     }
   };
 
+  /*
+   * ============================
+   * ESTADOS DE PÁGINA
+   * ============================
+   */
+
   if (loadingEnrollment) {
-    return <CircularProgress />;
+    return (
+      <Box
+        sx={{
+          minHeight: 300,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!enrollment) {
     return <Typography color='error'>No se encontró la matriculación.</Typography>;
   }
 
-  const presentCount = students.filter(
-    (student) => attendance[student.idEnrollment] === AttendanceStatus.PRESENT,
-  ).length;
-
-  const absentCount = students.filter((student) => attendance[student.idEnrollment] === AttendanceStatus.ABSENT).length;
-
-  const formatDate = (date: string) => {
-    const [year, month, day] = date.split('-');
-
-    return `${day}/${month}/${year}`;
-  };
-
   return (
-    <Box>
-      <Stack spacing={4}>
-        <EnrollmentHeader enrollment={enrollment} />
+    <Stack spacing={3}>
+      <AttendancePageHeader
+        enrollment={enrollment}
+        studentCount={students.length}
+        onBack={() => router.push(`/dashboard/enrollments/${idEnrollment}`)}
+      />
 
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => {
-            router.push(`/dashboard/enrollments/${idEnrollment}`);
-          }}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          Volver
-        </Button>
+      <AttendanceSessionToolbar
+        selectedDate={selectedDate}
+        selectedSessionId={selectedSessionId}
+        session={session}
+        saving={saving}
+        onDateChange={setSelectedDate}
+        onCreateSession={handleCreateSession}
+      />
 
-        <Card>
-          <CardHeader title='Asistencia' subheader='Gestiona la asistencia de los estudiantes del curso.' />
+      {selectedSessionId && (
+        <AttendanceSheet
+          students={filteredStudents}
+          totalStudents={students.length}
+          attendance={attendance}
+          loading={loadingStudents || !session}
+          saving={saving}
+          search={search}
+          presentCount={presentCount}
+          absentCount={absentCount}
+          hasChanges={hasChanges}
+          onSearchChange={setSearch}
+          onChangeAttendance={handleChangeAttendance}
+          onMarkAllPresent={() => handleMarkAll(AttendanceStatus.PRESENT)}
+          onMarkAllAbsent={() => handleMarkAll(AttendanceStatus.ABSENT)}
+          onCancelChanges={handleCancelChanges}
+          onSave={handleSave}
+        />
+      )}
 
-          <CardContent>
-            <Stack spacing={3}>
-              <TextField
-                label='Fecha'
-                type='date'
-                value={selectedDate}
-                onChange={(event) => {
-                  setSelectedDate(event.target.value);
-                }}
-              />
-
-              <Button variant='contained' onClick={handleCreateSession} disabled={saving || !selectedDate}>
-                {saving ? 'Creando...' : 'Nueva sesión de asistencia'}
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader title='Historial de asistencia' subheader={`${sessions.length} sesión(es) registrada(s)`} />
-
-          <CardContent>
-            {loadingSessions ? (
-              <CircularProgress size={24} />
-            ) : sessions.length === 0 ? (
-              <Typography color='text.secondary'>No existen sesiones de asistencia.</Typography>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Fecha</TableCell>
-                      <TableCell align='center'>Presentes</TableCell>
-                      <TableCell align='center'>Ausentes</TableCell>
-                      <TableCell align='right'>Acción</TableCell>
-                    </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {sessions.map((item) => (
-                      <TableRow key={item.idAttendanceSession}>
-                        <TableCell>{formatDate(item.date)}</TableCell>
-
-                        <TableCell align='center'>{item.presentCount}</TableCell>
-
-                        <TableCell align='center'>{item.absentCount}</TableCell>
-
-                        <TableCell align='right'>
-                          <Button variant='outlined' onClick={() => handleSelectSession(item.idAttendanceSession)}>
-                            Ver
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {selectedSessionId && (
-          <Card>
-            <CardHeader
-              title='Registro de asistencia'
-              subheader={session?.date ? `Fecha: ${session.date}` : 'Fecha no disponible'}
-            />
-
-            <CardContent>
-              <Stack direction='row' spacing={2}>
-                <Typography>
-                  Total: <strong>{students.length}</strong>
-                </Typography>
-
-                <Typography color='success.main'>
-                  Presentes: <strong>{presentCount}</strong>
-                </Typography>
-
-                <Typography color='error.main'>
-                  Ausentes: <strong>{absentCount}</strong>
-                </Typography>
-              </Stack>
-              {loadingStudents || !session ? (
-                <CircularProgress size={24} />
-              ) : (
-                <Stack spacing={2}>
-                  {students.map((student) => {
-                    const status = attendance[student.idEnrollment] ?? 'ABSENT';
-
-                    return (
-                      <Stack
-                        key={student.idEnrollment}
-                        direction='row'
-                        justifyContent='space-between'
-                        alignItems='center'
-                      >
-                        <Box>
-                          <Typography fontWeight={600}>
-                            {student.user.name} {student.user.lastname}
-                          </Typography>
-
-                          <Typography variant='body2' color='text.secondary'>
-                            CI: {student.user.ci} · RU: {student.user.ru}
-                          </Typography>
-                        </Box>
-
-                        <ToggleButtonGroup
-                          exclusive
-                          value={status}
-                          onChange={(_, value: AttendanceStatus | null) => {
-                            if (value !== null) {
-                              handleChangeAttendance(student.idEnrollment, value);
-                            }
-                          }}
-                        >
-                          <ToggleButton value={AttendanceStatus.PRESENT}>Presente</ToggleButton>
-
-                          <ToggleButton value={AttendanceStatus.ABSENT}>Ausente</ToggleButton>
-                        </ToggleButtonGroup>
-                      </Stack>
-                    );
-                  })}
-
-                  <Button variant='contained' onClick={handleSave} disabled={saving || students.length === 0}>
-                    {saving ? 'Guardando...' : 'Guardar asistencia'}
-                  </Button>
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </Stack>
-    </Box>
+      <AttendanceHistory
+        sessions={sessions}
+        loading={loadingSessions}
+        selectedSessionId={selectedSessionId}
+        onSelectSession={handleSelectSession}
+      />
+    </Stack>
   );
 }

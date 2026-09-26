@@ -11,9 +11,11 @@ import {
   createAssistantGradeScheme,
   getMyAssistantGradeScheme,
   updateAssistantGradeScheme,
+  deleteAssistantGradeScheme,
+  reactivateAssistantGradeScheme,
 } from '@/api/assistant-grade-schemes.service';
 
-export function useAssistantGradeScheme(idCourse: number | null) {
+export function useAssistantGradeScheme(idCourse: number | null, idEnrollment?: number) {
   const [scheme, setScheme] = useState<IAssistantGradeScheme | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -30,13 +32,13 @@ export function useAssistantGradeScheme(idCourse: number | null) {
     setLoading(true);
 
     try {
-      const data = await getMyAssistantGradeScheme(idCourse);
+      const data = await getMyAssistantGradeScheme(idCourse, idEnrollment);
 
       setScheme(data);
     } finally {
       setLoading(false);
     }
-  }, [idCourse]);
+  }, [idCourse, idEnrollment]);
 
   useEffect(() => {
     void load();
@@ -50,11 +52,33 @@ export function useAssistantGradeScheme(idCourse: number | null) {
     setSaving(true);
 
     try {
-      const created = await createAssistantGradeScheme(idCourse, data);
+      const created = await createAssistantGradeScheme(idCourse, data, idEnrollment);
 
       setScheme(created);
 
       return created;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deactivate = async (id: number) => {
+    setSaving(true);
+
+    try {
+      await deleteAssistantGradeScheme(id);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reactivate = async (id: number) => {
+    setSaving(true);
+
+    try {
+      await reactivateAssistantGradeScheme(id);
+      await load();
     } finally {
       setSaving(false);
     }
@@ -81,5 +105,7 @@ export function useAssistantGradeScheme(idCourse: number | null) {
     create,
     update,
     load,
+    deactivate,
+    reactivate,
   };
 }

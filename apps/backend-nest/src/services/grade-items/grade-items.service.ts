@@ -1,3 +1,5 @@
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 import { GradeItemUpdateDto } from 'src/dtos/grade-items/grade-items-update.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,9 +14,9 @@ export class GradeItemsService {
     private readonly gradeItemRepository: Repository<GradeItem>,
   ) {}
 
-  async getAll(): Promise<GradeItem[]> {
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<GradeItem[]> {
     return this.gradeItemRepository.find({
-      where: { isActive: true },
+      where: statusFilter(status),
     });
   }
 

@@ -1,3 +1,5 @@
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 import { CourseUpdateDto } from 'src/dtos/courses/courses-update.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,10 +11,10 @@ import { Repository } from 'typeorm';
 export class CoursesService {
   constructor(@InjectRepository(Course) private readonly courseRepository: Repository<Course>) {}
 
-  async getAll(): Promise<Course[]> {
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<Course[]> {
     return this.courseRepository.find({
-      where: { isActive: true },
-      relations: { userCourses: true },
+      where: statusFilter(status),
+      relations: { userCourses: true, career: true },
       order: { code: 'ASC' },
     });
   }

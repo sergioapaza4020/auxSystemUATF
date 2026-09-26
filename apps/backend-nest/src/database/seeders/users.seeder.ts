@@ -58,7 +58,7 @@ export class UserSeeder {
       password: await hashPassword(data.password),
       ci: data.ci,
       ru: data.ru,
-      careers,
+      careers: careers[0],
       roles,
     });
 

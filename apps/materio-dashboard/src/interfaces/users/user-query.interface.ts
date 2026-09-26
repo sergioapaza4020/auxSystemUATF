@@ -1,9 +1,10 @@
-import type { UserRole } from '@/enums/userRole';
+import type { RecordStatus } from '../status-query.interface';
 
 export interface UserQuery {
   careerId?: number;
   search?: string;
-  role?: UserRole[];
+  role?: string[];
+  status?: RecordStatus;
   page?: number;
   limit?: number;
 }

@@ -1,8 +1,10 @@
-import type { IBase } from '../base.interface';
-
-export interface ISemester extends IBase {
+export interface ISemester {
+  idSemester: number;
+  isActive: boolean;
   year: number;
-  period: string;
-  startDate: Date;
-  endDate: Date;
+  period: 'I' | 'II';
+  startDate: string;
+  endDate: string;
 }
+
+export type ISemesterWrite = Pick<ISemester, 'year' | 'period' | 'startDate' | 'endDate'>;

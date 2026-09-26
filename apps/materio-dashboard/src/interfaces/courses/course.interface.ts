@@ -7,4 +7,7 @@ export interface ICourse {
   code: string;
   group: number;
   gradeScheme?: IGradeScheme;
+  career?: { idCareer: number; name: string }[];
 }
+
+export type ICourseWrite = Pick<ICourse, 'name' | 'code' | 'group'>;

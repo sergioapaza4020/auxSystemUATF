@@ -1,4 +1,5 @@
 import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
+import { AttendanceHistoryQueryDto } from 'src/dtos/attendances/attendance-history-query.dto';
 import { CourseRelations } from '@common/enums/courseRelations';
 
 import {
@@ -155,6 +156,32 @@ export class AttendancesService {
     return session;
   }
 
+  async getSessionsPage(idUser: number, idEnrollment: number, query: AttendanceHistoryQueryDto) {
+    await this.getAssistantEnrollment(idUser, idEnrollment);
+    const { page = 1, limit = 10 } = query;
+    const [sessions, total] = await this.attendanceSessionRepository.findAndCount({
+      where: {
+        assistantEnrollment: { idEnrollment },
+        ...(query.date ? { date: query.date as unknown as Date } : {}),
+      },
+      relations: { attendances: true },
+      order: { date: 'DESC', idAttendanceSession: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data: sessions.map((session) => ({
+        idAttendanceSession: session.idAttendanceSession,
+        date: session.date,
+        presentCount: session.attendances.filter((item) => item.status === AttendanceStatus.PRESENT)
+          .length,
+        absentCount: session.attendances.filter((item) => item.status === AttendanceStatus.ABSENT)
+          .length,
+      })),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
   async saveAttendances(
     idUser: number,
     idSession: number,
@@ -200,46 +227,32 @@ export class AttendancesService {
       }
     }
 
-    const savedAttendances: Attendance[] = [];
-
-    for (const attendanceData of dto.attendances) {
-      const existingAttendance = await this.attendanceRepository.findOne({
-        where: {
-          attendanceSession: {
-            idAttendanceSession: session.idAttendanceSession,
-          },
-          enrollment: {
-            idEnrollment: attendanceData.enrollmentId,
-          },
-        },
+    return this.attendanceRepository.manager.transaction(async (manager) => {
+      // Serialize writes to a session, including insertion of previously unmarked students.
+      await manager.getRepository(AttendanceSession).findOneOrFail({
+        where: { idAttendanceSession: idSession },
+        lock: { mode: 'pessimistic_write' },
       });
-
-      if (existingAttendance) {
-        existingAttendance.status = attendanceData.status;
-
-        savedAttendances.push(await this.attendanceRepository.save(existingAttendance));
-
-        continue;
+      const repository = manager.getRepository(Attendance);
+      const saved: Attendance[] = [];
+      for (const record of dto.attendances) {
+        const existing = await repository.findOne({
+          where: {
+            attendanceSession: { idAttendanceSession: idSession },
+            enrollment: { idEnrollment: record.enrollmentId },
+          },
+        });
+        const attendance =
+          existing ??
+          repository.create({
+            attendanceSession: session,
+            enrollment: { idEnrollment: record.enrollmentId },
+          });
+        attendance.status = record.status;
+        saved.push(await repository.save(attendance));
       }
-
-      const enrollment = studentEnrollments.find(
-        (student) => student.idEnrollment === attendanceData.enrollmentId,
-      );
-
-      if (!enrollment) {
-        throw new BadRequestException('Matrícula de estudiante no encontrada');
-      }
-
-      const newAttendance = this.attendanceRepository.create({
-        attendanceSession: session,
-        enrollment,
-        status: attendanceData.status,
-      });
-
-      savedAttendances.push(await this.attendanceRepository.save(newAttendance));
-    }
-
-    return savedAttendances;
+      return saved;
+    });
   }
 
   async getStudentAttendance(

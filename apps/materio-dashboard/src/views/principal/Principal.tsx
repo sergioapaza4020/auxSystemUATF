@@ -165,7 +165,7 @@ export function Principal() {
                 color: 'inherit',
               }}
             >
-              ¡Hola, {user?.username ?? 'Usuario'}! 👋
+              ¡Hola, {user?.name ?? 'Usuario'}! 👋
             </Typography>
 
             <Typography
@@ -261,7 +261,6 @@ export function Principal() {
             ))}
           </Grid>
         ) : enrollments.length === 0 ? (
-          /* Empty state */
           <Alert
             severity='info'
             variant='outlined'
@@ -273,7 +272,6 @@ export function Principal() {
             No tienes materias matriculadas actualmente.
           </Alert>
         ) : (
-          /* Materias */
           <Grid container spacing={3}>
             {enrollments.map((enrollment) => (
               <Grid item xs={12} sm={6} lg={4} key={enrollment.idEnrollment}>

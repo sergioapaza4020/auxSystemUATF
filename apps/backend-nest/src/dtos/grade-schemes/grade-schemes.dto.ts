@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsNumber,
@@ -29,6 +30,7 @@ export class DetailCreateDto {
 
   @ApiProperty()
   @ValidateNested()
+  @Type(() => GradeItemReferenceDto)
   gradeItem: GradeItemReferenceDto;
 }
 
@@ -46,5 +48,6 @@ export class GradeSchemeCreateDto {
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
+  @Type(() => DetailCreateDto)
   details: DetailCreateDto[];
 }

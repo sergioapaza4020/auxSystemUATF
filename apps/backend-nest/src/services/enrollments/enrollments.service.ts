@@ -1,3 +1,6 @@
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { EnrollmentQueryDto } from 'src/dtos/enrollments/enrollment-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 import { Grade } from 'src/entities/grades/grades.entity';
 import { Attendance } from 'src/entities/attendance/attendance.entity';
 import { AttendanceSession } from 'src/entities/attendance/attendance-session.entity';
@@ -29,9 +32,9 @@ export class EnrollmentsService {
     private readonly coursesService: CoursesService,
   ) {}
 
-  async getAll(): Promise<Enrollment[]> {
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<Enrollment[]> {
     return this.enrollmentRepository.find({
-      where: { isActive: true },
+      where: statusFilter(status),
       relations: {
         semester: true,
         course: true,
@@ -66,6 +69,31 @@ export class EnrollmentsService {
       );
 
     return { user, semester, course, role: dto.role };
+  }
+
+  async getPage(query: EnrollmentQueryDto) {
+    const { page = 1, limit = 20 } = query;
+    const qb = this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.user', 'user')
+      .leftJoinAndSelect('enrollment.course', 'course')
+      .leftJoinAndSelect('enrollment.semester', 'semester')
+      .where(statusFilter(query.status));
+    if (query.search?.trim())
+      qb.andWhere(
+        '(user.name ILIKE :search OR user.lastname ILIKE :search OR user.username ILIKE :search OR user.ci ILIKE :search OR user.ru ILIKE :search OR course.code ILIKE :search OR course.name ILIKE :search)',
+        { search: `%${query.search.trim()}%` },
+      );
+    if (query.courseId) qb.andWhere('course.idCourse = :courseId', { courseId: query.courseId });
+    if (query.semesterId)
+      qb.andWhere('semester.idSemester = :semesterId', { semesterId: query.semesterId });
+    if (query.role) qb.andWhere('enrollment.role = :role', { role: query.role });
+    const [data, total] = await qb
+      .orderBy('enrollment.idEnrollment', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async create(dto: EnrollmentCreateDto) {

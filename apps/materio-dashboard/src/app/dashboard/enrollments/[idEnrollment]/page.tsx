@@ -33,7 +33,10 @@ export default function EnrollmentDetailPage() {
     saving: savingAssistantGradeScheme,
     create: createAssistantGradeScheme,
     update: updateAssistantGradeScheme,
-  } = useAssistantGradeScheme(enrollment?.role === UserRole.ASSISTANT ? enrollment.course.idCourse : null);
+  } = useAssistantGradeScheme(
+    enrollment?.role === UserRole.ASSISTANT ? enrollment.course.idCourse : null,
+    enrollment?.idEnrollment,
+  );
 
   const { grades, loading: loadingGrades } = useEnrollmentGrades(idEnrollment);
 

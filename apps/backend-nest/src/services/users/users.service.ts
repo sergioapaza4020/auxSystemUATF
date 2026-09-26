@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { RolesService } from '../roles/roles.service';
 import { UserQueryDto } from 'src/dtos/users/user-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 
 @Injectable()
 export class UsersService {
@@ -22,7 +23,8 @@ export class UsersService {
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.careers', 'career')
       .leftJoinAndSelect('user.roles', 'roles')
-      .where('user.isActive = :isActive', { isActive: true });
+      .where(statusFilter(query.status))
+      .orderBy('user.idUser', 'ASC');
 
     if (careerId) qb.andWhere('career.idCareer = :careerId', { careerId });
 
@@ -39,10 +41,8 @@ export class UsersService {
       );
 
     if (role) {
-      const roles = role.split(',');
-
       qb.andWhere('roles.name IN (:...roles)', {
-        roles,
+        roles: role,
       });
     }
 
@@ -104,6 +104,19 @@ export class UsersService {
         },
       },
     });
+  }
+
+  async getForAuthentication(username: string) {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .leftJoinAndSelect('user.roles', 'roles')
+      .leftJoinAndSelect('roles.permissions', 'permissions')
+      .where('user.username = :username AND user.isActive = :isActive', {
+        username,
+        isActive: true,
+      })
+      .getOne();
   }
 
   async getOneById(idUser: number) {

@@ -1,12 +1,32 @@
+import type { ApiResponse, PaginatedApiResponse } from '@/interfaces/apiResponse';
+import type { RecordStatus } from '@/interfaces/status-query.interface';
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 import { instance } from './config/config';
 import type { IEnrollmentCreate } from '@/interfaces/enrollments/enrollment-create.interface';
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 
-export const getEnrollments = async (): Promise<IEnrollment[]> => {
-  const enrollments = await instance.get('/enrollments');
+export const getEnrollments = async (status?: RecordStatus): Promise<IEnrollment[]> => {
+  const enrollments = await instance.get<ApiResponse<IEnrollment[]>>('/enrollments', { params: { status } });
 
   return enrollments.data.data;
+};
+
+export interface EnrollmentPageQuery {
+  page: number;
+  limit: number;
+  status?: RecordStatus;
+  search?: string;
+  role?: string;
+}
+export const getEnrollmentsPage = async (query: EnrollmentPageQuery) =>
+  (await instance.get<PaginatedApiResponse<IEnrollment[]>>('/enrollments', { params: query })).data;
+
+export const deactivateEnrollment = async (id: number) => {
+  await instance.delete(`/enrollments/${id}`);
+};
+
+export const reactivateEnrollment = async (id: number) => {
+  await instance.patch(`/enrollments/reactivate/${id}`);
 };
 
 export const getMyEnrollments = async (): Promise<IEnrollment[]> => {

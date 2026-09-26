@@ -1,3 +1,5 @@
+import { Query } from '@nestjs/common';
+import { StatusQueryDto } from 'src/dtos/common/status-query.dto';
 import { PermissionUpdateDto } from 'src/dtos/permissions/permissions-update.dto';
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -15,8 +17,8 @@ export class PermissionsController {
 
   @Permissions('permission.get-all')
   @Get()
-  async getAll() {
-    return this.permissionsService.getAll();
+  async getAll(@Query() query: StatusQueryDto) {
+    return this.permissionsService.getAll(query.status);
   }
 
   @Permissions('permission.create')

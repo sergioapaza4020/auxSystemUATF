@@ -1,3 +1,5 @@
+import { Query } from '@nestjs/common';
+import { StatusQueryDto } from 'src/dtos/common/status-query.dto';
 import { GradeItemUpdateDto } from 'src/dtos/grade-items/grade-items-update.dto';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
@@ -15,8 +17,8 @@ export class GradeItemsController {
 
   @Permissions('grade-item.get-all')
   @Get()
-  async getAll() {
-    return await this.GradeItemsService.getAll();
+  async getAll(@Query() query: StatusQueryDto) {
+    return await this.GradeItemsService.getAll(query.status);
   }
 
   @Permissions('grade-item.create')

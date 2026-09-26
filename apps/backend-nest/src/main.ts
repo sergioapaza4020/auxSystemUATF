@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { createValidationPipe } from '@core/pipes/validation.pipe';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from '@core/interceptors/response/response.interceptor';
@@ -6,6 +7,7 @@ import { HttpExceptionFilter } from '@core/filters/http-exception/http-exception
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(createValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('Sistema de auxiliares API')

@@ -1,3 +1,5 @@
+import { Query } from '@nestjs/common';
+import { StatusQueryDto } from 'src/dtos/common/status-query.dto';
 import { CareerUpdateDto } from 'src/dtos/careers/careers-update.dto';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
@@ -15,8 +17,8 @@ export class CareersController {
 
   @Permissions('career.get-all')
   @Get()
-  async getAll() {
-    return this.careersService.getAll();
+  async getAll(@Query() query: StatusQueryDto) {
+    return this.careersService.getAll(query.status);
   }
 
   @Permissions('career.create')

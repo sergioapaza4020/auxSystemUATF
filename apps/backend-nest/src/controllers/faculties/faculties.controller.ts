@@ -1,6 +1,7 @@
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { StatusQueryDto } from 'src/dtos/common/status-query.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FacultyUpdateDto } from 'src/dtos/faculties/faculties-update.dto';
 import { FacultyCreateDto } from 'src/dtos/faculties/faculties.dto';
@@ -15,8 +16,8 @@ export class FacultiesController {
 
   @Permissions('faculty.get-all')
   @Get()
-  async getAll() {
-    return this.facultiesService.getAll();
+  async getAll(@Query() query: StatusQueryDto) {
+    return this.facultiesService.getAll(query.status);
   }
 
   @Permissions('faculty.create')

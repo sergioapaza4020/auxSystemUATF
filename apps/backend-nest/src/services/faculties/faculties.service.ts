@@ -4,6 +4,8 @@ import { FacultyUpdateDto } from 'src/dtos/faculties/faculties-update.dto';
 import { FacultyCreateDto } from 'src/dtos/faculties/faculties.dto';
 import { Faculty } from 'src/entities/faculties/faculties.entity';
 import { Repository, DataSource } from 'typeorm';
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 
 @Injectable()
 export class FacultiesService {
@@ -12,10 +14,10 @@ export class FacultiesService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getAll(): Promise<Faculty[]> {
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<Faculty[]> {
     return this.facultyRepository.find({
-      where: { isActive: true },
-      relations: { careers: true },
+      where: statusFilter(status),
+      relations: { careers: true, dean: true },
     });
   }
 
@@ -23,7 +25,10 @@ export class FacultiesService {
     const faculty = await this.getOneByName(facultyCreateDto.name);
     if (faculty) throw new BadRequestException('Faculty already exists');
 
-    const facultyCreated = this.facultyRepository.create();
+    const facultyCreated = this.facultyRepository.create({
+      name: facultyCreateDto.name,
+      dean: { idUser: facultyCreateDto.idDean },
+    });
     facultyCreated.createdBy = authorId;
     return facultyCreated;
   }

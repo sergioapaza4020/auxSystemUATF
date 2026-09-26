@@ -10,6 +10,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from '../roles/roles.entity';
+import { Exclude } from 'class-transformer';
 import { BaseEntity } from '@common/entities/base.entity';
 import { UserSession } from '../user-sessions/user-sessions.entity';
 import { Faculty } from '../faculties/faculties.entity';
@@ -27,12 +28,13 @@ export class User extends BaseEntity {
 
   @ManyToOne(() => Career, { nullable: true })
   @JoinColumn({ name: 'careers' })
-  careers: Career[];
+  careers: Career;
 
   @Column({ unique: true, name: 'email' })
   email: string;
 
-  @Column({ name: 'password' })
+  @Exclude({ toPlainOnly: true })
+  @Column({ name: 'password', select: false })
   password: string;
 
   @Column({ nullable: true, name: 'avatar' })

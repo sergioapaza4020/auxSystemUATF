@@ -26,7 +26,7 @@ export class Course extends BaseEntity {
   gradeScheme: GradeScheme;
 
   @ManyToMany(() => Career, (career) => career.courses)
-  career: Career;
+  career: Career[];
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.course)
   enrollments: Enrollment[];

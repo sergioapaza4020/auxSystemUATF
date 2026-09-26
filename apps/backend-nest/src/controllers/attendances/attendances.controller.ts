@@ -1,4 +1,6 @@
 import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
+import { Query } from '@nestjs/common';
+import { AttendanceHistoryQueryDto } from 'src/dtos/attendances/attendance-history-query.dto';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
@@ -28,10 +30,13 @@ export class AttendancesController {
   @Permissions('attendance.session.get-by-enrollment')
   @Get('sessions/enrollment/:idEnrollment')
   async getSessionsByEnrollment(
+    @Query() query: AttendanceHistoryQueryDto,
     @CurrentUser() user: JwtPayload,
     @Param('idEnrollment', ParseIntPipe)
     idEnrollment: number,
   ) {
+    if (query.page !== undefined || query.limit !== undefined || query.date)
+      return this.attendancesService.getSessionsPage(user.idUser, idEnrollment, query);
     return this.attendancesService.getSessionsByEnrollment(user.idUser, idEnrollment);
   }
 

@@ -1,4 +1,6 @@
 import type { JwtPayload } from '@common/types/jwt-payload.type';
+import { Query } from '@nestjs/common';
+import { AssistantSchemeQueryDto } from 'src/dtos/assistant-grade-schemes/assistant-scheme-query.dto';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 import {
@@ -28,20 +30,27 @@ export class AssistantGradeSchemesController {
   @Permissions('assistant-grade-scheme.get-one')
   @Get('course/:idCourse')
   async getMyScheme(
+    @Query() query: AssistantSchemeQueryDto,
     @CurrentUser() user: JwtPayload,
     @Param('idCourse', ParseIntPipe) idCourse: number,
   ) {
-    return this.assistantGradeSchemesService.getMyScheme(user.idUser, idCourse);
+    return this.assistantGradeSchemesService.getMyScheme(
+      user.idUser,
+      idCourse,
+      query.enrollmentId,
+      query.status,
+    );
   }
 
   @Permissions('assistant-grade-scheme.create')
   @Post('course/:idCourse')
   async create(
+    @Query() query: AssistantSchemeQueryDto,
     @CurrentUser() user: JwtPayload,
     @Param('idCourse', ParseIntPipe) idCourse: number,
     @Body() dto: AssistantGradeSchemeCreateDto,
   ) {
-    return this.assistantGradeSchemesService.create(user.idUser, idCourse, dto);
+    return this.assistantGradeSchemesService.create(user.idUser, idCourse, dto, query.enrollmentId);
   }
 
   @Permissions('assistant-grade-scheme.update')

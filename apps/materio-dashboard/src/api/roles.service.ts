@@ -1,3 +1,5 @@
+import type { ApiResponse } from '@/interfaces/apiResponse';
+import type { RecordStatus } from '@/interfaces/status-query.interface';
 import { instance } from './config/config';
 
 import type { IRole, IRoleCreate } from '@/interfaces/roles/role.interface';
@@ -10,8 +12,8 @@ export const getRoles = async (): Promise<IRole[]> => {
   return response.data.data;
 };
 
-export const getPermissions = async (): Promise<IPermission[]> => {
-  const response = await instance.get('/permissions');
+export const getPermissions = async (status?: RecordStatus): Promise<IPermission[]> => {
+  const response = await instance.get<ApiResponse<IPermission[]>>('/permissions', { params: { status } });
 
   return response.data.data;
 };

@@ -21,6 +21,7 @@ export function useAttendances(idEnrollment: number | null) {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const loadSessions = useCallback(async () => {
     if (!idEnrollment) {
@@ -30,6 +31,7 @@ export function useAttendances(idEnrollment: number | null) {
     }
 
     setLoading(true);
+    setError('');
 
     try {
       const data = await getAttendanceSessionsByEnrollment(idEnrollment);
@@ -78,19 +80,26 @@ export function useAttendances(idEnrollment: number | null) {
     [idEnrollment, loadSessions],
   );
 
-  const saveSessionAttendances = useCallback(async (idSession: number, data: IAttendanceSave) => {
-    setSaving(true);
+  const saveSessionAttendances = useCallback(
+    async (idSession: number, data: IAttendanceSave) => {
+      setSaving(true);
 
-    try {
-      const result = await saveAttendances(idSession, data);
+      try {
+        const result = await saveAttendances(idSession, data);
 
-      setSession(result);
+        if (session?.idAttendanceSession === idSession) {
+          const refreshed = await getAttendanceSession(idSession);
 
-      return result;
-    } finally {
-      setSaving(false);
-    }
-  }, []);
+          setSession(refreshed);
+        }
+
+        return result;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [session],
+  );
 
   useEffect(() => {
     void loadSessions();
@@ -99,6 +108,7 @@ export function useAttendances(idEnrollment: number | null) {
   return {
     sessions,
     session,
+    error,
     loading,
     saving,
     loadSessions,

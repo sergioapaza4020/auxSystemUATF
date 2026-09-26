@@ -1,3 +1,5 @@
+import { Query } from '@nestjs/common';
+import { EnrollmentQueryDto } from 'src/dtos/enrollments/enrollment-query.dto';
 import { EnrollmentUpdateDto } from 'src/dtos/enrollments/enrollments-update.dto';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
@@ -15,8 +17,17 @@ export class EnrollmentsController {
 
   @Permissions('enrollment.get-all')
   @Get()
-  async getAll() {
-    return this.enrollmentsService.getAll();
+  async getAll(@Query() query: EnrollmentQueryDto) {
+    if (
+      query.page !== undefined ||
+      query.limit !== undefined ||
+      query.search ||
+      query.courseId ||
+      query.semesterId ||
+      query.role
+    )
+      return this.enrollmentsService.getPage(query);
+    return this.enrollmentsService.getAll(query.status);
   }
 
   @Permissions('enrollment.create')

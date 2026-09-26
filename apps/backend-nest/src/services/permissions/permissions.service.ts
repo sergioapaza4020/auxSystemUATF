@@ -1,3 +1,5 @@
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 import { PermissionUpdateDto } from 'src/dtos/permissions/permissions-update.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -25,8 +27,8 @@ export class PermissionsService {
     return this.permissionRepository.save(permissionCreated);
   }
 
-  async getAll(): Promise<Permission[]> {
-    return this.permissionRepository.find({ where: { isActive: true } });
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<Permission[]> {
+    return this.permissionRepository.find({ where: statusFilter(status) });
   }
 
   async getOneByName(name: string) {

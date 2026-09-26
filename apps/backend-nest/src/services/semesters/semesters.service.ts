@@ -1,3 +1,5 @@
+import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 import { SemesterUpdateDto } from 'src/dtos/semesters/semesters-update.dto';
 import { SemesterNumber } from '@common/enums/semesterNumber';
 import {
@@ -17,9 +19,9 @@ export class SemestersService {
     @InjectRepository(Semester) private readonly semesterRepository: Repository<Semester>,
   ) {}
 
-  async getAll(): Promise<Semester[]> {
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<Semester[]> {
     return this.semesterRepository.find({
-      where: { isActive: true },
+      where: statusFilter(status),
     });
   }
 
