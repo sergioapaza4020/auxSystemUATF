@@ -36,6 +36,42 @@ describe('ResponseInterceptor', () => {
     });
   });
 
+  it('preserves the domain preview summary, operationId, page and metadata inside its envelope', async () => {
+    const preview = {
+      operationId: 'b73a79d0-02ca-4a3a-8a47-5516cae13e47',
+      total: 10000,
+      valid: 9997,
+      invalid: 3,
+      data: [{ row: 2, name: 'Carlos', valid: false, errors: ['RU duplicado'] }],
+      meta: { page: 1, limit: 25, total: 3, totalPages: 1 },
+    };
+    expect(await responseFor({ data: preview })).toEqual({
+      status: true,
+      statusCode: 200,
+      message: undefined,
+      data: preview,
+    });
+  });
+
+  it('preserves the durable operation status inside the 202 envelope', async () => {
+    const execution = {
+      operationId: 'operation',
+      status: 'IMPORTING',
+      total: 10000,
+      processed: 250,
+      failed: 0,
+      progress: 2.5,
+      startedAt: new Date(),
+      completedAt: null,
+    };
+    const result = await firstValueFrom(
+      new ResponseInterceptor().intercept(new ExecutionContextHost([{}, { statusCode: 202 }]), {
+        handle: () => of(execution),
+      }),
+    );
+    expect(result).toEqual({ status: true, statusCode: 202, message: undefined, data: execution });
+  });
+
   it('removes passwords from saved entities, projections and nested sessions without mutating them', async () => {
     const createdAt = new Date('2026-01-01');
     const entity = Object.assign(new User(), { idUser: 1, password: 'hash', createdAt });

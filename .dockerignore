@@ -1,0 +1,11 @@
+.git
+.turbo
+**/node_modules
+**/.next
+**/dist
+**/dist-worker
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+tools/test-data/output

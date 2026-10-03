@@ -50,6 +50,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   await app.listen(process.env.PORT ?? 3001);
+  console.log(`API HTTP ready pid=${process.pid}; no USER_IMPORT consumer`);
 }
 bootstrap().catch((err) => {
   console.error('Error during bootstrap:', err);

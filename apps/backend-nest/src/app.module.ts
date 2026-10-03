@@ -22,6 +22,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { GradesModule } from './modules/grades/grades.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { AttendancesModule } from './modules/attendances/attendances.module';
+import { BulkOperationsModule } from './modules/bulk-operations/bulk-operations.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { AttendancesModule } from './modules/attendances/attendances.module';
     GradesModule,
     ActivitiesModule,
     AttendancesModule,
+    BulkOperationsModule,
   ],
   controllers: [AppController],
   providers: [

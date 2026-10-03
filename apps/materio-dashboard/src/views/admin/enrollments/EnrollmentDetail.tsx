@@ -18,6 +18,8 @@ import { UserRole } from '@/enums/userRole';
 
 import { useGradeItems } from '@/hooks/grade-items';
 import { useActivities } from '@/hooks/activities/useActivities';
+import { useAuth } from '@/hooks/useAuth';
+import { canImportEnrollmentStudents } from '@/utils/enrollmentImportAccess';
 
 import { EnrollmentHeader } from './EnrollmentHeader';
 import { GradeSchemeCard } from './GradeSchemeCard';
@@ -61,6 +63,7 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
   } = props;
 
   const router = useRouter();
+  const { user } = useAuth();
 
   const [assistantDialogOpen, setAssistantDialogOpen] = useState(false);
 
@@ -117,6 +120,11 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
 
       {isAssistant && (
         <EnrollmentStudentsCard
+          onImportStudents={
+            canImportEnrollmentStudents(user, enrollment)
+              ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/import`)
+              : undefined
+          }
           students={students}
           loading={loadingStudents}
           onSelectStudent={(student) => {

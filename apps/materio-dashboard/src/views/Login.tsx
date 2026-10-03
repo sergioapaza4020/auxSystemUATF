@@ -37,16 +37,20 @@ import type { Mode } from '@core/types';
 
 // Components
 import LoginBrandPanel from '@/components/auth/LoginBrandPanel';
+import ModeDropdown from '@components/layout/shared/ModeDropdown';
 
 // Hooks
 import { useSnackbar } from '@/hooks/useSnackbar';
+import { useSettings } from '@core/hooks/useSettings';
 
 // Utils
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 
-const Login = ({ mode }: { mode: Mode }) => {
+const Login = ({ mode: initialMode }: { mode: Mode }) => {
   const router = useRouter();
   const snackbar = useSnackbar();
+  const { settings } = useSettings();
+  const mode = settings.mode ?? initialMode;
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -175,6 +179,10 @@ const Login = ({ mode }: { mode: Mode }) => {
           boxShadow: mode === 'dark' ? '0 24px 70px rgba(0,0,0,0.30)' : '0 24px 70px rgba(24,39,75,0.12)',
         }}
       >
+        <Box sx={{ position: 'absolute', top: 2, right: 2, zIndex: 1 }}>
+          <ModeDropdown />
+        </Box>
+
         {/* Panel institucional */}
         <LoginBrandPanel />
 

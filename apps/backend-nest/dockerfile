@@ -9,6 +9,7 @@ RUN pnpm install --frozen-lockfile
 
 WORKDIR /app/apps/backend-nest
 RUN pnpm build
+RUN pnpm worker:build
 
 EXPOSE 3001
 CMD ["node","dist/main"]

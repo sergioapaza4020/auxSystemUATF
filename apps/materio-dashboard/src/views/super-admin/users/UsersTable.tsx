@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { useRouter } from 'next/navigation';
+
 import {
   Alert,
   LinearProgress,
@@ -38,6 +40,7 @@ import { UserRolesDialog } from './components/UserRolesDialog';
 type UserDialog = { type: 'create' } | { type: 'edit' | 'detail' | 'roles'; user: IUser } | null;
 
 export function UsersTable() {
+  const router = useRouter();
   const { user: currentUser, loading: authLoading, refreshUser } = useAuth();
   const can = (action: string) => hasPermission(currentUser, `user.${action}`);
   const canReadRoles = hasPermission(currentUser, 'role.get-all');
@@ -125,9 +128,18 @@ export function UsersTable() {
           Usuarios
         </Typography>
         {can('create') && (
-          <Button variant='contained' disabled={mutation.busy} onClick={() => open({ type: 'create' })}>
-            Crear usuario
-          </Button>
+          <Stack direction='row' spacing={2}>
+            <Button
+              onClick={() => router.push('/dashboard/super-admin/users/import')}
+              variant='outlined'
+              disabled={mutation.busy}
+            >
+              Importar usuarios
+            </Button>
+            <Button variant='contained' disabled={mutation.busy} onClick={() => open({ type: 'create' })}>
+              Crear usuario
+            </Button>
+          </Stack>
         )}
       </Stack>
       {!canReadRoles && (

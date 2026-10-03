@@ -33,6 +33,7 @@ import { EnrollmentsService } from './enrollments/enrollments.service';
 import { AssistantGradeSchemesService } from './grade-schemes/assistant-grade-schemes.service';
 import { AttendancesService } from './attendances/attendances.service';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { BulkOperationsService } from './bulk-operations/bulk-operations.service';
 
 function repositoryMock() {
   return {
@@ -92,6 +93,7 @@ describe('CRUD service behavior', () => {
         AssistantGradeSchemesService,
         AttendancesService,
         { provide: RolesService, useValue: roles },
+        { provide: BulkOperationsService, useValue: {} },
         { provide: DataSource, useValue: {} },
         ...entities.map((entity) => ({
           provide: getRepositoryToken(entity),

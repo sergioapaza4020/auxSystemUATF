@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { useRouter } from 'next/navigation';
+
 import {
   Alert,
   Button,
@@ -53,6 +55,7 @@ type Kind = 'careers' | 'courses';
 type RecordItem = ICareer | ICourse;
 
 export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const snackbar = useSnackbar();
 
@@ -273,6 +276,18 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
 
                   <TableCell align='right'>
                     <Stack direction='row' spacing={1} justifyContent='flex-end'>
+                      {kind === 'careers' && can('update') && (
+                        <Button
+                          onClick={() =>
+                            router.push(`/dashboard/admin/careers/${(item as ICareer).idCareer}/students/import`)
+                          }
+                          variant='outlined'
+                          size='small'
+                          disabled={busy || !item.isActive}
+                        >
+                          Importar estudiantes
+                        </Button>
+                      )}
                       <Button
                         size='small'
                         onClick={() => open(item)}

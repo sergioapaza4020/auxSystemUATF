@@ -8,17 +8,30 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: aux_system_db
+      PGDATA: /var/lib/postgresql/data
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aux_system_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-  pnpm-install:
-    image: node:24-alpine
-    working_dir: /workspace
-    command: sh -c "corepack enable && corepack prepare pnpm@10.33.0 --activate && pnpm install"
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
-      - .:/workspace
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   backend:
     build:
@@ -27,26 +40,53 @@ services:
     container_name: aux_system_uatf_backend
     ports:
       - "3001:3001"
-    volumes:
-      - .:/app
+    env_file:
+      - apps/backend-nest/.env
     environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aux_system_db
     depends_on:
-      - postgres
-      - pnpm-install
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/backend-nest/dockerfile
+    container_name: aux_system_uatf_worker
+    command: ["node", "dist-worker/worker"]
+    restart: unless-stopped
+    env_file:
+      - apps/backend-nest/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aux_system_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BULK_USER_IMPORT_BATCH_SIZE: ${BULK_USER_IMPORT_BATCH_SIZE:-250}
+      BULK_USER_IMPORT_BCRYPT_CONCURRENCY: ${BULK_USER_IMPORT_BCRYPT_CONCURRENCY:-4}
+      BULK_USER_IMPORT_JOB_CONCURRENCY: ${BULK_USER_IMPORT_JOB_CONCURRENCY:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     build:
       context: .
       dockerfile: apps/materio-dashboard/dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
     container_name: aux_system_uatf_frontend
     ports:
       - "3000:3000"
-    volumes:
-      - .:/app
     depends_on:
-      - backend
-      - pnpm-install
+      backend:
+        condition: service_started
 
 volumes:
   postgres_data:
+  redis_data:

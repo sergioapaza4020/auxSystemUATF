@@ -32,6 +32,7 @@ interface EnrollmentStudentsCardProps {
   onSelectStudent: (student: IEnrollmentStudent) => void;
 
   onManageAttendance: () => void;
+  onImportStudents?: () => void;
 }
 
 export function EnrollmentStudentsCard({
@@ -39,6 +40,7 @@ export function EnrollmentStudentsCard({
   loading,
   onSelectStudent,
   onManageAttendance,
+  onImportStudents,
 }: EnrollmentStudentsCardProps) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -136,9 +138,20 @@ export function EnrollmentStudentsCard({
             </Box>
           </Stack>
 
-          <Button variant='contained' onClick={onManageAttendance} startIcon={<i className='ri-calendar-check-line' />}>
-            Tomar asistencia
-          </Button>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            {onImportStudents && (
+              <Button variant='outlined' onClick={onImportStudents} startIcon={<i className='ri-upload-line' />}>
+                Importar estudiantes
+              </Button>
+            )}
+            <Button
+              variant='contained'
+              onClick={onManageAttendance}
+              startIcon={<i className='ri-calendar-check-line' />}
+            >
+              Tomar asistencia
+            </Button>
+          </Stack>
         </Stack>
 
         {/* Search */}
