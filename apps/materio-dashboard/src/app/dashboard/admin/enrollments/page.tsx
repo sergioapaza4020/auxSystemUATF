@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   Alert,
@@ -26,7 +26,6 @@ import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface'
 export default function EnrollmentsPage() {
   const { user, loading } = useAuth();
   const snackbar = useSnackbar();
-  const can = (action: string) => hasPermission(user, `enrollment.${action}`);
   const [rows, setRows] = useState<IEnrollment[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -35,23 +34,28 @@ export default function EnrollmentsPage() {
   const [status, setStatus] = useState('active');
   const [busy, setBusy] = useState(false);
 
-  const load = async (nextPage = page) => {
-    try {
-      const response = await getEnrollmentsPage({
-        page: nextPage,
-        limit: 20,
-        status: status as 'active' | 'inactive' | 'all',
-        search: search || undefined,
-      });
+  const can = useCallback((action: string) => hasPermission(user, `enrollment.${action}`), [user]);
 
-      setRows(response.data);
-      setPage(response.meta.page);
-      setTotalPages(response.meta.totalPages);
-      setTotal(response.meta.total);
-    } catch (e) {
-      snackbar.error(getApiErrorMessage(e));
-    }
-  };
+  const load = useCallback(
+    async (nextPage = page) => {
+      try {
+        const response = await getEnrollmentsPage({
+          page: nextPage,
+          limit: 20,
+          status: status as 'active' | 'inactive' | 'all',
+          search: search || undefined,
+        });
+
+        setRows(response.data);
+        setPage(response.meta.page);
+        setTotalPages(response.meta.totalPages);
+        setTotal(response.meta.total);
+      } catch (e) {
+        snackbar.error(getApiErrorMessage(e));
+      }
+    },
+    [status, search, snackbar, page],
+  );
 
   useEffect(() => {
     if (!loading && can('get-all')) void load(1);

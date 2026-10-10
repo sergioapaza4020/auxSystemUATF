@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -83,7 +83,7 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
 
   const can = (action: string) => hasPermission(user, `${prefix}.${action}`);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -97,7 +97,7 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [kind, snackbar]);
 
   useEffect(() => {
     void load();

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -25,23 +26,53 @@ import {
 
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 
+import type { IStudentGradeSummary } from '@/interfaces/enrollments/student-grade-summary.interface';
+import { StudentGradeCell, type StudentGradesMode } from './StudentGradeCell';
+import { DEFAULT_GRADE_DISPLAY_MODE, GradeViewToggle } from './GradeViewToggle';
+
 interface EnrollmentStudentsCardProps {
   students: IEnrollmentStudent[];
+  summary?: IStudentGradeSummary | null;
+  summaryLoading?: boolean;
+  summaryError?: string | null;
+  onRetrySummary?: () => void;
+  showGrades?: boolean;
   loading: boolean;
 
   onSelectStudent: (student: IEnrollmentStudent) => void;
 
   onManageAttendance: () => void;
   onImportStudents?: () => void;
+  onManageGrades?: () => void;
 }
 
 export function EnrollmentStudentsCard({
   students,
+  summary,
+  summaryLoading = false,
+  summaryError,
+  onRetrySummary,
+  showGrades = true,
   loading,
   onSelectStudent,
   onManageAttendance,
   onImportStudents,
+  onManageGrades,
 }: EnrollmentStudentsCardProps) {
+  const [mode, setMode] = useState<StudentGradesMode>(DEFAULT_GRADE_DISPLAY_MODE);
+
+  const gradeStudents = useMemo(
+    () =>
+      new Map(
+        summary?.students.map((student) => [
+          student.idEnrollment,
+          { ...student, byDetail: new Map(student.details.map((detail) => [detail.idGradeSchemeDetail, detail])) },
+        ]) ?? [],
+      ),
+    [summary],
+  );
+
+  const details = summary?.scheme?.details ?? [];
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -62,13 +93,14 @@ export function EnrollmentStudentsCard({
     });
   }, [students, search]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / rowsPerPage));
+  const currentPage = Math.min(page, totalPages - 1);
+
   const visibleStudents = useMemo(() => {
-    const start = page * rowsPerPage;
+    const start = currentPage * rowsPerPage;
 
     return filteredStudents.slice(start, start + rowsPerPage);
-  }, [filteredStudents, page, rowsPerPage]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / rowsPerPage));
+  }, [filteredStudents, currentPage, rowsPerPage]);
 
   const getInitials = (name: string, lastname: string) => `${name?.[0] ?? ''}${lastname?.[0] ?? ''}`.toUpperCase();
 
@@ -139,6 +171,11 @@ export function EnrollmentStudentsCard({
           </Stack>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            {onManageGrades && (
+              <Button variant='outlined' onClick={onManageGrades} startIcon={<i className='ri-table-line' />}>
+                Gestionar calificaciones
+              </Button>
+            )}
             {onImportStudents && (
               <Button variant='outlined' onClick={onImportStudents} startIcon={<i className='ri-upload-line' />}>
                 Importar estudiantes
@@ -154,6 +191,18 @@ export function EnrollmentStudentsCard({
           </Stack>
         </Stack>
 
+        {showGrades && summaryError && (
+          <Alert severity='error' action={<Button onClick={onRetrySummary}>Reintentar</Button>} sx={{ mx: 3, mb: 2 }}>
+            No se pudo cargar el resumen de calificaciones. {summaryError}
+          </Alert>
+        )}
+        {showGrades && !summaryLoading && !summaryError && summary && (!summary.scheme || details.length === 0) && (
+          <Alert severity='info' sx={{ mx: 3, mb: 2 }}>
+            {summary.scheme
+              ? 'El esquema del auxiliar todavía no tiene criterios.'
+              : 'Todavía no existe un esquema de calificación del auxiliar.'}
+          </Alert>
+        )}
         {/* Search */}
         <Box
           sx={{
@@ -161,6 +210,12 @@ export function EnrollmentStudentsCard({
             pb: 2,
           }}
         >
+          {showGrades && <GradeViewToggle value={mode} onChange={setMode} sx={{ mb: 2 }} />}
+          {showGrades && summary?.scheme && (
+            <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 2 }}>
+              El bloque del auxiliar aporta hasta {summary.scheme.assistantPercentage} puntos.
+            </Typography>
+          )}
           <TextField
             fullWidth
             size='small'
@@ -221,7 +276,7 @@ export function EnrollmentStudentsCard({
           </Box>
         ) : (
           <>
-            <TableContainer>
+            <TableContainer sx={{ overflowX: 'auto' }}>
               <Table
                 size='small'
                 sx={{
@@ -243,11 +298,27 @@ export function EnrollmentStudentsCard({
                       #
                     </TableCell>
 
-                    <TableCell>Nombre del estudiante</TableCell>
+                    <TableCell sx={{ minWidth: 240 }}>Nombre del estudiante</TableCell>
 
                     <TableCell>CI</TableCell>
 
                     <TableCell>RU</TableCell>
+                    {showGrades &&
+                      details.map((detail) => (
+                        <TableCell key={detail.idGradeSchemeDetail} align='right' sx={{ minWidth: 120 }}>
+                          <Typography variant='body2' fontWeight={600}>
+                            {detail.name}
+                          </Typography>
+                          <Typography variant='caption' color='text.secondary'>
+                            {detail.percentage}%
+                          </Typography>
+                        </TableCell>
+                      ))}
+                    {showGrades && (
+                      <TableCell align='right' sx={{ minWidth: 120 }}>
+                        Total
+                      </TableCell>
+                    )}
 
                     <TableCell
                       align='right'
@@ -273,7 +344,7 @@ export function EnrollmentStudentsCard({
                     >
                       <TableCell sx={{ pl: 3 }}>
                         <Typography variant='body2' color='text.secondary'>
-                          {page * rowsPerPage + index + 1}
+                          {currentPage * rowsPerPage + index + 1}
                         </Typography>
                       </TableCell>
 
@@ -310,7 +381,46 @@ export function EnrollmentStudentsCard({
                         <Typography variant='body2'>{student.user.ru || '—'}</Typography>
                       </TableCell>
 
-                      <TableCell align='right' sx={{ pr: 3 }}>
+                      {showGrades &&
+                        details.map((detail) => {
+                          const grade = gradeStudents
+                            .get(student.idEnrollment)
+                            ?.byDetail.get(detail.idGradeSchemeDetail);
+
+                          return (
+                            <TableCell key={detail.idGradeSchemeDetail} align='right'>
+                              {summaryLoading ? (
+                                <Skeleton width={70} />
+                              ) : (
+                                <StudentGradeCell
+                                  score={mode === 'weighted' ? grade?.weightedScore : grade?.rawScore}
+                                  maximum={mode === 'weighted' ? detail.maximumScore : undefined}
+                                />
+                              )}
+                            </TableCell>
+                          );
+                        })}
+                      {showGrades && (
+                        <TableCell align='right' sx={{ bgcolor: 'action.hover' }}>
+                          {summaryLoading ? (
+                            <Skeleton width={70} />
+                          ) : (
+                            <StudentGradeCell
+                              total
+                              score={
+                                mode === 'weighted'
+                                  ? gradeStudents.get(student.idEnrollment)?.assistantContribution
+                                  : gradeStudents.get(student.idEnrollment)?.totalRaw
+                              }
+                              maximum={mode === 'weighted' ? summary?.scheme?.assistantPercentage : 100}
+                            />
+                          )}
+                        </TableCell>
+                      )}
+                      <TableCell
+                        align='right'
+                        sx={{ pr: 3, position: 'sticky', right: 0, bgcolor: 'background.paper' }}
+                      >
                         <Button
                           size='small'
                           endIcon={<i className='ri-arrow-right-s-line' />}
@@ -349,8 +459,8 @@ export function EnrollmentStudentsCard({
               }}
             >
               <Typography variant='body2' color='text.secondary'>
-                Mostrando {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filteredStudents.length)} de{' '}
-                {filteredStudents.length}
+                Mostrando {currentPage * rowsPerPage + 1}-
+                {Math.min((currentPage + 1) * rowsPerPage, filteredStudents.length)} de {filteredStudents.length}
               </Typography>
 
               <Stack direction='row' alignItems='center' justifyContent='flex-end' spacing={1}>
@@ -379,8 +489,8 @@ export function EnrollmentStudentsCard({
 
                 <Button
                   size='small'
-                  disabled={page === 0}
-                  onClick={() => setPage((current) => Math.max(current - 1, 0))}
+                  disabled={currentPage === 0}
+                  onClick={() => setPage(Math.max(currentPage - 1, 0))}
                   sx={{
                     minWidth: 36,
                   }}
@@ -395,13 +505,13 @@ export function EnrollmentStudentsCard({
                     textAlign: 'center',
                   }}
                 >
-                  {page + 1}/{totalPages}
+                  {currentPage + 1}/{totalPages}
                 </Typography>
 
                 <Button
                   size='small'
-                  disabled={page >= totalPages - 1}
-                  onClick={() => setPage((current) => Math.min(current + 1, totalPages - 1))}
+                  disabled={currentPage >= totalPages - 1}
+                  onClick={() => setPage(Math.min(currentPage + 1, totalPages - 1))}
                   sx={{
                     minWidth: 36,
                   }}

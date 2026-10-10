@@ -1,17 +1,48 @@
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateGradeDto } from 'src/dtos/grades/create-grade.dto';
 import { UpdateGradeDto } from 'src/dtos/grades/update-grade.dto';
 import { GradesService } from 'src/services/grades/grades.service';
+import { BulkActivityGradesDto } from 'src/dtos/grades/bulk-activity-grades.dto';
 
 @ApiBearerAuth('access-token')
 @Controller('grades')
 @ApiTags('Grades')
 export class GradesController {
   constructor(private readonly gradesService: GradesService) {}
+
+  @Permissions('grade.get-by-enrollment')
+  @Get('matrix/:idEnrollment')
+  async getMatrix(
+    @CurrentUser() user: JwtPayload,
+    @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+    @Query('detailId', new ParseIntPipe({ optional: true })) detailId?: number,
+  ) {
+    return this.gradesService.getMatrix(user.idUser, idEnrollment, detailId);
+  }
+
+  @Permissions('grade.create', 'grade.update')
+  @Patch('bulk/:idEnrollment')
+  async saveBulk(
+    @CurrentUser() user: JwtPayload,
+    @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+    @Body() dto: BulkActivityGradesDto,
+  ) {
+    return this.gradesService.saveBulk(user, idEnrollment, dto);
+  }
 
   @Permissions('grade.create')
   @Post()

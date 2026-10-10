@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   Alert,
@@ -54,15 +54,15 @@ export function FacultiesTable() {
   const [dean, setDean] = useState<IUser[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const can = (action: string) => hasPermission(user, `faculty.${action}`);
+  const can = useCallback((action: string) => hasPermission(user, `faculty.${action}`), [user]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setRows(await getFaculties(status));
     } catch (e) {
       snackbar.error(getApiErrorMessage(e));
     }
-  };
+  }, [status, snackbar]);
 
   useEffect(() => {
     if (!loading && can('get-all')) {

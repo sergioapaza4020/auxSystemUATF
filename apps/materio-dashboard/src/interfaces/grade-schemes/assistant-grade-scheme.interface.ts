@@ -4,6 +4,7 @@ import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
 export interface IAssistantGradeSchemeDetail {
   idGradeSchemeDetail: number;
   percentage: number;
+  permissionWeight?: number;
   order: number;
   gradeItem: IGradeItem;
   activities: IActivity[];
@@ -20,6 +21,7 @@ export interface IAssistantGradeScheme {
 
 export interface IAssistantGradeSchemeDetailCreate {
   percentage: number;
+  permissionWeight?: number;
   order: number;
   gradeItem: {
     idGradeItem: number;

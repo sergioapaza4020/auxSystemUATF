@@ -73,6 +73,7 @@ export class GradeSchemesService {
           idGradeItem: detail.gradeItem.idGradeItem,
         },
         percentage: detail.percentage,
+        permissionWeight: detail.permissionWeight ?? 1,
         order: idx + 1,
       }),
     );
@@ -162,6 +163,7 @@ export class GradeSchemesService {
             idGradeItem: detail.gradeItem.idGradeItem,
           },
           percentage: detail.percentage,
+          permissionWeight: detail.permissionWeight ?? 1,
           order: index + 1,
         }),
       );
@@ -227,6 +229,7 @@ export class GradeSchemesService {
             idGradeItem: detail.gradeItem.idGradeItem,
           },
           percentage: detail.percentage,
+          permissionWeight: detail.permissionWeight ?? 1,
           order: idx + 1,
         }),
       );

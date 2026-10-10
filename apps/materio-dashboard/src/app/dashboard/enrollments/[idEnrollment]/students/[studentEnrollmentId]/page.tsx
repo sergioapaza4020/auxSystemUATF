@@ -1,76 +1,151 @@
 'use client';
 
+import { useState } from 'react';
+
 import { useParams } from 'next/navigation';
 
-import { CircularProgress, Grid, Typography } from '@mui/material';
+import { isAttendanceCriterion } from '@repo/grade-calculations';
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+} from '@mui/material';
 
-import { useEnrollmentGrades } from '@/hooks/grades/useEnrollmentGrades';
-
-import { EnrollmentHeader } from '@/views/admin/enrollments/EnrollmentHeader';
-import { GradeSchemeCard } from '@/views/admin/enrollments/GradeSchemeCard';
+import { useAuth } from '@/hooks/useAuth';
+import { hasPermission } from '@/utils/hasPermission';
+import { useStudentAcademicRecord } from '@/hooks/enrollments/useStudentAcademicRecord';
+import { useStudentGradeSummary } from '@/hooks/enrollments/useStudentGradeSummary';
+import { StudentAcademicRecord } from '@/views/admin/enrollments/student-record/StudentAcademicRecord';
 import { GradesCard } from '@/views/admin/enrollments/grades-card/GradesCard';
-import { useManagedEnrollment } from '@/hooks/enrollments/useManagedEnrollment';
-import { useAssistantGradeScheme } from '@/hooks/assistant-grade-schemes/useAssistantGradeScheme';
-import { useStudentAttendance } from '@/hooks/attendances/useStudentAttendance';
 
-export default function StudentEnrollmentDetailPage() {
-  const params = useParams();
+function StudentRecordContent({
+  idEnrollment,
+  studentEnrollmentId,
+}: {
+  idEnrollment: number;
+  studentEnrollmentId: number;
+}) {
+  const { user } = useAuth();
 
-  const studentEnrollmentId = Number(params.studentEnrollmentId);
-
-  const { enrollment, loading: loadingEnrollment } = useManagedEnrollment(studentEnrollmentId);
-
-  const { scheme: assistantGradeScheme, loading: loadingAssistantGradeScheme } = useAssistantGradeScheme(
-    enrollment?.course.idCourse ?? null,
+  const data = useStudentAcademicRecord(
+    idEnrollment,
+    studentEnrollmentId,
+    hasPermission(user, 'attendance.student.get'),
   );
 
-  const { grades, loading: loadingGrades, load: reloadGrades } = useEnrollmentGrades(studentEnrollmentId);
-  const { attendance, loading: loadingAttendance } = useStudentAttendance(studentEnrollmentId);
+  const results = useStudentGradeSummary(idEnrollment, data.revision);
+  const [directOpen, setDirectOpen] = useState(false);
+  const canEdit = hasPermission(user, 'grade.create') && hasPermission(user, 'grade.update');
+  const record = data.record;
 
-  if (loadingEnrollment) {
-    return <CircularProgress />;
-  }
+  const directDetails =
+    record?.scheme?.details.filter(
+      (detail) =>
+        !isAttendanceCriterion(detail.gradeItem.name) && !detail.activities.some((activity) => activity.isActive),
+    ) ?? [];
 
-  if (!enrollment) {
-    return <Typography color='error'>No se encontró la matriculación del estudiante.</Typography>;
-  }
+  const reload = () => {
+    setDirectOpen(false);
+    data.reload();
+  };
 
-  if (!loadingAssistantGradeScheme && !assistantGradeScheme) {
+  const error = data.error || results.error;
+
+  if (data.loading || results.loading) return <CircularProgress aria-label='Cargando ficha académica' />;
+
+  if (
+    error ||
+    !record ||
+    !results.summary ||
+    !results.summary.students.some((student) => student.idEnrollment === studentEnrollmentId)
+  ) {
     return (
-      <>
-        <EnrollmentHeader enrollment={enrollment} />
-
-        <Typography color='warning.main' sx={{ mt: 4 }}>
-          Todavía no has configurado la evaluación del auxiliar para esta materia.
-        </Typography>
-      </>
+      <Stack spacing={2}>
+        <Button href={`/dashboard/enrollments/${idEnrollment}`}>Volver a la materia</Button>
+        <Alert severity='error'>{error || 'No se encontró al estudiante en esta materia.'}</Alert>
+        <Button
+          onClick={() => {
+            data.reload();
+            results.reload();
+          }}
+        >
+          Reintentar
+        </Button>
+      </Stack>
     );
   }
 
   return (
     <>
-      <EnrollmentHeader enrollment={enrollment} />
-
-      <Grid container spacing={4} sx={{ mt: 1 }}>
-        <Grid item xs={12} md={6}>
-          <GradeSchemeCard enrollment={enrollment} />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <GradesCard
-            enrollment={enrollment}
-            grades={grades}
-            loading={loadingGrades || loadingAssistantGradeScheme}
-            onGradesChanged={reloadGrades}
-            isEditable
-            gradeScheme={assistantGradeScheme ?? undefined}
-            schemeMultiplier={assistantGradeScheme ? Number(assistantGradeScheme.assistantPercentage) / 100 : 1}
-            assistantPercentage={assistantGradeScheme ? Number(assistantGradeScheme.assistantPercentage) : undefined}
-            attendance={attendance}
-            attendanceLoading={loadingAttendance}
-          />
-        </Grid>
-      </Grid>
+      <StudentAcademicRecord
+        idEnrollment={idEnrollment}
+        enrollment={record.enrollment}
+        scheme={record.scheme}
+        summary={results.summary}
+        grades={record.grades}
+        attendance={record.attendance}
+        attendanceError={record.attendanceError}
+        canEdit={canEdit}
+        canViewAttendance={
+          hasPermission(user, 'attendance.session.get-by-enrollment') &&
+          hasPermission(user, 'attendance.session.get-one')
+        }
+        onManageDirect={canEdit && directDetails.length ? () => setDirectOpen(true) : undefined}
+      />
+      {canEdit && record.scheme && directOpen && (
+        <Dialog open onClose={() => setDirectOpen(false)} fullWidth maxWidth='sm'>
+          <DialogTitle>Gestionar criterios directos</DialogTitle>
+          <DialogContent>
+            <Alert severity='info' sx={{ mb: 2 }}>
+              Las notas de actividades se gestionan desde Grade Matrix.
+            </Alert>
+            <GradesCard
+              enrollment={record.enrollment}
+              grades={record.grades}
+              loading={false}
+              isEditable
+              canDelete={hasPermission(user, 'grade.remove')}
+              gradeScheme={{
+                ...record.scheme,
+                details: directDetails.map((detail) => ({ ...detail, activities: [] })),
+              }}
+              schemeMultiplier={Number(record.scheme.assistantPercentage) / 100}
+              onGradesChanged={reload}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDirectOpen(false)}>Cerrar</Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </>
+  );
+}
+
+export default function StudentEnrollmentDetailPage() {
+  const params = useParams();
+  const { user } = useAuth();
+  const idEnrollment = Number(params.idEnrollment);
+  const studentEnrollmentId = Number(params.studentEnrollmentId);
+
+  if (!hasPermission(user, 'enrollment.get-managed-enrollment') || !hasPermission(user, 'grade.get-by-enrollment')) {
+    return <Alert severity='warning'>No tienes permiso para consultar esta ficha académica.</Alert>;
+  }
+
+  if (![idEnrollment, studentEnrollmentId].every((id) => Number.isInteger(id) && id > 0)) {
+    return <Alert severity='error'>La matrícula indicada no es válida.</Alert>;
+  }
+
+  return (
+    <StudentRecordContent
+      key={`${idEnrollment}:${studentEnrollmentId}`}
+      idEnrollment={idEnrollment}
+      studentEnrollmentId={studentEnrollmentId}
+    />
   );
 }

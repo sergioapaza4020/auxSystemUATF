@@ -1,7 +1,16 @@
 import { Type } from 'class-transformer';
 import { AttendanceStatus } from '@common/enums/attendanceStatus';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsInt, Min, ValidateNested } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export class AttendanceRecordDto {
   @ApiProperty({
@@ -18,6 +27,12 @@ export class AttendanceRecordDto {
   })
   @IsEnum(AttendanceStatus)
   status: AttendanceStatus;
+
+  @ApiPropertyOptional({ nullable: true, maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  observation?: string | null;
 }
 
 export class AttendanceSaveDto {

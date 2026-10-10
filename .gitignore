@@ -40,3 +40,5 @@ yarn-error.log*
 
 # Generated test datasets
 tools/test-data/output/
+
+/work

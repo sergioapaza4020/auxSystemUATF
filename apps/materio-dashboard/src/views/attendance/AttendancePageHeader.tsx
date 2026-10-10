@@ -44,8 +44,8 @@ export function AttendancePageHeader({ enrollment, studentCount, onBack }: Atten
           </Box>
 
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant='body1' fontWeight={600} noWrap>
-              {enrollment.course.code} - {enrollment.course.name}
+            <Typography variant='body1' fontWeight={600}>
+              {enrollment.course.code} · {enrollment.course.name}
             </Typography>
 
             <Stack

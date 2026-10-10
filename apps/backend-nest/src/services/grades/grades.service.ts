@@ -6,7 +6,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { ACTIVITY_ORDER } from '@common/utils/activity-rules';
+import {
+  assertGradeActivity,
+  assertGradeSchemeAccess,
+  assertGradeScore,
+} from '@common/utils/grade-rules';
+import { isAttendanceCriterion } from '@repo/grade-calculations';
+import { CourseRelations } from '@common/enums/courseRelations';
+import type { JwtPayload } from '@common/types/jwt-payload.type';
+import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
+import type { GradeMatrixDto } from 'src/dtos/grades/grade-matrix.dto';
+import type { BulkActivityGradesDto } from 'src/dtos/grades/bulk-activity-grades.dto';
 
 import { CreateGradeDto } from 'src/dtos/grades/create-grade.dto';
 import { UpdateGradeDto } from 'src/dtos/grades/update-grade.dto';
@@ -31,6 +43,7 @@ export class GradesService {
   ) {}
 
   async create(idUser: number, dto: CreateGradeDto) {
+    assertGradeScore(dto.score);
     const enrollment = await this.enrollmentRepository.findOne({
       where: {
         idEnrollment: dto.enrollmentId,
@@ -39,6 +52,7 @@ export class GradesService {
         course: {
           gradeScheme: true,
         },
+        semester: true,
       },
     });
 
@@ -57,6 +71,7 @@ export class GradesService {
           assistantEnrollment: {
             user: true,
             course: true,
+            semester: true,
           },
         },
         gradeItem: true,
@@ -67,29 +82,7 @@ export class GradesService {
       throw new NotFoundException('Detalle del esquema de notas no encontrado');
     }
 
-    const assistantEnrollment = detail.gradeScheme.assistantEnrollment;
-
-    if (assistantEnrollment) {
-      if (assistantEnrollment.user.idUser !== idUser) {
-        throw new ForbiddenException(
-          'No tienes permisos para registrar notas en esta configuración de auxiliar',
-        );
-      }
-
-      if (!assistantEnrollment.isActive) {
-        throw new ForbiddenException('La matrícula del auxiliar no está activa');
-      }
-
-      if (assistantEnrollment.course.idCourse !== enrollment.course.idCourse) {
-        throw new BadRequestException('La configuración del auxiliar no pertenece a esta materia');
-      }
-    } else {
-      if (enrollment.course.gradeScheme?.idGradeScheme !== detail.gradeScheme.idGradeScheme) {
-        throw new BadRequestException(
-          'El componente de nota no pertenece al esquema de la materia',
-        );
-      }
-    }
+    assertGradeSchemeAccess(idUser, enrollment, detail);
 
     let activity: Activity | null = null;
 
@@ -106,19 +99,7 @@ export class GradesService {
         },
       });
 
-      if (!activity) {
-        throw new NotFoundException('Actividad no encontrada o inactiva');
-      }
-
-      if (activity.gradeSchemeDetail.idGradeSchemeDetail !== detail.idGradeSchemeDetail) {
-        throw new BadRequestException('La actividad no pertenece al componente de nota indicado');
-      }
-
-      if (
-        activity.gradeSchemeDetail.gradeScheme.idGradeScheme !== detail.gradeScheme.idGradeScheme
-      ) {
-        throw new BadRequestException('La actividad no pertenece al esquema de la materia');
-      }
+      assertGradeActivity(activity, detail);
     }
 
     let existing: Grade | null = null;
@@ -164,7 +145,21 @@ export class GradesService {
       score: dto.score,
     });
 
-    return this.gradeRepository.save(grade);
+    try {
+      return await this.gradeRepository.save(grade);
+    } catch (error) {
+      const databaseError =
+        error instanceof QueryFailedError
+          ? (error.driverError as { code?: string; constraint?: string })
+          : null;
+      if (
+        databaseError?.code === '23505' &&
+        databaseError.constraint === 'UQ_grade_enrollment_activity'
+      ) {
+        throw new ConflictException('Ya existe una nota para esta actividad');
+      }
+      throw error;
+    }
   }
 
   async getByEnrollment(idUser: number, idEnrollment: number) {
@@ -188,11 +183,10 @@ export class GradesService {
     }
 
     return this.gradeRepository.find({
-      where: {
-        enrollment: {
-          idEnrollment,
-        },
-      },
+      where: [
+        { enrollment: { idEnrollment }, activity: IsNull() },
+        { enrollment: { idEnrollment }, activity: { isActive: true, deletedAt: IsNull() } },
+      ],
       relations: {
         gradeSchemeDetail: {
           gradeItem: true,
@@ -204,9 +198,7 @@ export class GradesService {
         gradeSchemeDetail: {
           order: 'ASC',
         },
-        activity: {
-          order: 'ASC',
-        },
+        activity: ACTIVITY_ORDER,
       },
     });
   }
@@ -245,6 +237,7 @@ export class GradesService {
     const grade = await this.getOne(idUser, idGrade);
 
     if (dto.score !== undefined) {
+      assertGradeScore(dto.score);
       grade.score = dto.score;
     }
 
@@ -259,5 +252,260 @@ export class GradesService {
     return {
       message: 'Nota eliminada correctamente',
     };
+  }
+
+  async getMatrix(
+    idUser: number,
+    idAssistantEnrollment: number,
+    detailId?: number,
+  ): Promise<GradeMatrixDto> {
+    const assistant = await this.enrollmentsService.getAssistantEnrollment(
+      idUser,
+      idAssistantEnrollment,
+    );
+    const manager = this.gradeRepository.manager;
+    const scheme = await manager.getRepository(GradeScheme).findOne({
+      where: { assistantEnrollment: { idEnrollment: idAssistantEnrollment }, isActive: true },
+      relations: { details: { gradeItem: true } },
+    });
+    const matrix: GradeMatrixDto = {
+      enrollment: {
+        idEnrollment: assistant.idEnrollment,
+        idCourse: assistant.course.idCourse,
+        code: assistant.course.code,
+        name: assistant.course.name,
+        group: assistant.course.group,
+        assistantName: `${assistant.user.name} ${assistant.user.lastname}`,
+      },
+      scheme: scheme
+        ? {
+            idGradeScheme: scheme.idGradeScheme,
+            assistantPercentage: Number(scheme.assistantPercentage ?? 100),
+          }
+        : null,
+      criteria: [],
+      detail: null,
+      activities: [],
+      students: [],
+      grades: [],
+    };
+    if (!scheme) return matrix;
+    const details = [...scheme.details]
+      .filter((detail) => !isAttendanceCriterion(detail.gradeItem.name))
+      .sort((a, b) => a.order - b.order || a.idGradeSchemeDetail - b.idGradeSchemeDetail);
+    const counts = await manager
+      .getRepository(Activity)
+      .createQueryBuilder('activity')
+      .select('activity.id_grade_scheme_detail', 'detailId')
+      .addSelect('COUNT(*)', 'count')
+      .innerJoin('activity.gradeSchemeDetail', 'detail')
+      .where('detail.id_grade_scheme = :schemeId', { schemeId: scheme.idGradeScheme })
+      .andWhere('activity.isActive = true')
+      .groupBy('activity.id_grade_scheme_detail')
+      .getRawMany<{ detailId: number; count: string }>();
+    const activityCounts = new Map(counts.map((row) => [Number(row.detailId), Number(row.count)]));
+    matrix.criteria = details.map((detail) => ({
+      idGradeSchemeDetail: detail.idGradeSchemeDetail,
+      name: detail.gradeItem.name,
+      percentage: Number(detail.percentage),
+      activityCount: activityCounts.get(detail.idGradeSchemeDetail) ?? 0,
+    }));
+    const detail =
+      detailId === undefined
+        ? (details.find((item) => activityCounts.has(item.idGradeSchemeDetail)) ?? details[0])
+        : details.find((item) => item.idGradeSchemeDetail === detailId);
+    if (detailId !== undefined && !detail)
+      throw new BadRequestException(
+        'El criterio no pertenece al esquema de actividades del auxiliar',
+      );
+    if (!detail) return matrix;
+    matrix.detail = {
+      idGradeSchemeDetail: detail.idGradeSchemeDetail,
+      name: detail.gradeItem.name,
+      percentage: Number(detail.percentage),
+    };
+    const [activities, students] = await Promise.all([
+      manager.getRepository(Activity).find({
+        where: {
+          gradeSchemeDetail: { idGradeSchemeDetail: detail.idGradeSchemeDetail },
+          isActive: true,
+          deletedAt: IsNull(),
+        },
+        select: {
+          idActivity: true,
+          name: true,
+          dueDate: true,
+          description: true,
+          publicationDate: true,
+        },
+        order: ACTIVITY_ORDER,
+      }),
+      manager.getRepository(Enrollment).find({
+        where: {
+          course: { idCourse: assistant.course.idCourse },
+          semester: { idSemester: assistant.semester.idSemester },
+          role: CourseRelations.STUDENT,
+          isActive: true,
+        },
+        select: {
+          idEnrollment: true,
+          user: { idUser: true, name: true, lastname: true, ci: true, ru: true },
+        },
+        relations: { user: true },
+        order: { user: { lastname: 'ASC', name: 'ASC' }, idEnrollment: 'ASC' },
+      }),
+    ]);
+    matrix.activities = activities.map((activity) => ({
+      idActivity: activity.idActivity,
+      name: activity.name,
+      dueDate: activity.dueDate,
+      description: activity.description ?? null,
+      publicationDate: activity.publicationDate,
+    }));
+    matrix.students = students.map((student) => ({
+      idEnrollment: student.idEnrollment,
+      name: student.user.name,
+      lastname: student.user.lastname,
+      ci: student.user.ci == null ? null : String(student.user.ci),
+      ru: student.user.ru == null ? null : String(student.user.ru),
+    }));
+    if (!activities.length || !students.length) return matrix;
+    const grades = await manager
+      .getRepository(Grade)
+      .createQueryBuilder('grade')
+      .select('grade.idGrade', 'idGrade')
+      .addSelect('grade.id_enrollment', 'enrollmentId')
+      .addSelect('grade.id_activity', 'activityId')
+      .addSelect('grade.score', 'score')
+      .where('grade.id_grade_scheme_detail = :detailId', { detailId: detail.idGradeSchemeDetail })
+      .andWhere('grade.id_enrollment IN (:...studentIds)', {
+        studentIds: students.map((student) => student.idEnrollment),
+      })
+      .andWhere('grade.id_activity IN (:...activityIds)', {
+        activityIds: activities.map((activity) => activity.idActivity),
+      })
+      .getRawMany<{ idGrade: number; enrollmentId: number; activityId: number; score: string }>();
+    matrix.grades = grades.map((grade) => ({
+      ...grade,
+      idGrade: Number(grade.idGrade),
+      enrollmentId: Number(grade.enrollmentId),
+      activityId: Number(grade.activityId),
+      score: Number(grade.score),
+    }));
+    return matrix;
+  }
+
+  async saveBulk(
+    user: Pick<JwtPayload, 'idUser' | 'roles' | 'permissions'>,
+    idAssistantEnrollment: number,
+    dto: BulkActivityGradesDto,
+  ) {
+    // The existing decorator is OR-based; mixed upserts must require BOTH write permissions.
+    if (
+      !user.roles.includes('SUPERADMIN') &&
+      (!user.permissions.includes('grade.create') || !user.permissions.includes('grade.update'))
+    ) {
+      throw new ForbiddenException(
+        'Se requieren los permisos para crear y actualizar calificaciones',
+      );
+    }
+    if (!dto.grades.length || dto.grades.length > 1000)
+      throw new BadRequestException('Envía entre 1 y 1000 calificaciones por operación');
+    const keys = new Set<string>();
+    for (const grade of dto.grades) {
+      assertGradeScore(grade.score);
+      const key = `${grade.enrollmentId}:${grade.activityId}`;
+      if (keys.has(key))
+        throw new BadRequestException('No se puede repetir una celda en la operación');
+      keys.add(key);
+    }
+    return this.gradeRepository.manager.transaction(async (manager) => {
+      const assistant = await this.enrollmentsService.getAssistantEnrollment(
+        user.idUser,
+        idAssistantEnrollment,
+        manager,
+      );
+      const scheme = await manager.getRepository(GradeScheme).findOne({
+        where: { assistantEnrollment: { idEnrollment: idAssistantEnrollment }, isActive: true },
+        relations: { details: { gradeItem: true } },
+      });
+      if (!scheme) throw new NotFoundException('No existe un esquema activo del auxiliar');
+      scheme.assistantEnrollment = assistant;
+      const activityIds = [...new Set(dto.grades.map((grade) => grade.activityId))];
+      const enrollmentIds = [...new Set(dto.grades.map((grade) => grade.enrollmentId))];
+      const [activities, students] = await Promise.all([
+        manager.getRepository(Activity).find({
+          where: { idActivity: In(activityIds), isActive: true, deletedAt: IsNull() },
+          relations: { gradeSchemeDetail: { gradeScheme: true } },
+        }),
+        manager.getRepository(Enrollment).find({
+          where: {
+            idEnrollment: In(enrollmentIds),
+            course: { idCourse: assistant.course.idCourse },
+            semester: { idSemester: assistant.semester.idSemester },
+            role: CourseRelations.STUDENT,
+            isActive: true,
+          },
+          relations: { course: true, semester: true },
+        }),
+      ]);
+      const activityMap = new Map(activities.map((activity) => [activity.idActivity, activity]));
+      const studentMap = new Map(students.map((student) => [student.idEnrollment, student]));
+      const detailMap = new Map(
+        scheme.details.map((detail) => [detail.idGradeSchemeDetail, detail]),
+      );
+      const values = dto.grades.map((input) => {
+        const student = studentMap.get(input.enrollmentId);
+        if (!student)
+          throw new ForbiddenException(
+            'Hay una matrícula que no pertenece a la materia y semestre del auxiliar',
+          );
+        const activity = activityMap.get(input.activityId);
+        const detail = activity
+          ? detailMap.get(activity.gradeSchemeDetail.idGradeSchemeDetail)
+          : undefined;
+        if (!detail || isAttendanceCriterion(detail.gradeItem.name))
+          throw new ForbiddenException(
+            'Hay una actividad que no pertenece a un criterio editable del auxiliar',
+          );
+        detail.gradeScheme = scheme;
+        assertGradeSchemeAccess(user.idUser, student, detail);
+        const validActivity = activity ?? null;
+        assertGradeActivity(validActivity, detail);
+        return {
+          enrollment: { idEnrollment: student.idEnrollment },
+          activity: { idActivity: validActivity.idActivity },
+          gradeSchemeDetail: { idGradeSchemeDetail: detail.idGradeSchemeDetail },
+          score: input.score,
+        };
+      });
+      // One INSERT ... ON CONFLICT, not a save() or HTTP loop per cell.
+      const result = await manager
+        .getRepository(Grade)
+        .createQueryBuilder()
+        .insert()
+        .into(Grade)
+        .values(values)
+        .onConflict(
+          '("id_enrollment", "id_activity") WHERE "id_activity" IS NOT NULL DO UPDATE SET "score" = EXCLUDED."score"',
+        )
+        // Database names in an array are treated as entity property paths and omit relation FKs.
+        .returning('"id_grade", "id_enrollment", "id_activity", "score"')
+        .execute();
+      const rows = result.raw as {
+        id_grade: number;
+        id_enrollment: number;
+        id_activity: number;
+        score: string;
+      }[];
+      return {
+        grades: rows.map((row) => ({
+          idGrade: Number(row.id_grade),
+          enrollmentId: Number(row.id_enrollment),
+          activityId: Number(row.id_activity),
+          score: Number(row.score),
+        })),
+      };
+    });
   }
 }

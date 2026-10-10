@@ -1,76 +1,31 @@
-import { Box, Card, CardContent, CircularProgress, Stack, Typography } from '@mui/material';
+'use client';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
-import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import { weightedScore, isAttendanceCriterion, criterionScore, totalScore } from '@repo/grade-calculations';
+import { Alert, Box, Card, CardContent, CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
 
 import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
 import type { IStudentAttendance } from '@/interfaces/attendances/attendance.interface';
-
-import { GradeSummaryRow } from './GradeSummaryRow';
-import { GradesSummary } from './GradesSummary';
+import { getMyStudentAttendance } from '@/api/attendances.service';
+import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
+import { calculateActivitiesAverage } from '@/utils/activities-average';
+import { GradeViewToggle, DEFAULT_GRADE_DISPLAY_MODE, type GradeDisplayMode } from '../GradeViewToggle';
+import { StudentGradeCell } from '../StudentGradeCell';
+import { AcademicCriteria, academicSurfaceStyles } from '../student-record/AcademicCriteria';
 
 interface StudentGradesViewProps {
   scheme: IGradeScheme;
   grades: IGrade[];
   loading: boolean;
-
   schemeMultiplier: number;
   maximumScore: number;
-
   attendance?: IStudentAttendance | null;
   attendanceLoading?: boolean;
+  studentEnrollmentId?: number;
+  schemeOverview?: ReactNode;
 }
-
-const getGradeItemVisual = (name: string) => {
-  const normalizedName = name.toLowerCase();
-
-  if (normalizedName.includes('práctica') || normalizedName.includes('practica')) {
-    return {
-      icon: ScienceOutlinedIcon,
-      description: 'Actividades prácticas',
-      color: 'success.main',
-      backgroundColor: 'success.lighterOpacity',
-    };
-  }
-
-  if (normalizedName.includes('laboratorio')) {
-    return {
-      icon: SettingsOutlinedIcon,
-      description: 'Trabajo de laboratorio',
-      color: 'warning.main',
-      backgroundColor: 'warning.lighterOpacity',
-    };
-  }
-
-  if (normalizedName.includes('examen')) {
-    return {
-      icon: AssignmentOutlinedIcon,
-      description: 'Evaluación final de la materia',
-      color: 'error.main',
-      backgroundColor: 'error.lighterOpacity',
-    };
-  }
-
-  if (normalizedName.includes('asistencia')) {
-    return {
-      icon: EventAvailableOutlinedIcon,
-      description: 'Registro de asistencia',
-      color: 'info.main',
-      backgroundColor: 'info.lighterOpacity',
-    };
-  }
-
-  return {
-    icon: DescriptionOutlinedIcon,
-    description: 'Componente de evaluación',
-    color: 'primary.main',
-    backgroundColor: 'primary.lighterOpacity',
-  };
-};
 
 export function StudentGradesView({
   scheme,
@@ -80,227 +35,175 @@ export function StudentGradesView({
   maximumScore,
   attendance,
   attendanceLoading = false,
+  studentEnrollmentId,
+  schemeOverview,
 }: StudentGradesViewProps) {
+  const [mode, setMode] = useState<GradeDisplayMode>(DEFAULT_GRADE_DISPLAY_MODE);
+  const [ownAttendance, setOwnAttendance] = useState<IStudentAttendance | null>(null);
+  const [loadingOwnAttendance, setLoadingOwnAttendance] = useState(false);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const hasAttendance = scheme.details.some((detail) => isAttendanceCriterion(detail.gradeItem.name));
+
+  useEffect(() => {
+    let active = true;
+
+    setOwnAttendance(null);
+    setAttendanceError(null);
+
+    if (!studentEnrollmentId || !hasAttendance) {
+      setLoadingOwnAttendance(false);
+
+      return;
+    }
+
+    setLoadingOwnAttendance(true);
+    void getMyStudentAttendance(studentEnrollmentId)
+      .then((data) => {
+        if (active) setOwnAttendance(data);
+      })
+      .catch((error: unknown) => {
+        if (active) setAttendanceError(getApiErrorMessage(error));
+      })
+      .finally(() => {
+        if (active) setLoadingOwnAttendance(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [studentEnrollmentId, hasAttendance]);
+  const attendanceSummary = studentEnrollmentId ? ownAttendance : attendance;
   const details = [...scheme.details].sort((a, b) => a.order - b.order);
 
-  const evaluatedPercentage = details.reduce((sum, detail) => {
-    const isAttendance = detail.gradeItem.name.toLowerCase() === 'asistencias';
+  const results = details.map((detail) => {
+    const activities = detail.activities.filter((activity) => activity.isActive);
 
-    if (isAttendance) {
-      return attendance ? sum + Number(detail.percentage) : sum;
-    }
-
-    if (detail.activities.length === 0) {
-      const grade = grades.find(
-        (item) => !item.activity && item.gradeSchemeDetail.idGradeSchemeDetail === detail.idGradeSchemeDetail,
-      );
-
-      return grade ? sum + Number(detail.percentage) : sum;
-    }
-
-    const activitiesWithGrades = detail.activities.filter((activity) =>
-      grades.some((grade) => grade.activity?.idActivity === activity.idActivity),
+    const directGrade = grades.find(
+      (grade) => !grade.activity && grade.gradeSchemeDetail.idGradeSchemeDetail === detail.idGradeSchemeDetail,
     );
 
-    return activitiesWithGrades.length === detail.activities.length ? sum + Number(detail.percentage) : sum;
-  }, 0);
+    const rawScore = criterionScore({
+      attendance: isAttendanceCriterion(detail.gradeItem.name)
+        ? (attendanceSummary ?? { totalSessions: 0, percentage: 0 })
+        : undefined,
+      activityCount: activities.length,
+      activityScore: calculateActivitiesAverage(detail.activities, grades),
+      directScore: directGrade ? Number(directGrade.score) : null,
+    });
 
-  const currentScore = details.reduce((sum, detail) => {
-    const isAttendance = detail.gradeItem.name.toLowerCase() === 'asistencias';
+    return {
+      idGradeSchemeDetail: detail.idGradeSchemeDetail,
+      rawScore,
+      weightedScore: weightedScore(rawScore, Number(detail.percentage), schemeMultiplier),
+    };
+  });
 
-    /*
-     * ASISTENCIA
-     */
-    if (isAttendance) {
-      if (!attendance) {
-        return sum;
-      }
+  const currentScore = weightedScore(
+    totalScore(
+      results.map((result, index) => ({ score: result.rawScore, percentage: Number(details[index].percentage) })),
+    ),
+    100,
+    schemeMultiplier,
+  );
 
-      const contribution = (Number(attendance.percentage) * Number(detail.percentage) * schemeMultiplier) / 100;
+  const maxima = details.map((detail) => ({
+    idGradeSchemeDetail: detail.idGradeSchemeDetail,
+    maximumScore: weightedScore(100, Number(detail.percentage), schemeMultiplier)!,
+  }));
 
-      return sum + contribution;
-    }
-
-    /*
-     * COMPONENTE DIRECTO
-     */
-    if (detail.activities.length === 0) {
-      const grade = grades.find(
-        (item) => !item.activity && item.gradeSchemeDetail.idGradeSchemeDetail === detail.idGradeSchemeDetail,
-      );
-
-      if (!grade) {
-        return sum;
-      }
-
-      const contribution = (Number(grade.score) * Number(detail.percentage) * schemeMultiplier) / 100;
-
-      return sum + contribution;
-    }
-
-    /*
-     * COMPONENTE CON ACTIVIDADES
-     */
-    const activityGrades = detail.activities
-      .map((activity) => grades.find((grade) => grade.activity?.idActivity === activity.idActivity))
-      .filter((grade): grade is IGrade => grade !== undefined);
-
-    if (activityGrades.length === 0) {
-      return sum;
-    }
-
-    const average =
-      activityGrades.reduce((activitySum, grade) => activitySum + Number(grade.score), 0) / activityGrades.length;
-
-    const contribution = (average * Number(detail.percentage) * schemeMultiplier) / 100;
-
-    return sum + contribution;
-  }, 0);
+  if (loading || attendanceLoading || loadingOwnAttendance)
+    return (
+      <Stack spacing={3}>
+        {schemeOverview}
+        <CircularProgress aria-label='Cargando mi rendimiento académico' />
+      </Stack>
+    );
 
   return (
-    <Card>
-      <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-        <Stack spacing={3}>
-          <Stack direction='row' spacing={2} alignItems='center'>
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: 2,
-                bgcolor: 'primary.lighterOpacity',
-                color: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
+    <Stack spacing={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          alignItems: 'start',
+          gridTemplateColumns: {
+            xs: 'minmax(0,1fr)',
+            lg: schemeOverview ? 'minmax(0, 5fr) minmax(0, 7fr)' : 'minmax(0,1fr)',
+          },
+        }}
+      >
+        {schemeOverview}
+        <Card component='section' aria-label='Mi rendimiento académico' sx={academicSurfaceStyles}>
+          <CardContent>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              justifyContent='space-between'
+              alignItems={{ sm: 'center' }}
             >
-              <DescriptionOutlinedIcon />
-            </Box>
-
-            <Box>
-              <Typography variant='h5' fontWeight={700}>
-                Mis calificaciones
+              <Typography variant='h5' fontWeight={600}>
+                Mi rendimiento académico
               </Typography>
-
-              <Typography variant='body2' color='text.secondary'>
-                Resumen de tu rendimiento académico en la materia
-              </Typography>
-            </Box>
-          </Stack>
-
-          {loading ? (
-            <Stack alignItems='center' justifyContent='center' spacing={2} sx={{ py: 8 }}>
-              <CircularProgress size={32} />
-
-              <Typography variant='body2' color='text.secondary'>
-                Cargando calificaciones...
-              </Typography>
-            </Stack>
-          ) : (
-            <>
-              <Box
+              <GradeViewToggle
+                value={mode}
+                onChange={setMode}
                 sx={{
-                  border: 1,
+                  bgcolor: 'action.hover',
+                  border: '1px solid',
                   borderColor: 'divider',
+                  p: 0.5,
                   borderRadius: 2,
-                  overflow: 'hidden',
+                  '& .MuiToggleButton-root': {
+                    minHeight: 44,
+                    px: 2,
+                    border: 0,
+                    borderRadius: 'inherit',
+                    typography: 'body2',
+                    fontWeight: 600,
+                  },
+                  '& .MuiToggleButton-root.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  },
                 }}
-              >
-                <Box
-                  sx={{
-                    display: {
-                      xs: 'none',
-                      md: 'grid',
-                    },
-                    gridTemplateColumns: 'minmax(260px, 1.4fr) 100px minmax(220px, 1fr) 180px',
-                    gap: 3,
-                    px: 3,
-                    py: 1.5,
-                    bgcolor: 'action.hover',
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Typography variant='caption' fontWeight={700} color='text.secondary'>
-                    COMPONENTE
-                  </Typography>
-
-                  <Typography variant='caption' fontWeight={700} color='text.secondary'>
-                    PESO
-                  </Typography>
-
-                  <Typography variant='caption' fontWeight={700} color='text.secondary'>
-                    PROGRESO
-                  </Typography>
-
-                  <Typography variant='caption' fontWeight={700} color='text.secondary' textAlign='right'>
-                    CALIFICACIÓN
-                  </Typography>
-                </Box>
-
-                {details.map((detail) => {
-                  const visual = getGradeItemVisual(detail.gradeItem.name);
-
-                  const isAttendance = detail.gradeItem.name.toLowerCase() === 'asistencias';
-
-                  let score: number | null = null;
-                  let description = visual.description;
-
-                  if (isAttendance) {
-                    score = attendance?.percentage ?? null;
-
-                    if (attendanceLoading) {
-                      description = 'Cargando asistencia...';
-                    } else if (attendance) {
-                      description = `${attendance.presentSessions} de ${attendance.totalSessions} sesiones presentes`;
-                    } else {
-                      description = 'Sin registros de asistencia';
-                    }
-                  } else if (detail.activities.length === 0) {
-                    const grade = grades.find(
-                      (item) =>
-                        !item.activity && item.gradeSchemeDetail.idGradeSchemeDetail === detail.idGradeSchemeDetail,
-                    );
-
-                    score = grade ? Number(grade.score) : null;
-                  } else {
-                    const activityGrades = detail.activities
-                      .map((activity) => grades.find((grade) => grade.activity?.idActivity === activity.idActivity))
-                      .filter((grade): grade is IGrade => grade !== undefined);
-
-                    score =
-                      activityGrades.length > 0
-                        ? activityGrades.reduce((sum, grade) => sum + Number(grade.score), 0) / activityGrades.length
-                        : null;
-
-                    description = `${activityGrades.length} de ${detail.activities.length} actividades calificadas`;
-                  }
-
-                  return (
-                    <GradeSummaryRow
-                      key={detail.idGradeSchemeDetail}
-                      name={detail.gradeItem.name}
-                      description={description}
-                      percentage={Number(detail.percentage)}
-                      score={score}
-                      icon={visual.icon}
-                      iconColor={visual.color}
-                      iconBackgroundColor={visual.backgroundColor}
-                    />
-                  );
-                })}
-              </Box>
-
-              <GradesSummary
-                evaluatedPercentage={evaluatedPercentage}
-                currentScore={currentScore}
-                maximumScore={maximumScore}
               />
-            </>
-          )}
-        </Stack>
-      </CardContent>
-    </Card>
+            </Stack>
+            <Typography variant='body2' color='text.secondary' sx={{ mt: 3 }}>
+              {attendanceError ? 'Resultado parcial · Asistencia no disponible' : 'Resultado actual · Acumulado'}
+            </Typography>
+            <Box
+              sx={(theme) => ({
+                '& > .MuiTypography-root': { ...theme.typography.h3, fontWeight: 700, color: 'primary.main' },
+              })}
+            >
+              <StudentGradeCell score={currentScore} maximum={maximumScore} total />
+            </Box>
+            {currentScore !== null && (
+              <LinearProgress
+                aria-label='Resultado acumulado'
+                variant='determinate'
+                value={currentScore}
+                sx={{ mt: 2, borderRadius: 1 }}
+              />
+            )}
+            <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 2 }}>
+              Las actividades pendientes se muestran como --; su aporte se interpreta según las reglas de la materia.
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+      <Typography variant='h5'>Mis calificaciones</Typography>
+      {!details.length && <Alert severity='info'>El esquema todavía no tiene criterios.</Alert>}
+      <AcademicCriteria
+        scheme={scheme}
+        results={results}
+        maxima={maxima}
+        grades={grades}
+        attendance={attendanceSummary ?? null}
+        attendanceError={attendanceError}
+        mode={mode}
+      />
+    </Stack>
   );
 }

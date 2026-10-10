@@ -1,5 +1,6 @@
 import {
   BaseEntity,
+  Check,
   Column,
   Entity,
   JoinColumn,
@@ -12,6 +13,7 @@ import { GradeItem } from '../grade-items/grade-items.entity';
 import { Activity } from '../activities/activity.entity';
 
 @Entity('grade_scheme_details')
+@Check('CHK_attendance_permission_weight', '"permission_weight" >= 0 AND "permission_weight" <= 1')
 export class GradeSchemeDetail extends BaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_grade_scheme_detail' })
   idGradeSchemeDetail: number;
@@ -29,6 +31,9 @@ export class GradeSchemeDetail extends BaseEntity {
 
   @Column({ name: 'percentage' })
   percentage: number;
+
+  @Column({ name: 'permission_weight', type: 'double precision', default: 1 })
+  permissionWeight: number;
 
   @Column({ name: 'order' })
   order: number;

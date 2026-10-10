@@ -1,3 +1,4 @@
+import { isAttendanceCriterion } from '@repo/grade-calculations';
 import {
   Box,
   Checkbox,
@@ -8,6 +9,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+
+import { parsePermissionPercentage, permissionWeightToPercentage } from '@/utils/attendance-permission';
 
 import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
 import type { IGradeSchemeDetailBase } from '@/interfaces/grade-schemes/grade-scheme-detail.interface';
@@ -25,10 +28,19 @@ interface GradeSchemeItemsEditorProps<T extends IGradeSchemeDetailBase> {
   onGradeItemChange(gradeItem: IGradeItem, checked: boolean): void;
 
   onPercentageChange(idGradeItem: number, percentage: number): void;
+  onPermissionWeightChange?(idGradeItem: number, permissionWeight: number): void;
 }
 
 export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: GradeSchemeItemsEditorProps<T>) {
-  const { gradeItems, details, loading, totalPercentage, onGradeItemChange, onPercentageChange } = props;
+  const {
+    gradeItems,
+    details,
+    loading,
+    totalPercentage,
+    onGradeItemChange,
+    onPercentageChange,
+    onPermissionWeightChange,
+  } = props;
 
   const totalIsValid = totalPercentage === 100;
 
@@ -285,6 +297,30 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
                   {percentage}%
                 </Typography>
               </Stack>
+              {detail && onPermissionWeightChange && isAttendanceCriterion(gradeItem.name) && (
+                <TextField
+                  size='small'
+                  type='number'
+                  label='Valor del permiso'
+                  value={
+                    Number.isFinite(detail.permissionWeight ?? 1)
+                      ? permissionWeightToPercentage(detail.permissionWeight ?? 1)
+                      : ''
+                  }
+                  onChange={(event) =>
+                    onPermissionWeightChange(gradeItem.idGradeItem, parsePermissionPercentage(event.target.value))
+                  }
+                  inputProps={{ min: 0, max: 100, step: 'any', 'aria-label': 'Valor del permiso (%)' }}
+                  InputProps={{ endAdornment: <InputAdornment position='end'>%</InputAdornment> }}
+                  error={
+                    !Number.isFinite(detail.permissionWeight ?? 1) ||
+                    (detail.permissionWeight ?? 1) < 0 ||
+                    (detail.permissionWeight ?? 1) > 1
+                  }
+                  helperText='Define qué porcentaje de una asistencia completa aporta un permiso. 100% equivale a una asistencia completa; 0% no aporta puntaje.'
+                  sx={{ gridColumn: '2 / -1' }}
+                />
+              )}
             </Box>
           );
         })}

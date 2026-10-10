@@ -28,11 +28,15 @@ export class Activity extends BaseEntity {
   description: string;
 
   @Column({
-    name: 'activity_date',
+    name: 'publication_date',
+    type: 'date',
+    nullable: true,
+  })
+  publicationDate: string | null;
+
+  @Column({
+    name: 'due_date',
     type: 'date',
   })
-  date: Date;
-
-  @Column({ name: 'order' })
-  order: number;
+  dueDate: string;
 }

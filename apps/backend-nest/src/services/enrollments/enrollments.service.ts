@@ -1,5 +1,17 @@
+import {
+  averageScores,
+  criterionScore,
+  isAttendanceCriterion,
+  totalScore,
+  weightedScore,
+} from '@repo/grade-calculations';
+import { attendanceSummary } from '@common/utils/attendance-summary';
+import { AttendanceStatus } from '@common/enums/attendanceStatus';
+import type { StudentGradeSummaryDto } from 'src/dtos/enrollments/student-grade-summary.dto';
+import { Activity } from 'src/entities/activities/activity.entity';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
 import { EnrollmentQueryDto } from 'src/dtos/enrollments/enrollment-query.dto';
+import { withActiveActivities } from '@common/utils/active-activities';
 import { statusFilter } from '@common/utils/status-filter';
 import { Grade } from 'src/entities/grades/grades.entity';
 import { Attendance } from 'src/entities/attendance/attendance.entity';
@@ -17,7 +29,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EnrollmentCreateDto } from 'src/dtos/enrollments/enrollments.dto';
 import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { SemestersService } from '../semesters/semesters.service';
 import { UsersService } from '../users/users.service';
 import { CoursesService } from '../courses/courses.service';
@@ -225,6 +237,9 @@ export class EnrollmentsService {
       },
     });
 
+    for (const enrollment of enrollments) {
+      withActiveActivities(enrollment.course.gradeScheme);
+    }
     return enrollments;
   }
 
@@ -256,6 +271,7 @@ export class EnrollmentsService {
       throw new NotFoundException('La matrícula no existe o no pertenece al usuario');
     }
 
+    withActiveActivities(enrollment.course.gradeScheme);
     return enrollment;
   }
 
@@ -285,11 +301,16 @@ export class EnrollmentsService {
       throw new NotFoundException('La matrícula del estudiante no existe');
     }
 
+    withActiveActivities(fullEnrollment.course.gradeScheme);
     return fullEnrollment;
   }
 
-  async getStudentsByEnrollment(idAssistant: number, idEnrollment: number) {
-    const enrollment = await this.enrollmentRepository.findOne({
+  async getAssistantEnrollment(
+    idAssistant: number,
+    idEnrollment: number,
+    manager: EntityManager = this.enrollmentRepository.manager,
+  ) {
+    const enrollment = await manager.getRepository(Enrollment).findOne({
       where: {
         idEnrollment,
         isActive: true,
@@ -298,6 +319,7 @@ export class EnrollmentsService {
       relations: {
         course: true,
         semester: true,
+        user: true,
       },
     });
 
@@ -305,18 +327,15 @@ export class EnrollmentsService {
       throw new NotFoundException('Matriculación de auxiliar no encontrada');
     }
 
-    const assistantEnrollment = await this.enrollmentRepository.findOne({
-      where: {
-        idEnrollment: enrollment.idEnrollment,
-        user: { idUser: idAssistant },
-        isActive: true,
-        role: CourseRelations.ASSISTANT,
-      },
-    });
-
-    if (!assistantEnrollment) {
+    if (enrollment.user.idUser !== idAssistant) {
       throw new ForbiddenException('No tienes permisos para gestionar esta materia');
     }
+
+    return enrollment;
+  }
+
+  async getStudentsByEnrollment(idAssistant: number, idEnrollment: number) {
+    const enrollment = await this.getAssistantEnrollment(idAssistant, idEnrollment);
 
     const students = await this.enrollmentRepository.find({
       where: {
@@ -341,6 +360,154 @@ export class EnrollmentsService {
     });
 
     return students;
+  }
+
+  async getStudentGradeSummary(
+    idAssistant: number,
+    idEnrollment: number,
+  ): Promise<StudentGradeSummaryDto> {
+    // Reuse ownership, active enrollment, semester and student ordering checks.
+    const students = await this.getStudentsByEnrollment(idAssistant, idEnrollment);
+    const manager = this.enrollmentRepository.manager;
+    const scheme = await manager.getRepository(GradeScheme).findOne({
+      where: { assistantEnrollment: { idEnrollment }, isActive: true },
+      relations: { details: { gradeItem: true } },
+    });
+    if (!scheme)
+      return {
+        scheme: null,
+        students: students.map((student) => ({
+          idEnrollment: student.idEnrollment,
+          details: [],
+          totalRaw: null,
+          assistantContribution: null,
+        })),
+      };
+    const details = [...scheme.details].sort(
+      (a, b) => a.order - b.order || a.idGradeSchemeDetail - b.idGradeSchemeDetail,
+    );
+    const multiplier = Number(scheme.assistantPercentage ?? 100) / 100;
+    const result: StudentGradeSummaryDto = {
+      scheme: {
+        idGradeScheme: scheme.idGradeScheme,
+        assistantPercentage: Number(scheme.assistantPercentage ?? 100),
+        details: details.map((detail) => ({
+          idGradeSchemeDetail: detail.idGradeSchemeDetail,
+          name: detail.gradeItem.name,
+          percentage: Number(detail.percentage),
+          maximumScore: weightedScore(100, Number(detail.percentage), multiplier) ?? 0,
+        })),
+      },
+      students: [],
+    };
+    if (!details.length || !students.length) {
+      result.students = students.map((student) => ({
+        idEnrollment: student.idEnrollment,
+        details: [],
+        totalRaw: null,
+        assistantContribution: null,
+      }));
+      return result;
+    }
+    const studentIds = students.map((student) => student.idEnrollment);
+    // Fixed number of grouped queries; no activity payloads or per-student SQL.
+    const [activityCounts, gradeScores, sessions, presences] = await Promise.all([
+      manager
+        .getRepository(Activity)
+        .createQueryBuilder('activity')
+        .select('activity.id_grade_scheme_detail', 'detailId')
+        .addSelect('COUNT(*)', 'count')
+        .innerJoin('activity.gradeSchemeDetail', 'detail')
+        .where('detail.id_grade_scheme = :schemeId', { schemeId: scheme.idGradeScheme })
+        .andWhere('activity.isActive = true')
+        .groupBy('activity.id_grade_scheme_detail')
+        .getRawMany<{ detailId: number; count: string }>(),
+      manager
+        .getRepository(Grade)
+        .createQueryBuilder('grade')
+        .select('grade.id_enrollment', 'enrollmentId')
+        .addSelect('grade.id_grade_scheme_detail', 'detailId')
+        .addSelect('SUM(grade.score) FILTER (WHERE grade.id_activity IS NOT NULL)', 'activityTotal')
+        .addSelect('MAX(grade.score) FILTER (WHERE grade.id_activity IS NULL)', 'directScore')
+        .innerJoin('grade.gradeSchemeDetail', 'detail')
+        .leftJoin('grade.activity', 'activity')
+        .where('detail.id_grade_scheme = :schemeId', { schemeId: scheme.idGradeScheme })
+        .andWhere('grade.id_enrollment IN (:...studentIds)', { studentIds })
+        .andWhere(
+          '(grade.id_activity IS NULL OR (activity.isActive = true AND activity.deletedAt IS NULL AND activity.id_grade_scheme_detail = grade.id_grade_scheme_detail))',
+        )
+        .groupBy('grade.id_enrollment')
+        .addGroupBy('grade.id_grade_scheme_detail')
+        .getRawMany<{
+          enrollmentId: number;
+          detailId: number;
+          activityTotal: string | null;
+          directScore: string | null;
+        }>(),
+      manager.getRepository(AttendanceSession).countBy({ assistantEnrollment: { idEnrollment } }),
+      manager
+        .getRepository(Attendance)
+        .createQueryBuilder('attendance')
+        .select('attendance.id_enrollment', 'enrollmentId')
+        .addSelect('COUNT(*) FILTER (WHERE attendance.status = :present)', 'count')
+        .addSelect('COUNT(*) FILTER (WHERE attendance.status = :excused)', 'excused')
+        .setParameters({ present: AttendanceStatus.PRESENT, excused: AttendanceStatus.EXCUSED })
+        .innerJoin('attendance.attendanceSession', 'session')
+        .where('session.id_assistant_enrollment = :idEnrollment', { idEnrollment })
+        .andWhere('attendance.id_enrollment IN (:...studentIds)', { studentIds })
+        .groupBy('attendance.id_enrollment')
+        .getRawMany<{ enrollmentId: number; count: string; excused: string }>(),
+    ]);
+    const counts = new Map(activityCounts.map((row) => [Number(row.detailId), Number(row.count)]));
+    const scores = new Map(gradeScores.map((row) => [`${row.enrollmentId}:${row.detailId}`, row]));
+    const presentCounts = new Map(
+      presences.map((row) => [
+        Number(row.enrollmentId),
+        { present: Number(row.count), excused: Number(row.excused ?? 0) },
+      ]),
+    );
+    result.students = students.map((student) => {
+      const studentDetails = details.map((detail) => {
+        const grade = scores.get(`${student.idEnrollment}:${detail.idGradeSchemeDetail}`);
+        const rawScore = criterionScore({
+          attendance: isAttendanceCriterion(detail.gradeItem.name)
+            ? {
+                totalSessions: sessions,
+                percentage: attendanceSummary(
+                  presentCounts.get(student.idEnrollment)?.present ?? 0,
+                  presentCounts.get(student.idEnrollment)?.excused ?? 0,
+                  sessions,
+                  Number(detail.permissionWeight ?? 1),
+                ).percentage,
+              }
+            : undefined,
+          activityCount: counts.get(detail.idGradeSchemeDetail) ?? 0,
+          activityScore: averageScores(
+            [grade?.activityTotal ?? null],
+            counts.get(detail.idGradeSchemeDetail) ?? 0,
+          ),
+          directScore: grade?.directScore == null ? null : Number(grade.directScore),
+        });
+        return {
+          idGradeSchemeDetail: detail.idGradeSchemeDetail,
+          rawScore,
+          weightedScore: weightedScore(rawScore, Number(detail.percentage), multiplier),
+        };
+      });
+      const totalRaw = totalScore(
+        studentDetails.map((detail, index) => ({
+          score: detail.rawScore,
+          percentage: Number(details[index].percentage),
+        })),
+      );
+      return {
+        idEnrollment: student.idEnrollment,
+        details: studentDetails,
+        totalRaw,
+        assistantContribution: weightedScore(totalRaw, Number(scheme.assistantPercentage ?? 100)),
+      };
+    });
+    return result;
   }
 
   private async verifyAssistantAccess(idAssistant: number, idEnrollment: number) {

@@ -1,3 +1,4 @@
+import { weightedScore } from '@repo/grade-calculations';
 import { Box, Chip, CircularProgress, Divider, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
@@ -6,6 +7,7 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 
 import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IActivity } from '@/interfaces/activities/activity.interface';
+import { calculateActivitiesAverage } from '@/utils/activities-average';
 
 interface ActivitiesGradeSectionProps {
   name: string;
@@ -35,18 +37,15 @@ export function ActivitiesGradeSection({
   onSave,
   onDelete,
 }: ActivitiesGradeSectionProps) {
-  const sortedActivities = [...activities].sort((a, b) => a.order - b.order);
+  const activeActivities = activities.filter((activity) => activity.isActive);
 
-  const activityGrades = sortedActivities
+  const activityGrades = activeActivities
     .map((activity) => grades.find((grade) => grade.activity?.idActivity === activity.idActivity))
     .filter((grade): grade is IGrade => grade !== undefined);
 
-  const average =
-    activityGrades.length > 0
-      ? activityGrades.reduce((sum, grade) => sum + Number(grade.score), 0) / activityGrades.length
-      : null;
+  const average = activeActivities.length ? calculateActivitiesAverage(activities, grades) : null;
 
-  const contribution = average !== null ? (average * percentage * schemeMultiplier) / 100 : null;
+  const contribution = average !== null ? weightedScore(average, percentage, schemeMultiplier) : null;
 
   return (
     <Box
@@ -94,7 +93,7 @@ export function ActivitiesGradeSection({
               </Stack>
 
               <Typography variant='body2' color='text.secondary'>
-                {activityGrades.length} de {activities.length} actividades calificadas
+                {activityGrades.length} de {activeActivities.length} actividades calificadas
               </Typography>
             </Box>
           </Stack>
@@ -111,7 +110,7 @@ export function ActivitiesGradeSection({
         </Stack>
       </Box>
 
-      {sortedActivities.map((activity, index) => {
+      {activeActivities.map((activity, index) => {
         const grade = grades.find((item) => item.activity?.idActivity === activity.idActivity);
 
         const score = scores[activity.idActivity] ?? '';
@@ -131,12 +130,12 @@ export function ActivitiesGradeSection({
               >
                 <Box sx={{ minWidth: 0, flex: 1 }}>
                   <Typography fontWeight={500}>
-                    {activity.order}. {activity.name}
+                    {index + 1}. {activity.name}
                   </Typography>
 
                   <Stack direction='row' spacing={1.5} sx={{ mt: 0.5 }}>
                     <Typography variant='caption' color='text.secondary'>
-                      {activity.date}
+                      Entrega: {activity.dueDate}
                     </Typography>
 
                     {activity.description && (
@@ -160,7 +159,7 @@ export function ActivitiesGradeSection({
                     value={score}
                     onChange={(event) => onScoreChange(activity.idActivity, event.target.value)}
                     error={invalid}
-                    placeholder='0'
+                    placeholder='--'
                     inputProps={{
                       min: 0,
                       max: 100,

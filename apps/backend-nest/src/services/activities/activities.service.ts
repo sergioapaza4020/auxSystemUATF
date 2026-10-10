@@ -13,6 +13,8 @@ import { Activity } from 'src/entities/activities/activity.entity';
 import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
 import { GradeSchemeDetail } from 'src/entities/grade-scheme-detail/grade-scheme-detail.entity';
 import { Repository } from 'typeorm';
+import { Course } from 'src/entities/courses/courses.entity';
+import { ACTIVITY_ORDER } from '@common/utils/activity-rules';
 
 @Injectable()
 export class ActivitiesService {
@@ -25,6 +27,42 @@ export class ActivitiesService {
     private readonly enrollmentRepository: Repository<Enrollment>,
   ) {}
 
+  private async saveWithUniqueName(activity: Activity, idCourse: number): Promise<Activity> {
+    activity.name = activity.name.trim();
+    if (!activity.name)
+      throw new BadRequestException('El nombre de la actividad no puede estar vacío');
+
+    return this.activityRepository.manager.transaction(async (manager) => {
+      // Serialize activity writes within the course; its identity is reached through relations,
+      // so a simple unique index on activities cannot enforce course-wide uniqueness.
+      await manager.getRepository(Course).findOneOrFail({
+        where: { idCourse },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const repository = manager.getRepository(Activity);
+      const query = repository
+        .createQueryBuilder('activity')
+        .innerJoin('activity.gradeSchemeDetail', 'detail')
+        .innerJoin('detail.gradeScheme', 'scheme')
+        .leftJoin('scheme.assistantEnrollment', 'assistantEnrollment')
+        .leftJoin('assistantEnrollment.course', 'assistantCourse')
+        .leftJoin('scheme.courses', 'schemeCourse')
+        .where('(assistantCourse.idCourse = :idCourse OR schemeCourse.idCourse = :idCourse)', {
+          idCourse,
+        })
+        .andWhere('activity.isActive = :isActive', { isActive: true })
+        .andWhere('activity.deletedAt IS NULL')
+        .andWhere('LOWER(BTRIM(activity.name)) = LOWER(BTRIM(:name))', { name: activity.name });
+      if (activity.idActivity !== undefined) {
+        query.andWhere('activity.idActivity != :idActivity', { idActivity: activity.idActivity });
+      }
+      if (await query.getExists()) {
+        throw new ConflictException('Ya existe una actividad con ese nombre en esta materia.');
+      }
+      return repository.save(activity);
+    });
+  }
+
   async getAll(): Promise<Activity[]> {
     return this.activityRepository.find({
       where: {
@@ -35,9 +73,7 @@ export class ActivitiesService {
           gradeItem: true,
         },
       },
-      order: {
-        order: 'ASC',
-      },
+      order: ACTIVITY_ORDER,
     });
   }
 
@@ -79,30 +115,16 @@ export class ActivitiesService {
       );
     }
 
-    const existingActivity = await this.activityRepository.findOne({
-      where: {
-        gradeSchemeDetail: {
-          idGradeSchemeDetail: dto.gradeSchemeDetailId,
-        },
-        order: dto.order,
-        isActive: true,
-      },
-    });
-
-    if (existingActivity) {
-      throw new ConflictException('Ya existe una actividad con ese orden');
-    }
-
     const activity = this.activityRepository.create({
       gradeSchemeDetail: detail,
       name: dto.name,
       description: dto.description,
-      date: dto.date as unknown as Date,
-      order: dto.order,
+      publicationDate: dto.publicationDate ?? null,
+      dueDate: dto.dueDate,
       createdBy: idUser,
     });
 
-    return this.activityRepository.save(activity);
+    return this.saveWithUniqueName(activity, idCourse);
   }
 
   async getByGradeSchemeDetail(idGradeSchemeDetail: number): Promise<Activity[]> {
@@ -118,9 +140,7 @@ export class ActivitiesService {
           gradeItem: true,
         },
       },
-      order: {
-        order: 'ASC',
-      },
+      order: ACTIVITY_ORDER,
     });
   }
 
@@ -175,31 +195,20 @@ export class ActivitiesService {
       activity.description = dto.description;
     }
 
-    if (dto.date !== undefined) {
-      activity.date = dto.date as unknown as Date;
+    if (dto.publicationDate !== undefined) {
+      activity.publicationDate = dto.publicationDate;
     }
 
-    if (dto.order !== undefined) {
-      const existingActivity = await this.activityRepository.findOne({
-        where: {
-          gradeSchemeDetail: {
-            idGradeSchemeDetail: activity.gradeSchemeDetail.idGradeSchemeDetail,
-          },
-          order: dto.order,
-          isActive: true,
-        },
-      });
-
-      if (existingActivity && existingActivity.idActivity !== idActivity) {
-        throw new ConflictException('Ya existe una actividad con ese orden');
-      }
-
-      activity.order = dto.order;
+    if (dto.dueDate !== undefined) {
+      activity.dueDate = dto.dueDate;
     }
 
     activity.updatedBy = idUser;
 
-    return this.activityRepository.save(activity);
+    return this.saveWithUniqueName(
+      activity,
+      activity.gradeSchemeDetail.gradeScheme.assistantEnrollment!.course.idCourse,
+    );
   }
 
   async delete(idActivity: number, idUser: number) {
@@ -222,6 +231,7 @@ export class ActivitiesService {
           gradeScheme: {
             assistantEnrollment: {
               user: true,
+              course: true,
             },
           },
         },
@@ -246,24 +256,10 @@ export class ActivitiesService {
       throw new ForbiddenException('La matrícula del auxiliar no está activa');
     }
 
-    const existingActivity = await this.activityRepository.findOne({
-      where: {
-        gradeSchemeDetail: {
-          idGradeSchemeDetail: activity.gradeSchemeDetail.idGradeSchemeDetail,
-        },
-        order: activity.order,
-        isActive: true,
-      },
-    });
-
-    if (existingActivity) {
-      throw new ConflictException('Ya existe una actividad activa con ese orden');
-    }
-
     activity.isActive = true;
     activity.deletedBy = 0;
     activity.updatedBy = idUser;
 
-    return this.activityRepository.save(activity);
+    return this.saveWithUniqueName(activity, assistantEnrollment.course.idCourse);
   }
 }

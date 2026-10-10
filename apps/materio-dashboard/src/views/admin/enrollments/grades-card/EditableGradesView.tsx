@@ -12,6 +12,7 @@ import { ActivitiesGradeSection } from './ActivitiesGradeSection';
 import { AttendanceGradeSection } from './AttendanceGradeSection';
 
 interface EditableGradesViewProps {
+  canDelete?: boolean;
   scheme: IGradeScheme;
   grades: IGrade[];
   scores: Record<number, string>;
@@ -33,6 +34,7 @@ interface EditableGradesViewProps {
 }
 
 export function EditableGradesView({
+  canDelete = true,
   scheme,
   grades,
   scores,
@@ -127,7 +129,9 @@ export function EditableGradesView({
                       schemeMultiplier={schemeMultiplier}
                       onChange={(value) => onScoreChange(detail.idGradeSchemeDetail, value)}
                       onSave={() => onSaveDetail(detail.idGradeSchemeDetail)}
-                      onDelete={grade ? () => onDelete(grade.idGrade, detail.idGradeSchemeDetail) : undefined}
+                      onDelete={
+                        canDelete && grade ? () => onDelete(grade.idGrade, detail.idGradeSchemeDetail) : undefined
+                      }
                     />
                   );
                 }

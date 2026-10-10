@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useParams } from 'next/navigation';
 
-import { CircularProgress, Typography } from '@mui/material';
+import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
 
 import { useSnackbar } from '@/hooks/useSnackbar';
 
@@ -29,6 +29,7 @@ export default function EnrollmentDetailPage() {
 
   const {
     scheme: assistantGradeScheme,
+    load: reloadAssistantGradeScheme,
     loading: loadingAssistantGradeScheme,
     saving: savingAssistantGradeScheme,
     create: createAssistantGradeScheme,
@@ -38,7 +39,7 @@ export default function EnrollmentDetailPage() {
     enrollment?.idEnrollment,
   );
 
-  const { grades, loading: loadingGrades } = useEnrollmentGrades(idEnrollment);
+  const { grades, loading: loadingGrades, error: gradesError, load: reloadGrades } = useEnrollmentGrades(idEnrollment);
 
   const snackbar = useSnackbar();
 
@@ -72,6 +73,15 @@ export default function EnrollmentDetailPage() {
     return <Typography color='error'>No se encontró la matriculación.</Typography>;
   }
 
+  if (enrollment.role === UserRole.STUDENT && gradesError) {
+    return (
+      <Stack spacing={2}>
+        <Alert severity='error'>{gradesError}</Alert>
+        <Button onClick={() => void reloadGrades()}>Reintentar</Button>
+      </Stack>
+    );
+  }
+
   return (
     <EnrollmentDetail
       enrollment={enrollment}
@@ -82,6 +92,7 @@ export default function EnrollmentDetailPage() {
       assistantGradeScheme={assistantGradeScheme}
       loadingAssistantGradeScheme={loadingAssistantGradeScheme}
       savingAssistantGradeScheme={savingAssistantGradeScheme}
+      onActivitiesChanged={reloadAssistantGradeScheme}
       onCreateAssistantGradeScheme={createAssistantGradeScheme}
       onUpdateAssistantGradeScheme={updateAssistantGradeScheme}
     />

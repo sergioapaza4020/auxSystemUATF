@@ -3,6 +3,6 @@ export interface IActivity {
   isActive: boolean;
   name: string;
   description?: string;
-  date: string;
-  order: number;
+  dueDate: string;
+  publicationDate?: string | null;
 }

@@ -8,13 +8,14 @@ import type { IActivity } from '@/interfaces/activities/activity.interface';
 
 interface ActivityListItemProps {
   activity: IActivity;
+  position: number;
   divider?: boolean;
   disabled?: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function ActivityListItem({ activity, divider, disabled, onEdit, onDelete }: ActivityListItemProps) {
+export function ActivityListItem({ activity, position, divider, disabled, onEdit, onDelete }: ActivityListItemProps) {
   return (
     <Box
       sx={{
@@ -47,7 +48,7 @@ export function ActivityListItem({ activity, divider, disabled, onEdit, onDelete
               fontWeight: 600,
             }}
           >
-            {activity.order}
+            {position}
           </Box>
 
           <Stack spacing={0.75} sx={{ minWidth: 0 }}>
@@ -78,7 +79,7 @@ export function ActivityListItem({ activity, divider, disabled, onEdit, onDelete
               />
 
               <Typography variant='body2' color='text.secondary'>
-                {activity.date}
+                Entrega: {activity.dueDate}
               </Typography>
             </Stack>
           </Stack>

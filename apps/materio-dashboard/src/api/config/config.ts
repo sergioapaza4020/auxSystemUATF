@@ -10,7 +10,7 @@ export const instance = axios.create({
   headers: { 'X-Custom-Header': 'foobar' },
 });
 
-instance.interceptors.request.use((config: any) => {
+instance.interceptors.request.use((config) => {
   const token = getAccessToken();
 
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -21,6 +21,8 @@ instance.interceptors.request.use((config: any) => {
 instance.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (axios.isCancel(error)) return Promise.reject(error);
+
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {

@@ -8,6 +8,7 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
   rows: T[],
   defaultOrderBy: SortableIds<T, TColumns>,
   defaultRowsPerPage = 5,
+  options: { preserveOrder?: boolean } = {},
 ) {
   const [order, setOrder] = useState<Order>('desc');
 
@@ -17,10 +18,15 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
 
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
 
-  const visibleRows = useMemo(
-    () => [...rows].sort(getComparator(order, orderBy)).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [rows, order, orderBy, page, rowsPerPage],
-  );
+  const currentPage = options.preserveOrder
+    ? Math.min(page, Math.max(0, Math.ceil(rows.length / rowsPerPage) - 1))
+    : page;
+
+  const visibleRows = useMemo(() => {
+    const orderedRows = options.preserveOrder ? rows : [...rows].sort(getComparator(order, orderBy));
+
+    return orderedRows.slice(currentPage * rowsPerPage, currentPage * rowsPerPage + rowsPerPage);
+  }, [rows, order, orderBy, currentPage, rowsPerPage, options.preserveOrder]);
 
   const handleRequestSort = (_: React.MouseEvent<unknown>, property: SortableIds<T, TColumns>) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -42,7 +48,7 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
     order,
     orderBy,
 
-    page,
+    page: currentPage,
     rowsPerPage,
 
     visibleRows,

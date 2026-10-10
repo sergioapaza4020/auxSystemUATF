@@ -50,11 +50,11 @@ const LoginBrandPanel = () => {
         backgroundImage: `
           linear-gradient(
             135deg,
-            rgba(5, 35, 82, 0.98) 0%,
-            rgba(8, 58, 126, 0.93) 48%,
-            rgba(11, 70, 145, 0.80) 100%
+            rgba(5, 35, 82, 0.70) 0%,
+            rgba(8, 58, 126, 0.87) 18%,
+            rgba(11, 70, 145, 0.90) 100%
           ),
-          url('/images/pages/uatf-building.jpg')
+          url('/images/pages/uatf-building.webp')
         `,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -94,8 +94,6 @@ const LoginBrandPanel = () => {
           position: 'relative',
           zIndex: 1,
 
-          // Dependiendo de cómo esté construido tu Logo,
-          // quizá debas ajustar estos estilos.
           '& svg': {
             maxWidth: 110,
           },

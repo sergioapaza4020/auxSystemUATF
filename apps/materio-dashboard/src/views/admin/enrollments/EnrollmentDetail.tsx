@@ -18,6 +18,8 @@ import { UserRole } from '@/enums/userRole';
 
 import { useGradeItems } from '@/hooks/grade-items';
 import { useActivities } from '@/hooks/activities/useActivities';
+import { useStudentGradeSummary } from '@/hooks/enrollments/useStudentGradeSummary';
+import { hasPermission } from '@/utils/hasPermission';
 import { useAuth } from '@/hooks/useAuth';
 import { canImportEnrollmentStudents } from '@/utils/enrollmentImportAccess';
 
@@ -28,6 +30,7 @@ import { EnrollmentStudentsCard } from './EnrollmentStudentsCard';
 import { AssistantGradeSchemeCard } from './AssistantGradeSchemeCard';
 import { AssistantGradeSchemeDialog } from './AssistantGradeSchemeDialog';
 import { ActivityManagementDialog } from './ActivityManagementDialog';
+import { StudentEnrollmentView } from './grades-card/StudentEnrollmentView';
 
 interface EnrollmentDetailProps {
   enrollment: IEnrollment;
@@ -40,6 +43,7 @@ interface EnrollmentDetailProps {
   loadingAssistantGradeScheme: boolean;
   savingAssistantGradeScheme: boolean;
 
+  onActivitiesChanged: () => Promise<void>;
   onCreateAssistantGradeScheme: (data: IAssistantGradeSchemeCreate) => Promise<IAssistantGradeScheme>;
 
   onUpdateAssistantGradeScheme: (
@@ -49,6 +53,14 @@ interface EnrollmentDetailProps {
 }
 
 export function EnrollmentDetail(props: EnrollmentDetailProps) {
+  if (props.enrollment.role === UserRole.STUDENT) {
+    return <StudentEnrollmentView enrollment={props.enrollment} grades={props.grades} loading={props.loadingGrades} />;
+  }
+
+  return <ManagedEnrollmentDetail {...props} />;
+}
+
+function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
   const {
     enrollment,
     grades,
@@ -58,6 +70,7 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
     assistantGradeScheme,
     loadingAssistantGradeScheme,
     savingAssistantGradeScheme,
+    onActivitiesChanged,
     onCreateAssistantGradeScheme,
     onUpdateAssistantGradeScheme,
   } = props;
@@ -82,9 +95,15 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
     create: createActivityHandler,
     update: updateActivityHandler,
     remove: removeActivityHandler,
-  } = useActivities(selectedGradeSchemeDetailId, enrollment.course.idCourse);
+  } = useActivities(selectedGradeSchemeDetailId, enrollment.course.idCourse, onActivitiesChanged);
 
   const isAssistant = enrollment.role === UserRole.ASSISTANT;
+  const canReadGrades = hasPermission(user, 'grade.get-by-enrollment');
+
+  const studentGrades = useStudentGradeSummary(
+    isAssistant && canReadGrades ? enrollment.idEnrollment : null,
+    assistantGradeScheme,
+  );
 
   return (
     <Stack spacing={3}>
@@ -120,11 +139,21 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
 
       {isAssistant && (
         <EnrollmentStudentsCard
+          onManageGrades={
+            canReadGrades && hasPermission(user, 'grade.create') && hasPermission(user, 'grade.update')
+              ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/grades`)
+              : undefined
+          }
           onImportStudents={
             canImportEnrollmentStudents(user, enrollment)
               ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/import`)
               : undefined
           }
+          summary={studentGrades.summary}
+          summaryLoading={studentGrades.loading}
+          summaryError={studentGrades.error}
+          onRetrySummary={studentGrades.reload}
+          showGrades={canReadGrades}
           students={students}
           loading={loadingStudents}
           onSelectStudent={(student) => {
@@ -153,6 +182,7 @@ export function EnrollmentDetail(props: EnrollmentDetailProps) {
 
                   details: assistantGradeScheme.details.map((detail) => ({
                     percentage: detail.percentage,
+                    permissionWeight: detail.permissionWeight ?? 1,
 
                     order: detail.order,
 

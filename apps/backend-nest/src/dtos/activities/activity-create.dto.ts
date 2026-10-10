@@ -18,14 +18,19 @@ export class ActivityCreateDto {
   description?: string;
 
   @ApiProperty({
+    required: false,
+    example: '2026-09-10',
+    description: 'Fecha de publicación de la actividad',
+  })
+  @IsOptional()
+  @IsDateString()
+  publicationDate?: string;
+
+  @ApiProperty({
     example: '2026-09-15',
+    description: 'Fecha límite de entrega de la actividad',
   })
   @IsNotEmpty()
   @IsDateString()
-  date: string;
-
-  @ApiProperty()
-  @IsInt()
-  @Min(1)
-  order: number;
+  dueDate: string;
 }

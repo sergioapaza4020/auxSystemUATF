@@ -1,3 +1,4 @@
+import type { IStudentGradeSummary } from '@/interfaces/enrollments/student-grade-summary.interface';
 import type { ApiResponse, PaginatedApiResponse } from '@/interfaces/apiResponse';
 import type { RecordStatus } from '@/interfaces/status-query.interface';
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
@@ -62,6 +63,20 @@ export const createEnrollment = async (data: Omit<IEnrollmentCreate, 'id' | 'isA
 
 export const getEnrollmentStudents = async (idEnrollment: number): Promise<IEnrollmentStudent[]> => {
   const response = await instance.get(`/enrollments/${idEnrollment}/students`);
+
+  return response.data.data;
+};
+
+export const getStudentGradeSummary = async (
+  idEnrollment: number,
+  signal?: AbortSignal,
+): Promise<IStudentGradeSummary> => {
+  const response = await instance.get<ApiResponse<IStudentGradeSummary>>(
+    `/enrollments/${idEnrollment}/student-grade-summary`,
+    { signal },
+  );
+
+  if (!response.data.status) throw new Error(response.data.message || 'No se pudo cargar el resumen de notas.');
 
   return response.data.data;
 };

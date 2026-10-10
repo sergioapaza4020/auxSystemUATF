@@ -8,14 +8,16 @@ import type { IActivity } from '@/interfaces/activities/activity.interface';
 import type { IActivityCreate, IActivityUpdate } from '@/api/activities.service';
 
 import { ActivityForm, type IActivityFormData } from './ActivityForm';
+import { useSnackbar } from '@/hooks/useSnackbar';
+import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 import { LoadingOverlay } from '@/components/feedback/LoadingOverlay';
 
 interface ActivityFormDialogProps {
   open: boolean;
   saving: boolean;
   activity: IActivity | null;
-  nextOrder: number;
   idGradeSchemeDetail: number;
+  creationNotice?: string;
 
   onClose: () => void;
   onCreate: (data: IActivityCreate) => Promise<unknown>;
@@ -26,17 +28,18 @@ export function ActivityFormDialog({
   open,
   saving,
   activity,
-  nextOrder,
   idGradeSchemeDetail,
+  creationNotice,
   onClose,
   onCreate,
   onUpdate,
 }: ActivityFormDialogProps) {
+  const snackbar = useSnackbar();
+
   const [formData, setFormData] = useState<IActivityFormData>({
     name: '',
     description: '',
-    date: '',
-    order: nextOrder,
+    dueDate: '',
   });
 
   useEffect(() => {
@@ -46,8 +49,7 @@ export function ActivityFormDialog({
       setFormData({
         name: activity.name,
         description: activity.description ?? '',
-        date: activity.date,
-        order: activity.order,
+        dueDate: activity.dueDate,
       });
 
       return;
@@ -56,38 +58,39 @@ export function ActivityFormDialog({
     setFormData({
       name: '',
       description: '',
-      date: '',
-      order: nextOrder,
+      dueDate: '',
     });
-  }, [open, activity, nextOrder]);
+  }, [open, activity]);
 
   const handleFormChange = useCallback((data: IActivityFormData) => {
     setFormData(data);
   }, []);
 
-  const isValid = !!formData.name.trim() && !!formData.date && formData.order >= 1;
+  const isValid = !!formData.name.trim() && !!formData.dueDate;
 
   const handleSubmit = async () => {
     if (!isValid) return;
 
-    if (activity) {
-      await onUpdate(activity.idActivity, {
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        date: formData.date,
-        order: formData.order,
-      });
-    } else {
-      await onCreate({
-        gradeSchemeDetailId: idGradeSchemeDetail,
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        date: formData.date,
-        order: formData.order,
-      });
-    }
+    try {
+      if (activity) {
+        await onUpdate(activity.idActivity, {
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+          dueDate: formData.dueDate,
+        });
+      } else {
+        await onCreate({
+          gradeSchemeDetailId: idGradeSchemeDetail,
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+          dueDate: formData.dueDate,
+        });
+      }
 
-    onClose();
+      onClose();
+    } catch (error) {
+      snackbar.error(getApiErrorMessage(error));
+    }
   };
 
   return (
@@ -124,16 +127,25 @@ export function ActivityFormDialog({
           pb: 4,
         }}
       >
-        <ActivityForm initialValue={activity} defaultOrder={nextOrder} onChange={handleFormChange} />
+        <ActivityForm initialValue={activity} onChange={handleFormChange} />
+        {!activity && creationNotice && (
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 2 }}>
+            {creationNotice}
+          </Typography>
+        )}
       </DialogContent>
 
       <DialogActions
+        disableSpacing
         sx={{
           px: 6,
-          py: 4,
+          pt: '24px !important',
+          pb: 4,
           borderTop: 1,
           borderColor: 'divider',
           gap: 2,
+          flexWrap: 'wrap',
+          justifyContent: 'flex-end',
         }}
       >
         <Button variant='outlined' color='inherit' onClick={onClose} disabled={saving}>

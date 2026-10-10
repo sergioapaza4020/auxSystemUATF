@@ -14,7 +14,11 @@ import {
 
 import type { IActivity } from '@/interfaces/activities/activity.interface';
 
-export function useActivities(idGradeSchemeDetail: number | null, idCourse: number | null) {
+export function useActivities(
+  idGradeSchemeDetail: number | null,
+  idCourse: number | null,
+  onChanged?: () => Promise<void>,
+) {
   const [activities, setActivities] = useState<IActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -51,7 +55,8 @@ export function useActivities(idGradeSchemeDetail: number | null, idCourse: numb
     try {
       const activity = await createActivity(idCourse, data);
 
-      setActivities((current) => [...current, activity].sort((a, b) => a.order - b.order));
+      await load();
+      await onChanged?.();
 
       return activity;
     } finally {
@@ -65,9 +70,8 @@ export function useActivities(idGradeSchemeDetail: number | null, idCourse: numb
     try {
       const activity = await updateActivity(idActivity, data);
 
-      setActivities((current) =>
-        current.map((item) => (item.idActivity === idActivity ? activity : item)).sort((a, b) => a.order - b.order),
-      );
+      await load();
+      await onChanged?.();
 
       return activity;
     } finally {
@@ -81,7 +85,8 @@ export function useActivities(idGradeSchemeDetail: number | null, idCourse: numb
     try {
       const activity = await deleteActivity(idActivity);
 
-      setActivities((current) => current.filter((item) => item.idActivity !== idActivity));
+      await load();
+      await onChanged?.();
 
       return activity;
     } finally {
@@ -95,7 +100,8 @@ export function useActivities(idGradeSchemeDetail: number | null, idCourse: numb
     try {
       const activity = await reactivateActivity(idActivity);
 
-      setActivities((current) => [...current, activity].sort((a, b) => a.order - b.order));
+      await load();
+      await onChanged?.();
 
       return activity;
     } finally {

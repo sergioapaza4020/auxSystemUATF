@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -18,6 +18,18 @@ export class GradeItemReferenceDto {
 }
 
 export class DetailCreateDto {
+  @ApiPropertyOptional({
+    minimum: 0,
+    maximum: 1,
+    default: 1,
+    description: 'Valor del permiso en el criterio de asistencia',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  permissionWeight?: number;
+
   @ApiProperty()
   @IsNumber()
   @Min(0)

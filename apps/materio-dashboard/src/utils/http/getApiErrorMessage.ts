@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 export function getApiErrorMessage(error: unknown): string {
-  if (!axios.isAxiosError(error)) return 'Ha ocurrido un error inesperado';
+  if (!axios.isAxiosError(error))
+    return error instanceof Error && error.message ? error.message : 'Ha ocurrido un error inesperado';
 
   const data = error.response?.data;
 

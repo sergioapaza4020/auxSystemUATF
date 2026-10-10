@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import {
   Box,
@@ -49,8 +49,6 @@ export function ActivityManagementDialog({
 }: ActivityManagementDialogProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<IActivity | null>(null);
-
-  const sortedActivities = useMemo(() => [...activities].sort((a, b) => a.order - b.order), [activities]);
 
   const handleCreate = () => {
     setEditingActivity(null);
@@ -110,7 +108,7 @@ export function ActivityManagementDialog({
                 Cargando actividades...
               </Typography>
             </Stack>
-          ) : sortedActivities.length === 0 ? (
+          ) : activities.length === 0 ? (
             <Box
               sx={{
                 py: 8,
@@ -141,11 +139,12 @@ export function ActivityManagementDialog({
                 overflow: 'hidden',
               }}
             >
-              {sortedActivities.map((activity, index) => (
+              {activities.map((activity, index) => (
                 <ActivityListItem
                   key={activity.idActivity}
                   activity={activity}
-                  divider={index < sortedActivities.length - 1}
+                  position={index + 1}
+                  divider={index < activities.length - 1}
                   disabled={saving}
                   onEdit={() => handleEdit(activity)}
                   onDelete={() => onDelete(activity.idActivity)}
@@ -156,19 +155,23 @@ export function ActivityManagementDialog({
         </DialogContent>
 
         <DialogActions
+          disableSpacing
           sx={{
             px: 6,
-            py: 4,
+            pt: '24px !important',
+            pb: 4,
             borderTop: 1,
             borderColor: 'divider',
             gap: 2,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
           }}
         >
           <Button variant='outlined' color='inherit' onClick={onClose} disabled={saving}>
             Cerrar
           </Button>
 
-          {sortedActivities.length > 0 && (
+          {activities.length > 0 && (
             <Button variant='contained' startIcon={<AddIcon />} onClick={handleCreate} disabled={saving}>
               Nueva actividad
             </Button>
@@ -180,7 +183,6 @@ export function ActivityManagementDialog({
         open={formOpen}
         saving={saving}
         activity={editingActivity}
-        nextOrder={activities.length > 0 ? Math.max(...activities.map((activity) => activity.order)) + 1 : 1}
         idGradeSchemeDetail={idGradeSchemeDetail}
         onClose={handleCloseForm}
         onCreate={onCreate}

@@ -70,6 +70,15 @@ export class EnrollmentsController {
     return this.enrollmentsService.getStudentsByEnrollment(user.idUser, idEnrollment);
   }
 
+  @Permissions('grade.get-by-enrollment')
+  @Get(':idEnrollment/student-grade-summary')
+  async getStudentGradeSummary(
+    @CurrentUser() user: JwtPayload,
+    @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+  ) {
+    return this.enrollmentsService.getStudentGradeSummary(user.idUser, idEnrollment);
+  }
+
   @Permissions('enrollment.get-one-by-id')
   @Get('id/:idEnrollment')
   async getOneById(@Param('idEnrollment', ParseIntPipe) idEnrollment: number) {

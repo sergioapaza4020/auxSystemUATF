@@ -1,3 +1,4 @@
+import { StudentAttendanceResponseDto } from 'src/dtos/attendances/student-attendance-response.dto';
 import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
 import { Query } from '@nestjs/common';
 import { AttendanceHistoryQueryDto } from 'src/dtos/attendances/attendance-history-query.dto';
@@ -8,7 +9,7 @@ import { Permissions } from '@core/decorators/permissions/permissions.decorator'
 
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOkResponse } from '@nestjs/swagger';
 
 import { AttendanceSessionCreateDto } from 'src/dtos/attendances/attendance-session-create.dto';
 import { AttendanceSaveDto } from 'src/dtos/attendances/attendance-save.dto';
@@ -62,12 +63,23 @@ export class AttendancesController {
   }
 
   @Permissions('attendance.student.get')
+  @ApiOkResponse({ type: StudentAttendanceResponseDto })
   @Get('student/:idEnrollment')
   async getStudentAttendance(
     @CurrentUser() user: JwtPayload,
     @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
   ) {
     return this.attendancesService.getStudentAttendance(user.idUser, idEnrollment);
+  }
+
+  @Permissions('enrollment.get-my-enrollment')
+  @ApiOkResponse({ type: StudentAttendanceResponseDto })
+  @Get('student/my/:idEnrollment')
+  async getMyAttendance(
+    @CurrentUser() user: JwtPayload,
+    @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+  ) {
+    return this.attendancesService.getMyStudentAttendance(user.idUser, idEnrollment);
   }
 
   @Permissions('attendance.session.update')

@@ -1,6 +1,10 @@
+import { weightedScore } from '@repo/grade-calculations';
 import { Box, Chip, CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
 
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+
+import { attendanceStatusColor } from '@/utils/attendance-status';
+import { AttendanceStatus } from '@/enums/attendanceStatus';
 
 import type { IStudentAttendance } from '@/interfaces/attendances/attendance.interface';
 
@@ -22,7 +26,7 @@ export function AttendanceGradeSection({
   const attendancePercentage = attendance?.percentage ?? null;
 
   const contribution =
-    attendancePercentage !== null ? (Number(attendancePercentage) * percentage * schemeMultiplier) / 100 : null;
+    attendancePercentage !== null ? weightedScore(Number(attendancePercentage), percentage, schemeMultiplier) : null;
 
   return (
     <Box
@@ -82,7 +86,18 @@ export function AttendanceGradeSection({
           >
             <Stack direction='row' justifyContent='space-between'>
               <Typography variant='body2' color='text.secondary'>
-                {attendance.presentSessions} de {attendance.totalSessions} sesiones
+                <Box component='span' color={attendanceStatusColor(AttendanceStatus.PRESENT)}>
+                  {attendance.presentSessions} presentes
+                </Box>{' '}
+                ·{' '}
+                <Box component='span' color={attendanceStatusColor(AttendanceStatus.EXCUSED)}>
+                  {attendance.excusedSessions} permisos
+                </Box>{' '}
+                ·{' '}
+                <Box component='span' color={attendanceStatusColor(AttendanceStatus.ABSENT)}>
+                  {attendance.absentSessions} ausencias
+                </Box>{' '}
+                · {attendance.totalSessions} sesiones
               </Typography>
 
               <Typography fontWeight={700}>{Number(attendance.percentage).toFixed(2)}%</Typography>

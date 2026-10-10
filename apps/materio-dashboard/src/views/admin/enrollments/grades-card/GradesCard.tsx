@@ -13,6 +13,7 @@ import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface'
 import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
 import type { IStudentAttendance } from '@/interfaces/attendances/attendance.interface';
+import { UserRole } from '@/enums/userRole';
 
 import { EditableGradesView } from './EditableGradesView';
 import { StudentGradesView } from './StudentGradesView';
@@ -25,6 +26,7 @@ interface GradesCardProps {
   onGradesChanged?: () => void;
 
   isEditable?: boolean;
+  canDelete?: boolean;
 
   gradeScheme?: IGradeScheme;
 
@@ -61,6 +63,7 @@ export function GradesCard({
   loading,
   onGradesChanged,
   isEditable = false,
+  canDelete = true,
   gradeScheme,
   schemeMultiplier = 1,
   assistantMode = false,
@@ -215,6 +218,7 @@ export function GradesCard({
    * correspondiente.
    */
   const handleDelete = async (idGrade: number, id: number) => {
+    if (!canDelete) return;
     setSaving(id);
 
     try {
@@ -284,6 +288,7 @@ export function GradesCard({
   if (isEditable) {
     return (
       <EditableGradesView
+        canDelete={canDelete}
         scheme={scheme}
         grades={grades}
         scores={scores}
@@ -310,6 +315,7 @@ export function GradesCard({
    */
   return (
     <StudentGradesView
+      studentEnrollmentId={enrollment.role === UserRole.STUDENT ? enrollment.idEnrollment : undefined}
       scheme={scheme}
       grades={grades}
       loading={loading}

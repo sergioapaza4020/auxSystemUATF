@@ -36,4 +36,7 @@ export class Attendance extends BaseEntity {
     enum: AttendanceStatus,
   })
   status: AttendanceStatus;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  observation: string | null;
 }

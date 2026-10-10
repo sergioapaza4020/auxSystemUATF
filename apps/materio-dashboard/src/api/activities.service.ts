@@ -5,15 +5,15 @@ export interface IActivityCreate {
   gradeSchemeDetailId: number;
   name: string;
   description?: string;
-  date: string;
-  order: number;
+  dueDate: string;
+  publicationDate?: string;
 }
 
 export interface IActivityUpdate {
   name?: string;
   description?: string;
-  date?: string;
-  order?: number;
+  dueDate?: string;
+  publicationDate?: string;
 }
 
 export const getActivitiesByGradeSchemeDetail = async (idGradeSchemeDetail: number): Promise<IActivity[]> => {

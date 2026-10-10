@@ -87,6 +87,15 @@ export function useAssistantGradeSchemeForm(options: UseAssistantGradeSchemeForm
     }));
   };
 
+  const handlePermissionWeightChange = (idGradeItem: number, permissionWeight: number) => {
+    setForm((current) => ({
+      ...current,
+      details: current.details.map((detail) =>
+        detail.gradeItem.idGradeItem === idGradeItem ? { ...detail, permissionWeight } : detail,
+      ),
+    }));
+  };
+
   const totalPercentage = useMemo(
     () => form.details.reduce((sum, detail) => sum + detail.percentage, 0),
     [form.details],
@@ -96,7 +105,13 @@ export function useAssistantGradeSchemeForm(options: UseAssistantGradeSchemeForm
     form.assistantPercentage > 0 &&
     form.assistantPercentage <= 100 &&
     form.details.length > 0 &&
-    totalPercentage === 100;
+    totalPercentage === 100 &&
+    form.details.every(
+      (detail) =>
+        Number.isFinite(detail.permissionWeight ?? 1) &&
+        (detail.permissionWeight ?? 1) >= 0 &&
+        (detail.permissionWeight ?? 1) <= 1,
+    );
 
   const reset = () => {
     setForm({
@@ -112,6 +127,7 @@ export function useAssistantGradeSchemeForm(options: UseAssistantGradeSchemeForm
     updateField,
     handleGradeItemChange,
     handlePercentageChange,
+    handlePermissionWeightChange,
     totalPercentage,
     isValid,
     reset,

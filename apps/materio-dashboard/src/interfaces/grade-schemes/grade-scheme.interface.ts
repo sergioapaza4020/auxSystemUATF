@@ -12,6 +12,7 @@ export interface IGradeScheme {
 export interface IDetail {
   idGradeSchemeDetail: number;
   percentage: number;
+  permissionWeight?: number;
   order: number;
   gradeItem: IGradeItem;
   activities: IActivity[];

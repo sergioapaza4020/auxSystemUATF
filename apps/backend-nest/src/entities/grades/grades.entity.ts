@@ -1,10 +1,22 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { Enrollment } from '../enrollments/enrollments.entity';
 import { GradeSchemeDetail } from '../grade-scheme-detail/grade-scheme-detail.entity';
 import { Activity } from '../activities/activity.entity';
 
 @Entity('grades')
+@Index('UQ_grade_enrollment_activity', ['enrollment', 'activity'], {
+  unique: true,
+  where: '"id_activity" IS NOT NULL',
+})
 export class Grade extends BaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_grade' })
   idGrade: number;

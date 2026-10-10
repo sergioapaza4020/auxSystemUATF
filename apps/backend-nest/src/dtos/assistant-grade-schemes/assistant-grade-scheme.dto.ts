@@ -19,6 +19,18 @@ export class AssistantGradeItemReferenceDto {
 }
 
 export class AssistantGradeSchemeDetailDto {
+  @ApiPropertyOptional({
+    minimum: 0,
+    maximum: 1,
+    default: 1,
+    description: 'Valor del permiso en el criterio de asistencia',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  permissionWeight?: number;
+
   @ApiProperty({
     minimum: 0,
     maximum: 100,

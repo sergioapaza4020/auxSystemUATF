@@ -17,6 +17,7 @@ export interface IAttendanceSessionCreate {
 export interface IAttendanceRecord {
   enrollmentId: number;
   status: AttendanceStatus;
+  observation?: string | null;
 }
 
 export interface IAttendanceSave {
@@ -63,6 +64,12 @@ export const deleteAttendance = async (idSession: number, idEnrollment: number):
 
 export const getStudentAttendance = async (idEnrollment: number): Promise<IStudentAttendance> => {
   const response = await instance.get(`/attendances/student/${idEnrollment}`);
+
+  return response.data.data;
+};
+
+export const getMyStudentAttendance = async (idEnrollment: number): Promise<IStudentAttendance> => {
+  const response = await instance.get(`/attendances/student/my/${idEnrollment}`);
 
   return response.data.data;
 };

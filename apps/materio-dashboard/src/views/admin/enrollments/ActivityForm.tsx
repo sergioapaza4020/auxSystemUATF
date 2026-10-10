@@ -5,41 +5,37 @@ import { useEffect, useState } from 'react';
 import { Grid, TextField } from '@mui/material';
 
 import type { IActivity } from '@/interfaces/activities/activity.interface';
+import { DateField } from '@/components/DateField';
 
 export interface IActivityFormData {
   name: string;
   description: string;
-  date: string;
-  order: number;
+  dueDate: string;
 }
 
 interface ActivityFormProps {
   initialValue?: IActivity | null;
-  defaultOrder?: number;
   onChange: (data: IActivityFormData) => void;
 }
 
-export function ActivityForm({ initialValue, defaultOrder = 1, onChange }: ActivityFormProps) {
+export function ActivityForm({ initialValue, onChange }: ActivityFormProps) {
   const [name, setName] = useState(initialValue?.name ?? '');
   const [description, setDescription] = useState(initialValue?.description ?? '');
-  const [date, setDate] = useState(initialValue?.date ?? '');
-  const [order, setOrder] = useState(initialValue?.order ?? defaultOrder);
+  const [dueDate, setDueDate] = useState(initialValue?.dueDate ?? '');
 
   useEffect(() => {
     setName(initialValue?.name ?? '');
     setDescription(initialValue?.description ?? '');
-    setDate(initialValue?.date ?? '');
-    setOrder(initialValue?.order ?? defaultOrder);
-  }, [initialValue, defaultOrder]);
+    setDueDate(initialValue?.dueDate ?? '');
+  }, [initialValue]);
 
   useEffect(() => {
     onChange({
       name,
       description,
-      date,
-      order,
+      dueDate,
     });
-  }, [name, description, date, order, onChange]);
+  }, [name, description, dueDate, onChange]);
 
   return (
     <Grid container spacing={4}>
@@ -68,36 +64,8 @@ export function ActivityForm({ initialValue, defaultOrder = 1, onChange }: Activ
         />
       </Grid>
 
-      <Grid item xs={12} sm={8}>
-        <TextField
-          fullWidth
-          required
-          label='Fecha'
-          type='date'
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-          InputLabelProps={{
-            shrink: true,
-          }}
-        />
-      </Grid>
-
-      <Grid item xs={12} sm={4}>
-        <TextField
-          fullWidth
-          required
-          label='Orden'
-          type='number'
-          value={order}
-          onChange={(event) => {
-            const value = Number(event.target.value);
-
-            setOrder(value);
-          }}
-          inputProps={{
-            min: 1,
-          }}
-        />
+      <Grid item xs={12}>
+        <DateField fullWidth required label='Fecha de entrega' value={dueDate} onChange={setDueDate} />
       </Grid>
     </Grid>
   );

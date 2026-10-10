@@ -23,8 +23,15 @@ interface AssistantGradeSchemeFormProps {
 export function AssistantGradeSchemeForm({ idCourse }: AssistantGradeSchemeFormProps) {
   const [saving, setSaving] = useState(false);
 
-  const { form, updateField, handleGradeItemChange, handlePercentageChange, totalPercentage, isValid } =
-    useAssistantGradeSchemeForm();
+  const {
+    form,
+    updateField,
+    handleGradeItemChange,
+    handlePercentageChange,
+    handlePermissionWeightChange,
+    totalPercentage,
+    isValid,
+  } = useAssistantGradeSchemeForm();
 
   const { create } = useAssistantGradeScheme(idCourse);
 
@@ -100,6 +107,7 @@ export function AssistantGradeSchemeForm({ idCourse }: AssistantGradeSchemeFormP
                 totalPercentage={totalPercentage}
                 onGradeItemChange={handleGradeItemChange}
                 onPercentageChange={handlePercentageChange}
+                onPermissionWeightChange={handlePermissionWeightChange}
               />
             </Grid>
 

@@ -2,6 +2,7 @@ import { Grade } from 'src/entities/grades/grades.entity';
 import { Activity } from 'src/entities/activities/activity.entity';
 import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
+import { withActiveActivities } from '@common/utils/active-activities';
 import { statusFilter } from '@common/utils/status-filter';
 import {
   BadRequestException,
@@ -59,7 +60,7 @@ export class AssistantGradeSchemesService {
       },
     });
 
-    return scheme;
+    return withActiveActivities(scheme);
   }
 
   async create(
@@ -104,23 +105,26 @@ export class AssistantGradeSchemesService {
             idGradeItem: detail.gradeItem.idGradeItem,
           },
           percentage: detail.percentage,
+          permissionWeight: detail.permissionWeight ?? 1,
           order: index + 1,
         }),
       );
 
       await detailRepository.save(details);
 
-      return gradeSchemeRepository.findOne({
-        where: {
-          idGradeScheme: scheme.idGradeScheme,
-        },
-        relations: {
-          details: {
-            gradeItem: true,
-            activities: true,
+      return withActiveActivities(
+        await gradeSchemeRepository.findOne({
+          where: {
+            idGradeScheme: scheme.idGradeScheme,
           },
-        },
-      });
+          relations: {
+            details: {
+              gradeItem: true,
+              activities: true,
+            },
+          },
+        }),
+      );
     });
   }
 
@@ -199,6 +203,7 @@ export class AssistantGradeSchemesService {
           detail = detailRepository.create({ gradeScheme: scheme, gradeItem: item });
         }
         detail.percentage = input.percentage;
+        detail.permissionWeight = input.permissionWeight ?? detail.permissionWeight ?? 1;
         detail.order = index + 1;
         details.push(detail);
       }
@@ -209,17 +214,19 @@ export class AssistantGradeSchemesService {
       for (const detail of removed) await detailRepository.delete(detail.idGradeSchemeDetail);
       await detailRepository.save(details);
 
-      return gradeSchemeRepository.findOne({
-        where: {
-          idGradeScheme: scheme.idGradeScheme,
-        },
-        relations: {
-          details: {
-            gradeItem: true,
-            activities: true,
+      return withActiveActivities(
+        await gradeSchemeRepository.findOne({
+          where: {
+            idGradeScheme: scheme.idGradeScheme,
           },
-        },
-      });
+          relations: {
+            details: {
+              gradeItem: true,
+              activities: true,
+            },
+          },
+        }),
+      );
     });
   }
 

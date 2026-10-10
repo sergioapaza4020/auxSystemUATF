@@ -80,26 +80,31 @@ export function useAttendances(idEnrollment: number | null) {
     [idEnrollment, loadSessions],
   );
 
-  const saveSessionAttendances = useCallback(
-    async (idSession: number, data: IAttendanceSave) => {
-      setSaving(true);
+  const saveSessionAttendances = useCallback(async (idSession: number, data: IAttendanceSave) => {
+    setSaving(true);
 
-      try {
-        const result = await saveAttendances(idSession, data);
+    try {
+      const result = await saveAttendances(idSession, data);
 
-        if (session?.idAttendanceSession === idSession) {
-          const refreshed = await getAttendanceSession(idSession);
+      setSession((current) => {
+        if (current?.idAttendanceSession !== idSession) return current;
 
-          setSession(refreshed);
+        const confirmed = new Map(result.map((record) => [record.enrollment.idEnrollment, record]));
+
+        for (const record of current.attendances) {
+          const id = record.enrollment.idEnrollment;
+
+          if (!confirmed.has(id)) confirmed.set(id, record);
         }
 
-        return result;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [session],
-  );
+        return { ...current, attendances: [...confirmed.values()] };
+      });
+
+      return result;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
 
   useEffect(() => {
     void loadSessions();

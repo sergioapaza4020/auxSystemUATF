@@ -42,10 +42,17 @@ export function AssistantGradeSchemeDialog({
   onClose,
   onSubmit,
 }: AssistantGradeSchemeDialogProps) {
-  const { form, updateField, handleGradeItemChange, handlePercentageChange, totalPercentage, isValid } =
-    useAssistantGradeSchemeForm({
-      initialValue,
-    });
+  const {
+    form,
+    updateField,
+    handleGradeItemChange,
+    handlePercentageChange,
+    handlePermissionWeightChange,
+    totalPercentage,
+    isValid,
+  } = useAssistantGradeSchemeForm({
+    initialValue,
+  });
 
   const formId = 'assistant-grade-scheme-form';
   const isEditing = !!initialValue;
@@ -167,6 +174,7 @@ export function AssistantGradeSchemeDialog({
                 totalPercentage={totalPercentage}
                 onGradeItemChange={handleGradeItemChange}
                 onPercentageChange={handlePercentageChange}
+                onPermissionWeightChange={handlePermissionWeightChange}
               />
             </Grid>
           </Grid>

@@ -1,3 +1,4 @@
+import { weightedScore } from '@repo/grade-calculations';
 import { Box, Chip, CircularProgress, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
@@ -32,7 +33,7 @@ export function DirectGradeSection({
   onSave,
   onDelete,
 }: DirectGradeSectionProps) {
-  const contribution = grade ? (Number(grade.score) * percentage * schemeMultiplier) / 100 : null;
+  const contribution = grade ? weightedScore(Number(grade.score), percentage, schemeMultiplier) : null;
 
   const canSave = score.trim() !== '' && !invalid && !saving;
 

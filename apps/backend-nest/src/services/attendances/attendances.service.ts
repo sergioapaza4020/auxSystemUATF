@@ -1,3 +1,9 @@
+import {
+  attendancePermissionWeight,
+  summarizeAttendanceStatuses,
+} from '@common/utils/attendance-summary';
+import { AttendanceStatus } from '@common/enums/attendanceStatus';
+import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
 import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
 import { AttendanceHistoryQueryDto } from 'src/dtos/attendances/attendance-history-query.dto';
 import { CourseRelations } from '@common/enums/courseRelations';
@@ -21,7 +27,6 @@ import { AttendanceSaveDto } from 'src/dtos/attendances/attendance-save.dto';
 import { AttendanceSession } from 'src/entities/attendance/attendance-session.entity';
 import { Attendance } from 'src/entities/attendance/attendance.entity';
 import { AttendanceSessionResponseDto } from 'src/dtos/attendances/attendance-session-response.dto';
-import { AttendanceStatus } from '@common/enums/attendanceStatus';
 import { StudentAttendanceResponseDto } from 'src/dtos/attendances/student-attendance-response.dto';
 
 @Injectable()
@@ -100,23 +105,59 @@ export class AttendancesService {
         },
       },
       relations: {
-        attendances: true,
+        attendances: { enrollment: true },
       },
       order: {
         date: 'DESC',
       },
     });
 
-    return sessions.map((session) => ({
-      idAttendanceSession: session.idAttendanceSession,
-      date: session.date,
-      presentCount: session.attendances.filter(
-        (attendance) => attendance.status === AttendanceStatus.PRESENT,
-      ).length,
-      absentCount: session.attendances.filter(
-        (attendance) => attendance.status === AttendanceStatus.ABSENT,
-      ).length,
-    }));
+    return this.summarizeSessions(assistantEnrollment, sessions);
+  }
+
+  private async getPermissionWeight(assistantEnrollment: Enrollment): Promise<number> {
+    const scheme = await this.enrollmentRepository.manager.getRepository(GradeScheme).findOne({
+      where: {
+        assistantEnrollment: { idEnrollment: assistantEnrollment.idEnrollment },
+        isActive: true,
+      },
+      relations: { details: { gradeItem: true } },
+    });
+    return attendancePermissionWeight(scheme?.details);
+  }
+
+  private async summarizeSessions(
+    assistantEnrollment: Enrollment,
+    sessions: AttendanceSession[],
+  ): Promise<AttendanceSessionResponseDto[]> {
+    const students = await this.enrollmentRepository.find({
+      where: {
+        course: { idCourse: assistantEnrollment.course.idCourse },
+        semester: { idSemester: assistantEnrollment.semester.idSemester },
+        role: CourseRelations.STUDENT,
+        isActive: true,
+      },
+    });
+    const studentIds = new Set(students.map((student) => student.idEnrollment));
+    const weight = await this.getPermissionWeight(assistantEnrollment);
+    return sessions.map((session) => {
+      const summary = summarizeAttendanceStatuses(
+        session.attendances
+          .filter((record) => studentIds.has(record.enrollment.idEnrollment))
+          .map((record) => record.status),
+        students.length,
+        weight,
+      );
+      return {
+        idAttendanceSession: session.idAttendanceSession,
+        date: session.date,
+        presentCount: summary.present,
+        excusedCount: summary.excused,
+        absentCount: summary.absent,
+        totalStudents: summary.total,
+        percentage: summary.percentage,
+      };
+    });
   }
 
   async getSession(idUser: number, idSession: number): Promise<AttendanceSession> {
@@ -157,27 +198,20 @@ export class AttendancesService {
   }
 
   async getSessionsPage(idUser: number, idEnrollment: number, query: AttendanceHistoryQueryDto) {
-    await this.getAssistantEnrollment(idUser, idEnrollment);
+    const assistantEnrollment = await this.getAssistantEnrollment(idUser, idEnrollment);
     const { page = 1, limit = 10 } = query;
     const [sessions, total] = await this.attendanceSessionRepository.findAndCount({
       where: {
         assistantEnrollment: { idEnrollment },
         ...(query.date ? { date: query.date as unknown as Date } : {}),
       },
-      relations: { attendances: true },
+      relations: { attendances: { enrollment: true } },
       order: { date: 'DESC', idAttendanceSession: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
     return {
-      data: sessions.map((session) => ({
-        idAttendanceSession: session.idAttendanceSession,
-        date: session.date,
-        presentCount: session.attendances.filter((item) => item.status === AttendanceStatus.PRESENT)
-          .length,
-        absentCount: session.attendances.filter((item) => item.status === AttendanceStatus.ABSENT)
-          .length,
-      })),
+      data: await this.summarizeSessions(assistantEnrollment, sessions),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -237,6 +271,7 @@ export class AttendancesService {
       const saved: Attendance[] = [];
       for (const record of dto.attendances) {
         const existing = await repository.findOne({
+          relations: { enrollment: true },
           where: {
             attendanceSession: { idAttendanceSession: idSession },
             enrollment: { idEnrollment: record.enrollmentId },
@@ -249,6 +284,12 @@ export class AttendancesService {
             enrollment: { idEnrollment: record.enrollmentId },
           });
         attendance.status = record.status;
+        attendance.observation =
+          record.status === AttendanceStatus.EXCUSED
+            ? record.observation === undefined
+              ? attendance.observation?.trim() || null
+              : record.observation?.trim() || null
+            : null;
         saved.push(await repository.save(attendance));
       }
       return saved;
@@ -258,6 +299,21 @@ export class AttendancesService {
   async getStudentAttendance(
     idUser: number,
     idStudentEnrollment: number,
+  ): Promise<StudentAttendanceResponseDto> {
+    return this.summarizeStudentAttendance(idUser, idStudentEnrollment, false);
+  }
+
+  async getMyStudentAttendance(
+    idUser: number,
+    idStudentEnrollment: number,
+  ): Promise<StudentAttendanceResponseDto> {
+    return this.summarizeStudentAttendance(idUser, idStudentEnrollment, true);
+  }
+
+  private async summarizeStudentAttendance(
+    idUser: number,
+    idStudentEnrollment: number,
+    ownOnly: boolean,
   ): Promise<StudentAttendanceResponseDto> {
     const studentEnrollment = await this.enrollmentRepository.findOne({
       where: {
@@ -276,23 +332,39 @@ export class AttendancesService {
       throw new NotFoundException('Matrícula del estudiante no encontrada');
     }
 
-    const assistantEnrollment = await this.enrollmentRepository.findOne({
-      where: {
-        user: {
-          idUser,
-        },
-        course: {
-          idCourse: studentEnrollment.course.idCourse,
-        },
-        semester: {
-          idSemester: studentEnrollment.semester.idSemester,
-        },
-        role: CourseRelations.ASSISTANT,
-        isActive: true,
+    if (ownOnly && studentEnrollment.user.idUser !== idUser) {
+      throw new ForbiddenException('Solo puedes consultar tu propia asistencia');
+    }
+
+    const assistantWhere = {
+      ...(!ownOnly ? { user: { idUser } } : {}),
+      course: {
+        idCourse: studentEnrollment.course.idCourse,
       },
-    });
+      semester: {
+        idSemester: studentEnrollment.semester.idSemester,
+      },
+      role: CourseRelations.ASSISTANT,
+      isActive: true,
+    };
+    const candidates = ownOnly
+      ? await this.enrollmentRepository.find({ where: assistantWhere })
+      : [await this.enrollmentRepository.findOne({ where: assistantWhere })];
+
+    if (ownOnly && candidates.length > 1) {
+      throw new BadRequestException('No se puede determinar un único auxiliar para tu asistencia');
+    }
+    const assistantEnrollment = candidates[0];
 
     if (!assistantEnrollment) {
+      if (ownOnly)
+        return {
+          totalSessions: 0,
+          presentSessions: 0,
+          excusedSessions: 0,
+          absentSessions: 0,
+          percentage: 0,
+        };
       throw new ForbiddenException(
         'No eres auxiliar de esta materia o la matrícula no está activa',
       );
@@ -314,36 +386,21 @@ export class AttendancesService {
       },
     });
 
-    const totalSessions = sessions.length;
-
-    let presentSessions = 0;
-    let absentSessions = 0;
-
-    for (const session of sessions) {
-      const attendance = session.attendances.find(
-        (item) => item.enrollment.idEnrollment === studentEnrollment.idEnrollment,
-      );
-
-      if (!attendance) {
-        continue;
-      }
-
-      if (attendance.status === AttendanceStatus.PRESENT) {
-        presentSessions++;
-      }
-
-      if (attendance.status === AttendanceStatus.ABSENT) {
-        absentSessions++;
-      }
-    }
-
-    const percentage = totalSessions === 0 ? 0 : (presentSessions / totalSessions) * 100;
-
+    const summary = summarizeAttendanceStatuses(
+      sessions.flatMap((session) =>
+        session.attendances
+          .filter((item) => item.enrollment.idEnrollment === studentEnrollment.idEnrollment)
+          .map((item) => item.status),
+      ),
+      sessions.length,
+      await this.getPermissionWeight(assistantEnrollment),
+    );
     return {
-      totalSessions,
-      presentSessions,
-      absentSessions,
-      percentage,
+      totalSessions: summary.total,
+      presentSessions: summary.present,
+      excusedSessions: summary.excused,
+      absentSessions: summary.absent,
+      percentage: summary.percentage,
     };
   }
 
