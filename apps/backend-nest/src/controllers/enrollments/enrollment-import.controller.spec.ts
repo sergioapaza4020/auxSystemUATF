@@ -9,7 +9,7 @@ import { EnrollmentImportController } from './enrollment-import.controller';
 
 describe('Enrollment import authorization and target', () => {
   const guard = new PermissionsGuard(new Reflector());
-  it.each(['template', 'preview', 'import'] as const)(
+  it.each(['template', 'preview', 'getPreview', 'status', 'import'] as const)(
     'protects %s with enrollment.create and SUPERADMIN bypass',
     (method) => {
       const context = (roles: string[], permissions: string[]) =>

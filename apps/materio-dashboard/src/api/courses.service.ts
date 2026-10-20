@@ -1,4 +1,5 @@
-import type { ApiResponse } from '@/interfaces/apiResponse';
+import type { CatalogPageQuery } from '@/interfaces/catalog-page.interface';
+import type { PaginatedApiResponse, ApiResponse } from '@/interfaces/apiResponse';
 import type { RecordStatus } from '@/interfaces/status-query.interface';
 import type { ICourse, ICourseWrite } from '@/interfaces/courses/course.interface';
 import { instance } from './config/config';
@@ -24,3 +25,6 @@ export const deactivateCourse = async (id: number): Promise<void> => {
 export const reactivateCourse = async (id: number): Promise<void> => {
   await instance.patch(`/courses/reactivate/${id}`);
 };
+
+export const getCoursesPage = async (query: CatalogPageQuery, signal?: AbortSignal) =>
+  (await instance.get<PaginatedApiResponse<ICourse[]>>('/courses', { params: query, signal })).data;

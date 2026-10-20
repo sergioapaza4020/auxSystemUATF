@@ -1,3 +1,5 @@
+import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
+import { getStudentRosterPage } from '@common/utils/student-roster';
 import {
   averageScores,
   criterionScore,
@@ -7,7 +9,10 @@ import {
 } from '@repo/grade-calculations';
 import { attendanceSummary } from '@common/utils/attendance-summary';
 import { AttendanceStatus } from '@common/enums/attendanceStatus';
-import type { StudentGradeSummaryDto } from 'src/dtos/enrollments/student-grade-summary.dto';
+import type {
+  IndividualStudentGradeSummaryDto,
+  StudentGradeSummaryDto,
+} from 'src/dtos/enrollments/student-grade-summary.dto';
 import { Activity } from 'src/entities/activities/activity.entity';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
 import { EnrollmentQueryDto } from 'src/dtos/enrollments/enrollment-query.dto';
@@ -197,9 +202,43 @@ export class EnrollmentsService {
     return this.enrollmentRepository.save(enrollment);
   }
 
-  async getUserEnrollments(idUser: number) {
+  async getUserEnrollments(idUser: number, current = false) {
     const user = await this.usersService.getOneById(idUser);
     if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    if (current) {
+      let semester: { idSemester: number };
+      try {
+        semester = await this.semestersService.getCurrentSemester();
+      } catch (error) {
+        if (error instanceof NotFoundException) return [];
+        throw error;
+      }
+      return this.enrollmentRepository.find({
+        where: {
+          user: { idUser },
+          isActive: true,
+          role: In([CourseRelations.STUDENT, CourseRelations.ASSISTANT]),
+          semester: { idSemester: semester.idSemester },
+        },
+        relations: { course: true, semester: true },
+        select: {
+          idEnrollment: true,
+          role: true,
+          isActive: true,
+          course: { idCourse: true, code: true, name: true, group: true, isActive: true },
+          semester: {
+            idSemester: true,
+            year: true,
+            period: true,
+            startDate: true,
+            endDate: true,
+            isActive: true,
+          },
+        },
+        order: { course: { code: 'ASC' }, idEnrollment: 'ASC' },
+      });
+    }
 
     const enrollments = await this.enrollmentRepository.find({
       where: [
@@ -275,7 +314,11 @@ export class EnrollmentsService {
     return enrollment;
   }
 
-  async getManagedEnrollment(idAssistant: number, idEnrollment: number) {
+  async getManagedEnrollment(
+    idAssistant: number,
+    idEnrollment: number,
+    includeCourseScheme = true,
+  ) {
     const enrollment = await this.verifyAssistantAccess(idAssistant, idEnrollment);
 
     const fullEnrollment = await this.enrollmentRepository.findOne({
@@ -286,14 +329,9 @@ export class EnrollmentsService {
       relations: {
         user: true,
         semester: true,
-        course: {
-          gradeScheme: {
-            details: {
-              gradeItem: true,
-              activities: true,
-            },
-          },
-        },
+        course: includeCourseScheme
+          ? { gradeScheme: { details: { gradeItem: true, activities: true } } }
+          : true,
       },
     });
 
@@ -334,6 +372,42 @@ export class EnrollmentsService {
     return enrollment;
   }
 
+  async getStudentsPage(idAssistant: number, idEnrollment: number, query: StudentRosterQueryDto) {
+    const assistant = await this.getAssistantEnrollment(idAssistant, idEnrollment);
+    return getStudentRosterPage(this.enrollmentRepository, assistant, query);
+  }
+
+  async getIndividualStudentGradeSummary(
+    idAssistant: number,
+    idEnrollment: number,
+    studentEnrollmentId: number,
+  ): Promise<IndividualStudentGradeSummaryDto> {
+    const assistant = await this.getAssistantEnrollment(idAssistant, idEnrollment);
+    const student = await this.enrollmentRepository.findOne({
+      where: {
+        idEnrollment: studentEnrollmentId,
+        course: { idCourse: assistant.course.idCourse },
+        semester: { idSemester: assistant.semester.idSemester },
+        role: CourseRelations.STUDENT,
+        isActive: true,
+      },
+      select: { idEnrollment: true },
+    });
+    if (!student) throw new NotFoundException('No se encontró al estudiante en esta materia.');
+    const summary = await this.getStudentGradeSummary(idAssistant, idEnrollment, [student]);
+    return { scheme: summary.scheme, student: summary.students[0] };
+  }
+
+  async getStudentGradeSummaryPage(
+    idAssistant: number,
+    idEnrollment: number,
+    query: StudentRosterQueryDto,
+  ) {
+    const roster = await this.getStudentsPage(idAssistant, idEnrollment, query);
+    const summary = await this.getStudentGradeSummary(idAssistant, idEnrollment, roster.data);
+    return { data: { ...summary, roster: roster.data }, meta: roster.meta };
+  }
+
   async getStudentsByEnrollment(idAssistant: number, idEnrollment: number) {
     const enrollment = await this.getAssistantEnrollment(idAssistant, idEnrollment);
 
@@ -356,6 +430,7 @@ export class EnrollmentsService {
           lastname: 'ASC',
           name: 'ASC',
         },
+        idEnrollment: 'ASC',
       },
     });
 
@@ -365,9 +440,11 @@ export class EnrollmentsService {
   async getStudentGradeSummary(
     idAssistant: number,
     idEnrollment: number,
+    pageStudents?: Enrollment[],
   ): Promise<StudentGradeSummaryDto> {
     // Reuse ownership, active enrollment, semester and student ordering checks.
-    const students = await this.getStudentsByEnrollment(idAssistant, idEnrollment);
+    const students =
+      pageStudents ?? (await this.getStudentsByEnrollment(idAssistant, idEnrollment));
     const manager = this.enrollmentRepository.manager;
     const scheme = await manager.getRepository(GradeScheme).findOne({
       where: { assistantEnrollment: { idEnrollment }, isActive: true },

@@ -1,9 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, EntityManager, Repository } from 'typeorm';
 import { BulkOperation } from 'src/entities/bulk-operations/bulk-operation.entity';
 import { BulkOperationRow } from 'src/entities/bulk-operations/bulk-operation-row.entity';
-import { BulkOperationStatus, BulkOperationType } from '@common/enums/bulk-operation';
+import {
+  BulkOperationRowStatus,
+  BulkOperationStatus,
+  BulkOperationType,
+} from '@common/enums/bulk-operation';
 import type {
   BulkOperationRowsQueryDto,
   CreateBulkOperationDto,
@@ -152,6 +161,62 @@ export class BulkOperationsService {
       .offset(offset)
       .getManyAndCount();
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+
+  /** Reusable synchronous execution: domain writes and terminal state commit together. */
+  async executeReady<T>(
+    operationId: string,
+    ownerId: number,
+    type: BulkOperationType,
+    work: (
+      manager: EntityManager,
+      operation: BulkOperation,
+      rows: BulkOperationRow[],
+    ) => Promise<T>,
+  ) {
+    this.validateIdentity(operationId, ownerId);
+    return this.operations.manager.transaction('SERIALIZABLE', async (manager) => {
+      const operation = await this.lockOperation(manager, operationId, ownerId);
+      if (operation.type !== type) throw new NotFoundException('Bulk operation not found');
+      if (operation.status !== BulkOperationStatus.READY)
+        throw new ConflictException('Bulk operation is not READY');
+      if (operation.expiresAt && operation.expiresAt <= new Date())
+        throw new ConflictException('Bulk operation has expired');
+      if (
+        operation.invalidRows ||
+        operation.validRows !== operation.totalRows ||
+        operation.totalRows < 1
+      )
+        throw new BadRequestException('El preview debe contener únicamente filas válidas');
+      operation.status = BulkOperationStatus.IMPORTING;
+      operation.startedAt = new Date();
+      await manager.getRepository(BulkOperation).save(operation);
+      const rows: BulkOperationRow[] = [];
+      const repository = manager.getRepository(BulkOperationRow);
+      for (let offset = 0; offset < operation.totalRows; offset += BULK_OPERATION_ROW_CHUNK_SIZE) {
+        rows.push(
+          ...(await repository.find({
+            where: { operation: { idBulkOperation: operationId }, valid: true },
+            order: { rowNumber: 'ASC' },
+            skip: offset,
+            take: BULK_OPERATION_ROW_CHUNK_SIZE,
+          })),
+        );
+      }
+      if (rows.length !== operation.validRows)
+        throw new ConflictException('Bulk operation rows are incomplete');
+      const result = await work(manager, operation, rows);
+      await repository.update(
+        { operation: { idBulkOperation: operationId }, valid: true },
+        { status: BulkOperationRowStatus.PROCESSED },
+      );
+      operation.status = BulkOperationStatus.COMPLETED;
+      operation.processedRows = rows.length;
+      operation.failedRows = 0;
+      operation.completedAt = new Date();
+      await manager.getRepository(BulkOperation).save(operation);
+      return result;
+    });
   }
 
   private async lockOperation(manager: EntityManager, operationId: string, ownerId: number) {

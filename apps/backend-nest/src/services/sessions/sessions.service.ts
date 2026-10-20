@@ -5,6 +5,7 @@ import { User } from 'src/entities/users/users.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { SessionRevokeReasons } from '@common/enums/sessionRevokeReasons';
+import { SessionQueryDto } from 'src/dtos/sessions/session-query.dto';
 
 @Injectable()
 export class SessionsService {
@@ -43,13 +44,19 @@ export class SessionsService {
     return this.sessionRepository.save(session);
   }
 
-  async getAllSessions(): Promise<UserSession[]> {
-    return this.sessionRepository
+  async getAllSessions(query: SessionQueryDto) {
+    const { page = 1, limit = 20 } = query;
+    const [data, total] = await this.sessionRepository
       .createQueryBuilder('session')
       .leftJoinAndSelect('session.user', 'user')
       .orderBy('session.isActive', 'DESC')
       .addOrderBy('session.lastUsedAt', 'DESC', 'NULLS LAST')
-      .getMany();
+      .addOrderBy('session.idSession', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async getUserSessions(idUser: number): Promise<UserSession[]> {

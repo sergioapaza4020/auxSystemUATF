@@ -8,6 +8,9 @@ describe('AttendanceHistory', () => {
   it('offers the first session action in the empty state', () => {
     const html = renderToStaticMarkup(
       <AttendanceHistory
+        meta={{ page: 1, limit: 5, total: 0, totalPages: 0 }}
+        onPageChange={() => {}}
+        onLimitChange={() => {}}
         sessions={[]}
         loading={false}
         selectedSessionId={null}
@@ -22,6 +25,9 @@ describe('AttendanceHistory', () => {
   it('displays permissions and the percentage supplied by the backend', () => {
     const html = renderToStaticMarkup(
       <AttendanceHistory
+        meta={{ page: 1, limit: 5, total: 1, totalPages: 1 }}
+        onPageChange={() => {}}
+        onLimitChange={() => {}}
         sessions={[
           {
             idAttendanceSession: 1,

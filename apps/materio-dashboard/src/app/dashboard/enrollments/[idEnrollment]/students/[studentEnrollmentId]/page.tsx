@@ -19,7 +19,6 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/utils/hasPermission';
 import { useStudentAcademicRecord } from '@/hooks/enrollments/useStudentAcademicRecord';
-import { useStudentGradeSummary } from '@/hooks/enrollments/useStudentGradeSummary';
 import { StudentAcademicRecord } from '@/views/admin/enrollments/student-record/StudentAcademicRecord';
 import { GradesCard } from '@/views/admin/enrollments/grades-card/GradesCard';
 
@@ -38,7 +37,6 @@ function StudentRecordContent({
     hasPermission(user, 'attendance.student.get'),
   );
 
-  const results = useStudentGradeSummary(idEnrollment, data.revision);
   const [directOpen, setDirectOpen] = useState(false);
   const canEdit = hasPermission(user, 'grade.create') && hasPermission(user, 'grade.update');
   const record = data.record;
@@ -54,16 +52,11 @@ function StudentRecordContent({
     data.reload();
   };
 
-  const error = data.error || results.error;
+  const error = data.error;
 
-  if (data.loading || results.loading) return <CircularProgress aria-label='Cargando ficha académica' />;
+  if (data.loading) return <CircularProgress aria-label='Cargando ficha académica' />;
 
-  if (
-    error ||
-    !record ||
-    !results.summary ||
-    !results.summary.students.some((student) => student.idEnrollment === studentEnrollmentId)
-  ) {
+  if (error || !record || record.summary.student.idEnrollment !== studentEnrollmentId) {
     return (
       <Stack spacing={2}>
         <Button href={`/dashboard/enrollments/${idEnrollment}`}>Volver a la materia</Button>
@@ -71,7 +64,6 @@ function StudentRecordContent({
         <Button
           onClick={() => {
             data.reload();
-            results.reload();
           }}
         >
           Reintentar
@@ -86,7 +78,7 @@ function StudentRecordContent({
         idEnrollment={idEnrollment}
         enrollment={record.enrollment}
         scheme={record.scheme}
-        summary={results.summary}
+        summary={record.summary}
         grades={record.grades}
         attendance={record.attendance}
         attendanceError={record.attendanceError}

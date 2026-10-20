@@ -18,9 +18,12 @@ No se altera Faculty, Enrollment, roles ni datos personales.
 
 - `GET /api/careers/:careerId/students/import/template`
 - `POST /api/careers/:careerId/students/import/preview`
+- `GET /api/careers/:careerId/students/import/preview/:operationId`
+- `GET /api/careers/:careerId/students/import/:operationId/status`
 - `POST /api/careers/:careerId/students/import`
 
-Los POST reciben un único campo multipart `file`; la carrera proviene de la URL.
+El POST preview recibe multipart `file`; la carrera proviene de la URL. El POST final
+recibe JSON `{operationId}`. Usa la carrera persistida y rechaza una URL distinta.
 El identificador debe ser un entero positivo representable como integer de BD.
 Todos requieren autenticación y `career.update`, mediante los guards globales.
 Se conserva el bypass SUPERADMIN. No se concede acceso por ser DIRECTOR: ese rol
@@ -40,16 +43,17 @@ exportaciones originales como alias, sin cambiar su contrato.
 - Filas vacías intermedias se reportan como inválidas; las finales sin valores se ignoran.
 - Se acumulan errores por archivo/fila, existencia/estado/rol del estudiante,
   duplicados, carrera actual y existencia/estado de la carrera destino.
-- Preview no escribe en BD y conserva el número real de Excel (`row`).
+- Preview persiste operación/filas, sin cambiar asignaciones; conserva el número Excel (`row`).
 
 El preview devuelve, dentro del envoltorio global `data`:
 
 ```json
 {
+  "operationId": "00000000-0000-4000-8000-000000000001",
   "total": 1,
   "valid": 0,
   "invalid": 1,
-  "rows": [{
+  "data": [{
     "row": 2,
     "studentId": 123,
     "ru": "00123456",
@@ -59,13 +63,14 @@ El preview devuelve, dentro del envoltorio global `data`:
     "currentCareer": { "idCareer": 20, "name": "Ingeniería Civil" },
     "status": "INVALID",
     "errors": ["El estudiante ya pertenece a la carrera Ingeniería Civil. No se permite cambiar de carrera mediante esta importación."]
-  }]
+  }],
+  "meta": { "page": 1, "limit": 25, "total": 1, "totalPages": 1 }
 }
 ```
 
 ## Confirmación e integridad
 
-Confirmar vuelve a parsear el archivo. La carrera, los estudiantes, sus roles y
+Confirmar recupera las filas normalizadas de la operación del propietario. La carrera, los estudiantes, sus roles y
 sus relaciones se revalidan dentro de una transacción TypeORM SERIALIZABLE.
 Una fila inválida provoca HTTP 400 antes de realizar actualizaciones.
 
@@ -89,4 +94,23 @@ rechazo se solicita otro preview para consultar los errores por fila.
 Las pruebas usan libros Excel reales, metadatos/SQL de TypeORM y dobles de
 repositorios/transacciones. El fallo del segundo lote comprueba que no se confirma
 el primero. No es una prueba de rollback o concurrencia contra PostgreSQL real.
-No se requieren ni ejecutan migraciones o seeds.
+Se crea una migración que amplía el enum BulkOperationType. No se ejecutan migraciones ni seeds.
+
+
+## Paginación y ejecución persistida (Fase 3)
+
+BulkOperation/BulkOperationRow se comparten con usuarios y matrícula. El POST
+retorna 25 filas; GET acepta page, limit 25/50/100, status all/valid/invalid y
+search de hasta 200 caracteres por nombre, RU, username, email y carrera actual.
+El orden es rowNumber ASC. Resumen global y meta.total filtrado son independientes.
+El propietario, tipo y carrera persistida se verifican en preview, estado y ejecución.
+
+La confirmación permanece síncrona y exige que todo el archivo sea válido. Se
+revalidan roles, actividad y carrera actual, además de la identidad studentId/RU.
+El bloqueo de operación y READY → IMPORTING → COMPLETED comparten transacción
+SERIALIZABLE con las asignaciones. Repetir COMPLETED devuelve conflicto; cualquier
+fallo revierte todo y deja READY. No se añade Redis, worker ni cleanup automático.
+Las operaciones no se borran al desmontar la pantalla; no se añade recuperación
+por URL ni persistencia local. La retención permanece indefinida.
+
+Ver el [informe de Fase 3](../../../PAGINATION_PHASE_3.md).

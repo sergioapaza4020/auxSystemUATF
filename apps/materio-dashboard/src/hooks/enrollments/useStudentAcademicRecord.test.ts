@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getManagedEnrollment } from '@/api/enrollments.service';
+import { getManagedEnrollment, getIndividualStudentGradeSummary } from '@/api/enrollments.service';
 import { getMyAssistantGradeScheme } from '@/api/assistant-grade-schemes.service';
 import { getGradesByEnrollment } from '@/api/grades.service';
 import { getStudentAttendance } from '@/api/attendances.service';
@@ -15,7 +15,10 @@ vi.mock('react', async () => {
 
   return { ...actual, useState: vi.fn(), useEffect: vi.fn() };
 });
-vi.mock('@/api/enrollments.service', () => ({ getManagedEnrollment: vi.fn() }));
+vi.mock('@/api/enrollments.service', () => ({
+  getManagedEnrollment: vi.fn(),
+  getIndividualStudentGradeSummary: vi.fn(),
+}));
 vi.mock('@/api/assistant-grade-schemes.service', () => ({ getMyAssistantGradeScheme: vi.fn() }));
 vi.mock('@/api/grades.service', () => ({ getGradesByEnrollment: vi.fn() }));
 vi.mock('@/api/attendances.service', () => ({ getStudentAttendance: vi.fn() }));
@@ -39,9 +42,13 @@ function useMount() {
   vi.mocked(React.useState).mockImplementation(((initial: unknown) => [
     initial,
     setters[stateIndex++],
-  ]) as typeof React.useState);
+  ]) as unknown as typeof React.useState);
   vi.mocked(React.useEffect).mockImplementation((callback) => {
     effect = callback;
+  });
+  vi.mocked(getIndividualStudentGradeSummary).mockResolvedValue({
+    scheme: null,
+    student: { idEnrollment: 10, details: [], totalRaw: null, assistantContribution: null },
   });
   vi.mocked(getManagedEnrollment).mockResolvedValue(enrollment);
   vi.mocked(getMyAssistantGradeScheme).mockResolvedValue(null);
@@ -64,11 +71,25 @@ describe('Academic record read loading', () => {
     const { setters } = useMount();
 
     await vi.waitFor(() => expect(setters[1]).toHaveBeenLastCalledWith(false));
-    expect(getManagedEnrollment).toHaveBeenCalledWith(10);
+    expect(getIndividualStudentGradeSummary).toHaveBeenCalledWith(7, 10);
+    expect(getManagedEnrollment).toHaveBeenCalledWith(10, false);
     expect(getMyAssistantGradeScheme).toHaveBeenCalledWith(8, 7);
     expect(getGradesByEnrollment).toHaveBeenCalledWith(10);
     expect(getStudentAttendance).toHaveBeenCalledWith(10);
     expect(setters[0]).toHaveBeenLastCalledWith(expect.objectContaining({ enrollment, scheme: null, grades: [] }));
+  });
+  it('rejects an invalid parent context before loading grades or attendance', async () => {
+    vi.mocked(getIndividualStudentGradeSummary).mockRejectedValueOnce(
+      new Error('No se encontró al estudiante en esta materia.'),
+    );
+    const { setters } = useMount();
+
+    await vi.waitFor(() =>
+      expect(setters[2]).toHaveBeenLastCalledWith('No se encontró al estudiante en esta materia.'),
+    );
+    expect(getManagedEnrollment).not.toHaveBeenCalled();
+    expect(getGradesByEnrollment).not.toHaveBeenCalled();
+    expect(getStudentAttendance).not.toHaveBeenCalled();
   });
   it('handles enrollment loading errors', async () => {
     vi.mocked(getManagedEnrollment).mockRejectedValueOnce(new Error('No se encontró al estudiante'));

@@ -10,8 +10,6 @@ import {
   Card,
   CardContent,
   InputAdornment,
-  MenuItem,
-  Select,
   Skeleton,
   Stack,
   Table,
@@ -24,14 +22,23 @@ import {
   Typography,
 } from '@mui/material';
 
+import type { useEnrollmentStudentsPage } from '@/hooks/enrollments/useEnrollmentStudentsPage';
+import { PaginationTable, type HeadCell } from '@/components/table';
+import { useDataTable } from '@/hooks/table/useDataTable';
+
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 
 import type { IStudentGradeSummary } from '@/interfaces/enrollments/student-grade-summary.interface';
 import { StudentGradeCell, type StudentGradesMode } from './StudentGradeCell';
 import { DEFAULT_GRADE_DISPLAY_MODE, GradeViewToggle } from './GradeViewToggle';
 
+const studentColumns = [
+  { id: 'idEnrollment', label: '#', sortable: true },
+] as const satisfies readonly HeadCell<IEnrollmentStudent>[];
+
 interface EnrollmentStudentsCardProps {
   students: IEnrollmentStudent[];
+  pagination?: Pick<ReturnType<typeof useEnrollmentStudentsPage>, 'query' | 'meta' | 'changeQuery'>;
   summary?: IStudentGradeSummary | null;
   summaryLoading?: boolean;
   summaryError?: string | null;
@@ -48,6 +55,7 @@ interface EnrollmentStudentsCardProps {
 
 export function EnrollmentStudentsCard({
   students,
+  pagination,
   summary,
   summaryLoading = false,
   summaryError,
@@ -74,13 +82,11 @@ export function EnrollmentStudentsCard({
 
   const details = summary?.scheme?.details ?? [];
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
 
-    if (!query) return students;
+    if (pagination || !query) return students;
 
     return students.filter((student) => {
       const fullName = `${student.user.name} ${student.user.lastname}`.toLocaleLowerCase();
@@ -91,16 +97,16 @@ export function EnrollmentStudentsCard({
 
       return fullName.includes(query) || ci.includes(query) || ru.includes(query);
     });
-  }, [students, search]);
+  }, [students, search, pagination]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages - 1);
+  const table = useDataTable<IEnrollmentStudent, typeof studentColumns>(filteredStudents, 'idEnrollment', 10, {
+    preserveOrder: true,
+    remote: pagination ? { ...pagination.query, changeQuery: pagination.changeQuery } : undefined,
+  });
 
-  const visibleStudents = useMemo(() => {
-    const start = currentPage * rowsPerPage;
-
-    return filteredStudents.slice(start, start + rowsPerPage);
-  }, [filteredStudents, currentPage, rowsPerPage]);
+  const currentPage = table.page;
+  const rowsPerPage = table.rowsPerPage;
+  const visibleStudents = table.visibleRows;
 
   const getInitials = (name: string, lastname: string) => `${name?.[0] ?? ''}${lastname?.[0] ?? ''}`.toUpperCase();
 
@@ -165,7 +171,10 @@ export function EnrollmentStudentsCard({
               </Typography>
 
               <Typography variant='body2' color='text.secondary'>
-                {students.length} {students.length === 1 ? 'estudiante matriculado' : 'estudiantes matriculados'}
+                {pagination?.meta.total ?? students.length}{' '}
+                {(pagination?.meta.total ?? students.length) === 1
+                  ? 'estudiante matriculado'
+                  : 'estudiantes matriculados'}
               </Typography>
             </Box>
           </Stack>
@@ -191,6 +200,11 @@ export function EnrollmentStudentsCard({
           </Stack>
         </Stack>
 
+        {!showGrades && summaryError && (
+          <Alert severity='error' sx={{ mx: 3, mb: 2 }}>
+            {summaryError}
+          </Alert>
+        )}
         {showGrades && summaryError && (
           <Alert severity='error' action={<Button onClick={onRetrySummary}>Reintentar</Button>} sx={{ mx: 3, mb: 2 }}>
             No se pudo cargar el resumen de calificaciones. {summaryError}
@@ -219,11 +233,12 @@ export function EnrollmentStudentsCard({
           <TextField
             fullWidth
             size='small'
-            value={search}
+            value={pagination?.query.search ?? search}
             placeholder='Buscar estudiante por nombre, CI o RU...'
             onChange={(event) => {
+              pagination?.changeQuery({ search: event.target.value });
               setSearch(event.target.value);
-              setPage(0);
+              if (!pagination) table.handleChangePage(null, 0);
             }}
             InputProps={{
               startAdornment: (
@@ -439,87 +454,13 @@ export function EnrollmentStudentsCard({
               </Table>
             </TableContainer>
 
-            {/* Pagination */}
-            <Stack
-              direction={{
-                xs: 'column',
-                sm: 'row',
-              }}
-              alignItems={{
-                xs: 'stretch',
-                sm: 'center',
-              }}
-              justifyContent='space-between'
-              spacing={2}
-              sx={{
-                px: 3,
-                py: 2,
-
-                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-              }}
-            >
-              <Typography variant='body2' color='text.secondary'>
-                Mostrando {currentPage * rowsPerPage + 1}-
-                {Math.min((currentPage + 1) * rowsPerPage, filteredStudents.length)} de {filteredStudents.length}
-              </Typography>
-
-              <Stack direction='row' alignItems='center' justifyContent='flex-end' spacing={1}>
-                <Typography variant='body2' color='text.secondary'>
-                  Filas:
-                </Typography>
-
-                <Select
-                  size='small'
-                  value={rowsPerPage}
-                  onChange={(event) => {
-                    setRowsPerPage(Number(event.target.value));
-
-                    setPage(0);
-                  }}
-                  sx={{
-                    minWidth: 70,
-                  }}
-                >
-                  {[5, 10, 25].map((value) => (
-                    <MenuItem key={value} value={value}>
-                      {value}
-                    </MenuItem>
-                  ))}
-                </Select>
-
-                <Button
-                  size='small'
-                  disabled={currentPage === 0}
-                  onClick={() => setPage(Math.max(currentPage - 1, 0))}
-                  sx={{
-                    minWidth: 36,
-                  }}
-                >
-                  <i className='ri-arrow-left-s-line' />
-                </Button>
-
-                <Typography
-                  variant='body2'
-                  sx={{
-                    minWidth: 45,
-                    textAlign: 'center',
-                  }}
-                >
-                  {currentPage + 1}/{totalPages}
-                </Typography>
-
-                <Button
-                  size='small'
-                  disabled={currentPage >= totalPages - 1}
-                  onClick={() => setPage(Math.min(currentPage + 1, totalPages - 1))}
-                  sx={{
-                    minWidth: 36,
-                  }}
-                >
-                  <i className='ri-arrow-right-s-line' />
-                </Button>
-              </Stack>
-            </Stack>
+            <PaginationTable
+              count={pagination?.meta.total ?? filteredStudents.length}
+              page={currentPage}
+              rowsPerPage={rowsPerPage}
+              onPageChange={table.handleChangePage}
+              onRowsPerPageChange={table.handleChangeRowsPerPage}
+            />
           </>
         )}
       </CardContent>

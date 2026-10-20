@@ -20,3 +20,8 @@ export interface StudentGradeSummaryDto {
     assistantContribution: number | null;
   }[];
 }
+
+export interface IndividualStudentGradeSummaryDto {
+  scheme: StudentGradeSummaryDto['scheme'];
+  student: StudentGradeSummaryDto['students'][number];
+}

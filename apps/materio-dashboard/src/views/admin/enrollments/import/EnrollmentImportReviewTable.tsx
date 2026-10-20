@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-
 import {
+  Alert,
+  Button,
+  LinearProgress,
   Box,
   Chip,
   MenuItem,
@@ -13,30 +14,38 @@ import {
   TableContainer,
   TablePagination,
   TableRow,
+  TableHead,
   TextField,
   Typography,
 } from '@mui/material';
 
-import { EnhancedTableHead, type HeadCell } from '@/components/table';
+import { type HeadCell } from '@/components/table';
 import { useDataTable } from '@/hooks/table/useDataTable';
-import type { IEnrollmentImportRow } from '@/interfaces/enrollments/enrollment-import.interface';
-import { filterEnrollmentImportRows, type EnrollmentImportFilter } from './enrollment-import';
+import type {
+  IEnrollmentImportRow,
+  IEnrollmentImportPreview,
+} from '@/interfaces/enrollments/enrollment-import.interface';
+import { getEnrollmentImportPreviewPage } from '@/api/enrollments.service';
+import { useImportPreview } from '@/hooks/imports/useImportPreview';
+import type { ImportPreviewQuery } from '@/interfaces/import-preview.interface';
 
 const columns = [
   { id: 'row', label: 'Fila', sortable: true },
-  { id: 'fullName', label: 'Estudiante', sortable: true },
-  { id: 'ru', label: 'RU', sortable: true },
-  { id: 'username', label: 'Username', sortable: true },
-  { id: 'email', label: 'Email', sortable: true },
-  { id: 'status', label: 'Estado', sortable: true },
+  { id: 'fullName', label: 'Estudiante', sortable: false },
+  { id: 'ru', label: 'RU', sortable: false },
+  { id: 'username', label: 'Username', sortable: false },
+  { id: 'email', label: 'Email', sortable: false },
+  { id: 'status', label: 'Estado', sortable: false },
   { id: 'errors', label: 'Errores', sortable: false },
 ] as const satisfies readonly HeadCell<IEnrollmentImportRow>[];
 
-export function EnrollmentImportReviewTable({ rows, busy }: { rows: IEnrollmentImportRow[]; busy: boolean }) {
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<EnrollmentImportFilter>('all');
-  const filtered = useMemo(() => filterEnrollmentImportRows(rows, search, filter), [rows, search, filter]);
-  const table = useDataTable<IEnrollmentImportRow, typeof columns>(filtered, 'row', 25);
+export function EnrollmentImportReviewTable({ preview, busy }: { preview: IEnrollmentImportPreview; busy: boolean }) {
+  const remote = useImportPreview(preview, !busy, getEnrollmentImportPreviewPage);
+
+  const table = useDataTable<IEnrollmentImportRow, typeof columns>(remote.rows, 'row', 25, {
+    preserveOrder: true,
+    remote: { ...remote.query, changeQuery: remote.changeQuery },
+  });
 
   return (
     <>
@@ -44,41 +53,51 @@ export function EnrollmentImportReviewTable({ rows, busy }: { rows: IEnrollmentI
         <TextField
           label='Buscar nombre, RU, username o email'
           size='small'
-          value={search}
+          value={remote.query.search}
           disabled={busy}
           sx={{ flex: 1 }}
           onChange={(event) => {
-            setSearch(event.target.value);
-            table.handleChangePage(null, 0);
+            remote.changeQuery({ search: event.target.value });
           }}
         />
         <TextField
           select
           label='Estado'
           size='small'
-          value={filter}
+          value={remote.query.status}
           disabled={busy}
           sx={{ minWidth: 180 }}
           onChange={(event) => {
-            setFilter(event.target.value as EnrollmentImportFilter);
-            table.handleChangePage(null, 0);
+            remote.changeQuery({ status: event.target.value as ImportPreviewQuery['status'] });
           }}
         >
           <MenuItem value='all'>Todos</MenuItem>
-          <MenuItem value='VALID'>Válidos</MenuItem>
-          <MenuItem value='INVALID'>Con errores</MenuItem>
+          <MenuItem value='valid'>Válidos</MenuItem>
+          <MenuItem value='invalid'>Con errores</MenuItem>
         </TextField>
       </Stack>
-      <TableContainer>
+      {remote.loading && <LinearProgress aria-label='Cargando página del preview' />}
+      {remote.error && (
+        <Alert
+          severity='error'
+          action={
+            <Button onClick={remote.reload} disabled={busy || remote.loading}>
+              Reintentar
+            </Button>
+          }
+        >
+          {remote.error}
+        </Alert>
+      )}
+      <TableContainer aria-busy={remote.loading} sx={{ opacity: remote.loading || remote.error ? 0.6 : 1 }}>
         <Table size='small' aria-label='Revisión de estudiantes a matricular' sx={{ minWidth: 950 }}>
-          <EnhancedTableHead<IEnrollmentImportRow, typeof columns>
-            headCells={columns}
-            order={table.order}
-            orderBy={table.orderBy}
-            onRequestSort={(event, property) => {
-              if (!busy) table.handleRequestSort(event, property);
-            }}
-          />
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell key={column.id}>{column.label}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
           <TableBody>
             {table.visibleRows.map((row) => (
               <TableRow key={row.row} sx={{ bgcolor: row.status === 'VALID' ? undefined : 'action.hover' }}>
@@ -124,7 +143,7 @@ export function EnrollmentImportReviewTable({ rows, busy }: { rows: IEnrollmentI
       </TableContainer>
       <TablePagination
         component='div'
-        count={filtered.length}
+        count={remote.meta.total}
         page={table.page}
         rowsPerPage={table.rowsPerPage}
         rowsPerPageOptions={[25, 50, 100]}
@@ -136,7 +155,7 @@ export function EnrollmentImportReviewTable({ rows, busy }: { rows: IEnrollmentI
         onRowsPerPageChange={table.handleChangeRowsPerPage}
         SelectProps={{ disabled: busy }}
         backIconButtonProps={{ disabled: busy || table.page === 0 }}
-        nextIconButtonProps={{ disabled: busy || (table.page + 1) * table.rowsPerPage >= filtered.length }}
+        nextIconButtonProps={{ disabled: busy || (table.page + 1) * table.rowsPerPage >= remote.meta.total }}
       />
     </>
   );

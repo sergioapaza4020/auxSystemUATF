@@ -1,5 +1,8 @@
+import type { StudentRosterQuery } from './enrollments.service';
+import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 import { instance } from './config/config';
 import type { AttendanceStatus } from '@/enums/attendanceStatus';
+import type { PaginatedApiResponse } from '@/interfaces/apiResponse';
 
 import type {
   IAttendanceSession,
@@ -22,6 +25,7 @@ export interface IAttendanceRecord {
 
 export interface IAttendanceSave {
   attendances: IAttendanceRecord[];
+  markAll?: AttendanceStatus;
 }
 
 export const createAttendanceSession = async (data: IAttendanceSessionCreate): Promise<IAttendanceSession> => {
@@ -30,17 +34,46 @@ export const createAttendanceSession = async (data: IAttendanceSessionCreate): P
   return response.data.data;
 };
 
-export const getAttendanceSessionsByEnrollment = async (idEnrollment: number): Promise<IAttendanceSessionSummary[]> => {
-  const response = await instance.get(`/attendances/sessions/enrollment/${idEnrollment}`);
+export interface AttendanceHistoryQuery {
+  page: number;
+  limit: number;
+  date?: string;
+}
+
+export const getAttendanceSessionsByEnrollment = async (
+  idEnrollment: number,
+  query: AttendanceHistoryQuery,
+  signal?: AbortSignal,
+): Promise<PaginatedApiResponse<IAttendanceSessionSummary[]>> => {
+  const response = await instance.get<PaginatedApiResponse<IAttendanceSessionSummary[]>>(
+    `/attendances/sessions/enrollment/${idEnrollment}`,
+    { params: query, signal },
+  );
+
+  return response.data;
+};
+
+export interface AttendanceSessionPage extends IAttendanceSessionDetail {
+  students: IEnrollmentStudent[];
+}
+
+export const getAttendanceSession = async (
+  idSession: number,
+  query?: StudentRosterQuery,
+  signal?: AbortSignal,
+): Promise<IAttendanceSessionDetail> => {
+  const response = await instance.get(`/attendances/sessions/${idSession}`, { params: query, signal });
 
   return response.data.data;
 };
 
-export const getAttendanceSession = async (idSession: number): Promise<IAttendanceSessionDetail> => {
-  const response = await instance.get(`/attendances/sessions/${idSession}`);
-
-  return response.data.data;
-};
+export const getAttendanceSessionPage = async (idSession: number, query: StudentRosterQuery, signal?: AbortSignal) =>
+  (
+    await instance.get<PaginatedApiResponse<AttendanceSessionPage>>(`/attendances/sessions/${idSession}`, {
+      params: query,
+      signal,
+    })
+  ).data;
 
 export const saveAttendances = async (idSession: number, data: IAttendanceSave): Promise<IAttendance[]> => {
   const response = await instance.post(`/attendances/sessions/${idSession}`, data);

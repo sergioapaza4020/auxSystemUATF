@@ -1,3 +1,4 @@
+import { CourseQueryDto } from 'src/dtos/courses/course-query.dto';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
 import { statusFilter } from '@common/utils/status-filter';
 import { CourseUpdateDto } from 'src/dtos/courses/courses-update.dto';
@@ -17,6 +18,26 @@ export class CoursesService {
       relations: { userCourses: true, career: true },
       order: { code: 'ASC' },
     });
+  }
+
+  async getPage(query: CourseQueryDto) {
+    const { page = 1, limit = 5, search } = query;
+    const qb = this.courseRepository
+      .createQueryBuilder('course')
+      .select(['course.idCourse', 'course.code', 'course.name', 'course.group', 'course.isActive'])
+      .where(statusFilter(query.status));
+    if (search?.trim())
+      qb.andWhere(
+        '(course.code ILIKE :search OR course.name ILIKE :search OR CAST(course.group AS text) ILIKE :search)',
+        { search: `%${search.trim()}%` },
+      );
+    const [data, total] = await qb
+      .orderBy('course.code', 'ASC')
+      .addOrderBy('course.idCourse', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async create(courseCreateDto: CourseCreateDto, authorId: number) {

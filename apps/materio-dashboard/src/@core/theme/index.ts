@@ -15,7 +15,7 @@ import shadows from './shadows';
 import customShadows from './customShadows';
 import typography from './typography';
 
-const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] });
+const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 const theme = (mode: SystemMode, direction: Theme['direction']): Theme => {
   return {

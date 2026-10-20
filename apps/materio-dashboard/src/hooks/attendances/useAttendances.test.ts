@@ -16,6 +16,7 @@ vi.mock('@/api/attendances.service', () => ({
 vi.mock('react', async () => ({
   ...(await vi.importActual<typeof React>('react')),
   useState: vi.fn(),
+  useRef: vi.fn((value) => ({ current: value })),
   useEffect: vi.fn(),
   useCallback: vi.fn((callback) => callback),
 }));

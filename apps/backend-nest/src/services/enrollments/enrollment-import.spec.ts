@@ -1,3 +1,6 @@
+import { bulkImportMock } from '@common/test-mocks/bulk-import.mock';
+import { BulkOperationsService } from '../bulk-operations/bulk-operations.service';
+import { EntityManager } from 'typeorm';
 import { Readable } from 'node:stream';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -159,9 +162,13 @@ describe('Enrollment import service', () => {
         }
       },
     );
+    const stored = bulkImportMock((work) =>
+      transaction('SERIALIZABLE', (manager) => work(manager as unknown as EntityManager)),
+    );
     const module = await Test.createTestingModule({
       providers: [
         EnrollmentImportService,
+        { provide: BulkOperationsService, useValue: stored.bulk },
         {
           provide: getRepositoryToken(Enrollment),
           useValue: { manager: { ...manager, transaction } },
@@ -172,6 +179,7 @@ describe('Enrollment import service', () => {
     await module.close();
     return {
       service,
+      ...stored,
       userQuery,
       enrollmentRepository,
       courseRepository,
@@ -181,11 +189,22 @@ describe('Enrollment import service', () => {
     };
   }
 
+  async function executeFile(
+    ctx: Awaited<ReturnType<typeof setup>>,
+    file: Express.Multer.File,
+    author = actor,
+  ) {
+    const preview = await ctx.service.preview(file, target, author);
+    ctx.userQuery.getMany.mockClear();
+    ctx.enrollmentRepository.find.mockClear();
+    return ctx.service.import(preview.operationId, author);
+  }
+
   it('previews valid students without writes or a transaction', async () => {
     const ctx = await setup();
     const preview = await ctx.service.preview(await excel(['1', 2]), target, actor);
     expect(preview).toMatchObject({ total: 2, valid: 2, invalid: 0 });
-    expect(preview.rows[0]).toMatchObject({
+    expect(preview.data[0]).toMatchObject({
       row: 2,
       studentId: 1,
       fullName: 'Ana Perez',
@@ -202,8 +221,8 @@ describe('Enrollment import service', () => {
     ctx.enrollmentRepository.find.mockResolvedValue([{ user }]);
     const result = await ctx.service.preview(await excel(['1', '1', '404']), target, actor);
     expect(result.invalid).toBe(3);
-    expect(result.rows[0].errors).toHaveLength(4);
-    expect(result.rows[2]).toMatchObject({
+    expect(result.data[0].errors).toHaveLength(4);
+    expect(result.data[2]).toMatchObject({
       studentId: null,
       errors: ['No existe un estudiante con este RU'],
     });
@@ -213,7 +232,7 @@ describe('Enrollment import service', () => {
   });
   it('blocks the complete import if a single row is invalid', async () => {
     const ctx = await setup();
-    await expect(ctx.service.import(await excel(['1', '404']), target, actor)).rejects.toThrow(
+    await expect(executeFile(ctx, await excel(['1', '404']), actor)).rejects.toThrow(
       BadRequestException,
     );
     expect(ctx.enrollmentRepository.insert).not.toHaveBeenCalled();
@@ -221,15 +240,65 @@ describe('Enrollment import service', () => {
   });
   it('revalidates after preview and rejects a newly existing enrollment', async () => {
     const ctx = await setup();
-    const file = await excel(['1']);
-    expect((await ctx.service.preview(file, target, actor)).invalid).toBe(0);
+    const preview = await ctx.service.preview(await excel(['1']), target, actor);
     ctx.enrollmentRepository.find.mockResolvedValue([{ user: student(1) }]);
-    await expect(ctx.service.import(file, target, actor)).rejects.toThrow(BadRequestException);
+    await expect(ctx.service.import(preview.operationId, actor)).rejects.toThrow(
+      BadRequestException,
+    );
     expect(ctx.committed).toHaveLength(0);
+  });
+  it('persists all rows but returns 25, with stable remote pages, global counters and validity filters', async () => {
+    const users = Array.from({ length: 60 }, (_, index) => student(index + 1));
+    const ctx = await setup(users);
+    const preview = await ctx.service.preview(
+      await excel(users.map((user) => user.ru ?? '')),
+      target,
+      actor,
+    );
+    expect(preview.data).toHaveLength(25);
+    expect(preview.meta).toEqual({ page: 1, limit: 25, total: 60, totalPages: 3 });
+    expect(ctx.rows.get(preview.operationId)).toHaveLength(60);
+    const second = await ctx.service.getPreview(preview.operationId, actor, {
+      page: 2,
+      limit: 25,
+      status: 'valid',
+    });
+    expect(second.data.map((row) => row.row)).toEqual(Array.from({ length: 25 }, (_, i) => i + 27));
+    expect(second.total).toBe(60);
+    expect(second.meta.total).toBe(60);
+    expect(second.data.some((row) => preview.data.some((first) => row.row === first.row))).toBe(
+      false,
+    );
+    expect(
+      (
+        await ctx.service.getPreview(preview.operationId, actor, {
+          page: 1,
+          limit: 25,
+          status: 'invalid',
+        })
+      ).meta.total,
+    ).toBe(0);
+  });
+  it('rejects another owner, missing operations and repeated execution; uses the saved context', async () => {
+    const ctx = await setup();
+    const preview = await ctx.service.preview(await excel(['1']), target, actor);
+    await expect(
+      ctx.service.getPreview(preview.operationId, { ...actor, idUser: 1 }),
+    ).rejects.toThrow(NotFoundException);
+    await expect(ctx.service.import(preview.operationId, { ...actor, idUser: 1 })).rejects.toThrow(
+      NotFoundException,
+    );
+    await expect(ctx.service.status('00000000-0000-4000-8000-999999999999', actor)).rejects.toThrow(
+      NotFoundException,
+    );
+    const result = await ctx.service.import(preview.operationId, actor);
+    expect(result).toMatchObject(target);
+    await expect(ctx.service.import(preview.operationId, actor)).rejects.toThrow(ConflictException);
+    expect((await ctx.service.status(preview.operationId, actor)).imported).toBe(1);
   });
   it('creates all enrollments with fixed STUDENT role and actor audit data', async () => {
     const ctx = await setup();
-    expect(await ctx.service.import(await excel(['1', '2']), target, actor)).toEqual({
+    expect(await executeFile(ctx, await excel(['1', '2']), actor)).toEqual({
       total: 2,
       imported: 2,
       ...target,
@@ -254,7 +323,7 @@ describe('Enrollment import service', () => {
       .mockImplementationOnce(insert)
       .mockRejectedValueOnce(new Error('internal DB detail'));
     await expect(
-      ctx.service.import(await excel(users.map((user) => user.ru ?? '')), target, actor),
+      executeFile(ctx, await excel(users.map((user) => user.ru ?? '')), actor),
     ).rejects.toThrow(InternalServerErrorException);
     expect(ctx.userQuery.getMany).toHaveBeenCalledTimes(2);
     expect(ctx.enrollmentRepository.find).toHaveBeenCalledTimes(2);
@@ -266,9 +335,7 @@ describe('Enrollment import service', () => {
     async (code) => {
       const ctx = await setup();
       ctx.enrollmentRepository.insert.mockRejectedValue({ code, detail: 'secret SQL' });
-      await expect(ctx.service.import(await excel(['1']), target, actor)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(executeFile(ctx, await excel(['1']), actor)).rejects.toThrow(ConflictException);
       expect(ctx.committed).toHaveLength(0);
     },
   );

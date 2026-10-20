@@ -1,10 +1,16 @@
 import {
+  ExecuteImportDto,
+  ImportPreviewQueryDto,
+} from 'src/dtos/bulk-operations/import-preview.dto';
+import {
   Body,
   Controller,
   Get,
   HttpCode,
   Post,
   Query,
+  Param,
+  ParseUUIDPipe,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -59,24 +65,37 @@ export class EnrollmentImportController {
   @ApiConsumes('multipart/form-data')
   @ApiBody(importBody)
   @UseInterceptors(FileInterceptor('file', enrollmentImportUploadOptions))
-  preview(
+  async preview(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() target: EnrollmentImportTargetDto,
     @CurrentUser() actor: JwtPayload,
   ) {
-    return this.service.preview(file, target, actor);
+    return { data: await this.service.preview(file, target, actor) };
+  }
+
+  @Get('preview/:operationId')
+  @Permissions('enrollment.create')
+  async getPreview(
+    @Param('operationId', ParseUUIDPipe) operationId: string,
+    @Query() query: ImportPreviewQueryDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return { data: await this.service.getPreview(operationId, actor, query) };
+  }
+
+  @Get(':operationId/status')
+  @Permissions('enrollment.create')
+  status(
+    @Param('operationId', ParseUUIDPipe) operationId: string,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.service.status(operationId, actor);
   }
 
   @Post()
   @Permissions('enrollment.create')
-  @ApiConsumes('multipart/form-data')
-  @ApiBody(importBody)
-  @UseInterceptors(FileInterceptor('file', enrollmentImportUploadOptions))
-  import(
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() target: EnrollmentImportTargetDto,
-    @CurrentUser() actor: JwtPayload,
-  ) {
-    return this.service.import(file, target, actor);
+  @ApiBody({ type: ExecuteImportDto })
+  import(@Body() dto: ExecuteImportDto, @CurrentUser() actor: JwtPayload) {
+    return this.service.import(dto.operationId, actor);
   }
 }

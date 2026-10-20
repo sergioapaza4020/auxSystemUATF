@@ -1,4 +1,5 @@
 export interface GradeMatrixDto {
+  meta?: { page: number; limit: number; total: number; totalPages: number };
   enrollment: {
     idEnrollment: number;
     idCourse: number;

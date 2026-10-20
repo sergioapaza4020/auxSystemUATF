@@ -1,4 +1,7 @@
+import { GradeSchemeQueryDto } from 'src/dtos/grade-schemes/grade-scheme-query.dto';
+import { statusFilter } from '@common/utils/status-filter';
 import { CourseRelations } from '@common/enums/courseRelations';
+import { validateAssistantGradeItems } from '@common/utils/assistant-grade-items';
 import {
   BadRequestException,
   ConflictException,
@@ -37,6 +40,26 @@ export class GradeSchemesService {
         },
       },
     });
+  }
+
+  async getPage(query: GradeSchemeQueryDto) {
+    const { page = 1, limit = 5, search, sortBy = 'idGradeScheme', sortOrder = 'DESC' } = query;
+    const qb = this.gradeSchemeRepository
+      .createQueryBuilder('scheme')
+      .leftJoinAndSelect('scheme.details', 'detail')
+      .leftJoinAndSelect('detail.gradeItem', 'gradeItem')
+      .where(statusFilter(query.status));
+    if (search?.trim())
+      qb.andWhere('(scheme.name ILIKE :search OR scheme.description ILIKE :search)', {
+        search: `%${search.trim()}%`,
+      });
+    qb.orderBy(`scheme.${sortBy}`, sortOrder);
+    if (sortBy !== 'idGradeScheme') qb.addOrderBy('scheme.idGradeScheme', 'DESC');
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async create(gradeSchemeCreateDto: GradeSchemeCreateDto) {
@@ -197,11 +220,16 @@ export class GradeSchemesService {
 
       const gradeScheme = await gradeSchemeRepository.findOne({
         where: { idGradeScheme, isActive: true },
+        relations: { assistantEnrollment: true },
       });
 
       if (!gradeScheme) throw new BadRequestException('Grade scheme not found');
       if (!gradeSchemeUpdateDto.details)
         throw new BadRequestException('Details from grade scheme not found');
+
+      if (gradeScheme.assistantEnrollment) {
+        await validateAssistantGradeItems(manager, gradeSchemeUpdateDto.details);
+      }
 
       const totalPercentage = gradeSchemeUpdateDto.details.reduce(
         (sum, detail) => sum + detail.percentage,

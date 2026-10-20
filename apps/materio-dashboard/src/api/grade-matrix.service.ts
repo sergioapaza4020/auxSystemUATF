@@ -1,3 +1,4 @@
+import type { StudentRosterQuery } from './enrollments.service';
 import { instance } from './config/config';
 import type { ApiResponse } from '@/interfaces/apiResponse';
 import type { IGradeMatrix, IBulkActivityGrade, IMatrixGrade } from '@/interfaces/grades/grade-matrix.interface';
@@ -6,15 +7,16 @@ export async function getGradeMatrix(
   idEnrollment: number,
   detailId?: number,
   signal?: AbortSignal,
+  query?: StudentRosterQuery,
 ): Promise<IGradeMatrix> {
   const response = await instance.get<ApiResponse<IGradeMatrix>>(`/grades/matrix/${idEnrollment}`, {
-    params: { detailId },
+    params: { detailId, ...query },
     signal,
   });
 
   if (!response.data.status) throw new Error(response.data.message || 'No se pudo cargar la planilla.');
 
-  return response.data.data;
+  return { ...response.data.data, meta: response.data.meta ?? response.data.data.meta };
 }
 
 export async function saveActivityGrades(idEnrollment: number, grades: IBulkActivityGrade[]): Promise<IMatrixGrade[]> {

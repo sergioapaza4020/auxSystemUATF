@@ -1,3 +1,4 @@
+import { BulkOperationsModule } from '../bulk-operations/bulk-operations.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnrollmentsController } from 'src/controllers/enrollments/enrollments.controller';
@@ -10,7 +11,13 @@ import { EnrollmentImportService } from 'src/services/enrollments/enrollment-imp
 import { EnrollmentImportController } from 'src/controllers/enrollments/enrollment-import.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Enrollment]), UsersModule, SemestersModule, CoursesModule],
+  imports: [
+    BulkOperationsModule,
+    TypeOrmModule.forFeature([Enrollment]),
+    UsersModule,
+    SemestersModule,
+    CoursesModule,
+  ],
   providers: [EnrollmentsService, EnrollmentImportService],
   controllers: [EnrollmentImportController, EnrollmentsController],
   exports: [EnrollmentsService],

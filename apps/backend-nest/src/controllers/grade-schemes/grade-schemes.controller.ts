@@ -1,3 +1,5 @@
+import { Query } from '@nestjs/common';
+import { GradeSchemeQueryDto } from 'src/dtos/grade-schemes/grade-scheme-query.dto';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
@@ -25,7 +27,16 @@ export class GradeSchemesController {
 
   @Permissions('grade-scheme.get-all')
   @Get()
-  async getAll() {
+  async getAll(@Query() query: GradeSchemeQueryDto) {
+    if (
+      query.page !== undefined ||
+      query.limit !== undefined ||
+      query.search !== undefined ||
+      query.status !== undefined ||
+      query.sortBy !== undefined ||
+      query.sortOrder !== undefined
+    )
+      return this.gradeSchemesService.getPage(query);
     return this.gradeSchemesService.getAll();
   }
 

@@ -1,10 +1,11 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   Alert,
   Button,
   MenuItem,
+  LinearProgress,
   Paper,
   Stack,
   Table,
@@ -16,50 +17,40 @@ import {
   Typography,
 } from '@mui/material';
 
-import { deactivateEnrollment, getEnrollmentsPage, reactivateEnrollment } from '@/api/enrollments.service';
+import { deactivateEnrollment, reactivateEnrollment } from '@/api/enrollments.service';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/utils/hasPermission';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
-import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
+import { useEnrollmentsPage } from '@/hooks/enrollments/useEnrollmentsPage';
+import type { RecordStatus } from '@/interfaces/status-query.interface';
 
 export default function EnrollmentsPage() {
   const { user, loading } = useAuth();
   const snackbar = useSnackbar();
-  const [rows, setRows] = useState<IEnrollment[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('active');
-  const [busy, setBusy] = useState(false);
+  const notification = useRef(snackbar);
 
+  notification.current = snackbar;
+  const [search, setSearch] = useState('');
+  const [busy, setBusy] = useState(false);
   const can = useCallback((action: string) => hasPermission(user, `enrollment.${action}`), [user]);
 
-  const load = useCallback(
-    async (nextPage = page) => {
-      try {
-        const response = await getEnrollmentsPage({
-          page: nextPage,
-          limit: 20,
-          status: status as 'active' | 'inactive' | 'all',
-          search: search || undefined,
-        });
+  const {
+    rows,
+    query,
+    meta,
+    loading: loadingPage,
+    error,
+    changeQuery,
+    reload,
+  } = useEnrollmentsPage(!loading && can('get-all'));
 
-        setRows(response.data);
-        setPage(response.meta.page);
-        setTotalPages(response.meta.totalPages);
-        setTotal(response.meta.total);
-      } catch (e) {
-        snackbar.error(getApiErrorMessage(e));
-      }
-    },
-    [status, search, snackbar, page],
-  );
+  const { page, limit, total, totalPages } = meta;
 
   useEffect(() => {
-    if (!loading && can('get-all')) void load(1);
-  }, [loading, status, can, load]);
+    if (error) notification.current.error(error);
+  }, [error]);
+
   if (loading) return <Typography>Cargando…</Typography>;
   if (!can('get-all')) return <Alert severity='warning'>No tienes permiso para consultar matrículas.</Alert>;
 
@@ -73,16 +64,23 @@ export default function EnrollmentsPage() {
             label='Buscar usuario o curso'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void load(1)}
+            onKeyDown={(e) => e.key === 'Enter' && changeQuery({ search })}
           />
-          <TextField select size='small' label='Estado' value={status} onChange={(e) => setStatus(e.target.value)}>
+          <TextField
+            select
+            size='small'
+            label='Estado'
+            value={query.status}
+            onChange={(e) => changeQuery({ status: e.target.value as RecordStatus })}
+          >
             <MenuItem value='all'>Todos</MenuItem>
             <MenuItem value='active'>Activos</MenuItem>
             <MenuItem value='inactive'>Inactivos</MenuItem>
           </TextField>
-          <Button onClick={() => void load(1)}>Buscar</Button>
+          <Button onClick={() => changeQuery({ search })}>Buscar</Button>
         </Stack>
-        <Table>
+        {loadingPage && <LinearProgress />}
+        <Table aria-busy={loadingPage}>
           <TableHead>
             <TableRow>
               <TableCell>Usuario</TableCell>
@@ -120,7 +118,7 @@ export default function EnrollmentsPage() {
 
                         try {
                           await deactivateEnrollment(row.idEnrollment);
-                          await load();
+                          reload();
                           snackbar.success('Matrícula desactivada.');
                         } catch (e) {
                           snackbar.error(getApiErrorMessage(e));
@@ -141,7 +139,7 @@ export default function EnrollmentsPage() {
 
                         try {
                           await reactivateEnrollment(row.idEnrollment);
-                          await load();
+                          reload();
                           snackbar.success('Matrícula reactivada.');
                         } catch (e) {
                           snackbar.error(getApiErrorMessage(e));
@@ -158,14 +156,27 @@ export default function EnrollmentsPage() {
             ))}
           </TableBody>
         </Table>
-        <Stack direction='row' justifyContent='space-between' sx={{ p: 2 }}>
-          <Button disabled={page <= 1} onClick={() => void load(page - 1)}>
+        <Stack direction='row' justifyContent='space-between' alignItems='center' sx={{ p: 2 }}>
+          <TextField
+            select
+            size='small'
+            label='Filas por página'
+            value={limit}
+            onChange={(event) => changeQuery({ limit: Number(event.target.value) })}
+          >
+            {[20, 50, 100].map((value) => (
+              <MenuItem key={value} value={value}>
+                {value}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Button disabled={page <= 1} onClick={() => changeQuery({ page: page - 1 })}>
             Anterior
           </Button>
           <Typography>
-            Página {page} de {totalPages} · {total}
+            Página {page} de {Math.max(1, totalPages)} · {total}
           </Typography>
-          <Button disabled={page >= totalPages} onClick={() => void load(page + 1)}>
+          <Button disabled={page >= totalPages} onClick={() => changeQuery({ page: page + 1 })}>
             Siguiente
           </Button>
         </Stack>

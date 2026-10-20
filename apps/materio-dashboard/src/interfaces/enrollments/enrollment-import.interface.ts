@@ -1,3 +1,5 @@
+import type { ImportPreviewPage } from '../import-preview.interface';
+
 export interface IEnrollmentImportTarget {
   courseId: number;
   semesterId: number;
@@ -14,12 +16,7 @@ export interface IEnrollmentImportRow {
   errors: string[];
 }
 
-export interface IEnrollmentImportPreview {
-  total: number;
-  valid: number;
-  invalid: number;
-  rows: IEnrollmentImportRow[];
-}
+export interface IEnrollmentImportPreview extends ImportPreviewPage<IEnrollmentImportRow> {}
 
 export interface IEnrollmentImportResult extends IEnrollmentImportTarget {
   imported: number;

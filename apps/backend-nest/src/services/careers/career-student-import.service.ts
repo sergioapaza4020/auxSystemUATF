@@ -1,3 +1,12 @@
+import { BulkOperationsService } from '../bulk-operations/bulk-operations.service';
+import { BulkOperationStatus, BulkOperationType } from '@common/enums/bulk-operation';
+import { ImportPreviewQueryDto } from 'src/dtos/bulk-operations/import-preview.dto';
+import {
+  studentImportPreviewRow,
+  studentImportSearchCondition,
+} from '@common/imports/student-import-preview';
+import type { BulkOperation } from 'src/entities/bulk-operations/bulk-operation.entity';
+import type { BulkOperationRow } from 'src/entities/bulk-operations/bulk-operation-row.entity';
 import {
   BadRequestException,
   ConflictException,
@@ -25,7 +34,10 @@ const BATCH_SIZE = 500;
 
 @Injectable()
 export class CareerStudentImportService {
-  constructor(@InjectRepository(Career) private readonly repository: Repository<Career>) {}
+  constructor(
+    @InjectRepository(Career) private readonly repository: Repository<Career>,
+    private readonly bulk: BulkOperationsService,
+  ) {}
 
   async template(careerId: number): Promise<Buffer> {
     return this.handleErrors(async () => {
@@ -39,50 +51,185 @@ export class CareerStudentImportService {
   async preview(
     file: Express.Multer.File | undefined,
     careerId: number,
+    ownerId: number,
   ): Promise<CareerStudentImportPreviewDto> {
     return this.handleErrors(async () => {
       await this.validateCareer(this.repository.manager, careerId);
-      return this.validateRows(this.repository.manager, await parseStudentRuImport(file), careerId);
+      const preview = await this.validateRows(
+        this.repository.manager,
+        await parseStudentRuImport(file),
+        careerId,
+      );
+      const operation = await this.bulk.create(
+        {
+          type: BulkOperationType.CAREER_STUDENT_IMPORT,
+          metadata: { careerId, originalFileName: file?.originalname ?? '' },
+        },
+        ownerId,
+        preview.rows.map((row) => ({
+          rowNumber: row.row,
+          valid: row.status === 'VALID',
+          errors: row.errors,
+          data: {
+            studentId: row.studentId,
+            ru: row.ru,
+            fullName: row.fullName,
+            username: row.username,
+            email: row.email,
+            currentCareer: row.currentCareer,
+          },
+        })),
+      );
+      try {
+        await this.bulk.update(operation.idBulkOperation, ownerId, {
+          status: BulkOperationStatus.READY,
+        });
+      } catch (cause) {
+        await this.bulk
+          .update(operation.idBulkOperation, ownerId, { status: BulkOperationStatus.FAILED })
+          .catch(() => undefined);
+        throw cause;
+      }
+      return this.getPreview(operation.idBulkOperation, careerId, ownerId);
     });
   }
 
-  async import(
-    file: Express.Multer.File | undefined,
+  private async operation(operationId: string, careerId: number, ownerId: number) {
+    const operation = await this.bulk.getById(operationId, ownerId);
+    if (
+      operation.type !== BulkOperationType.CAREER_STUDENT_IMPORT ||
+      operation.metadata?.careerId !== careerId
+    )
+      throw new NotFoundException('Career student import not found');
+    return operation;
+  }
+
+  private target(operation: BulkOperation): number {
+    const careerId = operation.metadata?.careerId;
+    if (typeof careerId !== 'number' || !Number.isSafeInteger(careerId) || careerId < 1)
+      throw new InternalServerErrorException('Invalid career import context');
+    return careerId;
+  }
+
+  private row(row: BulkOperationRow): CareerStudentImportRowDto {
+    const career = row.data.currentCareer;
+    if (
+      career !== null &&
+      (typeof career !== 'object' ||
+        Array.isArray(career) ||
+        typeof career.idCareer !== 'number' ||
+        typeof career.name !== 'string')
+    )
+      throw new InternalServerErrorException('Invalid career import row');
+    return {
+      ...studentImportPreviewRow(row),
+      currentCareer:
+        career === null
+          ? null
+          : { idCareer: career.idCareer as number, name: career.name as string },
+    };
+  }
+
+  async getPreview(
+    operationId: string,
     careerId: number,
+    ownerId: number,
+    query = new ImportPreviewQueryDto(),
+  ): Promise<CareerStudentImportPreviewDto> {
+    const operation = await this.operation(operationId, careerId, ownerId);
+    if (operation.status !== BulkOperationStatus.READY)
+      throw new BadRequestException('Career student import preview is not ready');
+    await this.validateCareer(this.repository.manager, this.target(operation));
+    const rows = await this.bulk.findRows(
+      operationId,
+      ownerId,
+      {
+        page: query.page,
+        limit: query.limit,
+        valid: query.status === 'all' ? undefined : query.status === 'valid',
+      },
+      studentImportSearchCondition(query.search, true),
+    );
+    return {
+      operationId,
+      total: operation.totalRows,
+      valid: operation.validRows,
+      invalid: operation.invalidRows,
+      data: rows.data.map((row) => this.row(row)),
+      meta: rows.meta,
+    };
+  }
+
+  async status(operationId: string, careerId: number, ownerId: number) {
+    const operation = await this.operation(operationId, careerId, ownerId);
+    return {
+      operationId,
+      status: operation.status,
+      total: operation.totalRows,
+      valid: operation.validRows,
+      invalid: operation.invalidRows,
+      imported: operation.processedRows,
+      failed: operation.failedRows,
+    };
+  }
+
+  async import(
+    operationId: string,
+    routeCareerId: number,
     authorId: number,
   ): Promise<CareerStudentImportResultDto> {
     return this.handleErrors(async () => {
-      const inputs = await parseStudentRuImport(file);
-      return this.repository.manager.transaction('SERIALIZABLE', async (manager) => {
-        await this.validateCareer(manager, careerId);
-        const preview = await this.validateRows(manager, inputs, careerId);
-        if (preview.invalid)
-          throw new BadRequestException(
-            `El archivo contiene ${preview.invalid} filas inválidas. No se realizó ninguna asignación. Vuelve a revisar el archivo.`,
-          );
-        // The conditional update is a second line of protection against concurrent reassignment.
-        for (let offset = 0; offset < preview.rows.length; offset += BATCH_SIZE) {
-          const ids = preview.rows.slice(offset, offset + BATCH_SIZE).map((row) => {
-            if (row.studentId === null) throw new BadRequestException('Estudiante no resuelto');
-            return row.studentId;
-          });
-          const updated = await manager
-            .getRepository(User)
-            .createQueryBuilder()
-            .update(User)
-            .set({ careers: { idCareer: careerId }, updatedBy: authorId })
-            .where('id_user IN (:...ids)', { ids })
-            .andWhere('careers IS NULL')
-            .andWhere('is_active = true')
-            .andWhere('deleted_at IS NULL')
-            .execute();
-          if (updated.affected !== ids.length)
-            throw new ConflictException(
-              'Los estudiantes cambiaron durante la importación. No se realizó ninguna asignación; vuelve a revisar el archivo.',
+      const operation = await this.operation(operationId, routeCareerId, authorId);
+      if (operation.invalidRows)
+        throw new BadRequestException(
+          `El archivo contiene ${operation.invalidRows} filas inválidas. No se realizó ninguna asignación. Vuelve a revisar el archivo.`,
+        );
+      return this.bulk.executeReady(
+        operationId,
+        authorId,
+        BulkOperationType.CAREER_STUDENT_IMPORT,
+        async (manager, persisted, rows) => {
+          const careerId = this.target(persisted);
+          if (careerId !== routeCareerId)
+            throw new NotFoundException('Career student import not found');
+          await this.validateCareer(manager, careerId);
+          const inputs = rows.map((row) => ({
+            row: row.rowNumber,
+            ru: studentImportPreviewRow(row).ru,
+            errors: [],
+          }));
+          const preview = await this.validateRows(manager, inputs, careerId);
+          if (
+            preview.invalid ||
+            preview.rows.some((row, index) => row.studentId !== rows[index].data.studentId)
+          )
+            throw new BadRequestException(
+              `El archivo contiene ${preview.invalid || 1} filas inválidas. No se realizó ninguna asignación. Vuelve a revisar el archivo.`,
             );
-        }
-        return { imported: preview.total, total: preview.total, careerId };
-      });
+          // The conditional update is a second line of protection against concurrent reassignment.
+          for (let offset = 0; offset < preview.rows.length; offset += BATCH_SIZE) {
+            const ids = preview.rows.slice(offset, offset + BATCH_SIZE).map((row) => {
+              if (row.studentId === null) throw new BadRequestException('Estudiante no resuelto');
+              return row.studentId;
+            });
+            const updated = await manager
+              .getRepository(User)
+              .createQueryBuilder()
+              .update(User)
+              .set({ careers: { idCareer: careerId }, updatedBy: authorId })
+              .where('id_user IN (:...ids)', { ids })
+              .andWhere('careers IS NULL')
+              .andWhere('is_active = true')
+              .andWhere('deleted_at IS NULL')
+              .execute();
+            if (updated.affected !== ids.length)
+              throw new ConflictException(
+                'Los estudiantes cambiaron durante la importación. No se realizó ninguna asignación; vuelve a revisar el archivo.',
+              );
+          }
+          return { imported: preview.total, total: preview.total, careerId };
+        },
+      );
     });
   }
 
@@ -96,7 +243,7 @@ export class CareerStudentImportService {
     manager: EntityManager,
     inputs: StudentRuImportInputRow[],
     careerId: number,
-  ): Promise<CareerStudentImportPreviewDto> {
+  ): Promise<{ total: number; valid: number; invalid: number; rows: CareerStudentImportRowDto[] }> {
     const counts = new Map<string, number>();
     for (const row of inputs) if (row.ru) counts.set(row.ru, (counts.get(row.ru) ?? 0) + 1);
     const rus = [...counts.keys()];

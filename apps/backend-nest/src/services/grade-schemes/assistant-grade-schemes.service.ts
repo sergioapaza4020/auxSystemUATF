@@ -4,6 +4,7 @@ import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
 import { withActiveActivities } from '@common/utils/active-activities';
 import { statusFilter } from '@common/utils/status-filter';
+import { validateAssistantGradeItems } from '@common/utils/assistant-grade-items';
 import {
   BadRequestException,
   ConflictException,
@@ -86,6 +87,7 @@ export class AssistantGradeSchemesService {
     this.validatePercentages(dto);
 
     return this.dataSource.transaction(async (manager) => {
+      await validateAssistantGradeItems(manager, dto.details);
       const gradeSchemeRepository = manager.getRepository(GradeScheme);
       const detailRepository = manager.getRepository(GradeSchemeDetail);
 
@@ -157,6 +159,7 @@ export class AssistantGradeSchemesService {
     }
 
     return this.dataSource.transaction(async (manager) => {
+      await validateAssistantGradeItems(manager, dto.details);
       const gradeSchemeRepository = manager.getRepository(GradeScheme);
       const detailRepository = manager.getRepository(GradeSchemeDetail);
 

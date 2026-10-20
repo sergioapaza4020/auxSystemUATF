@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { Button, TextField } from '@mui/material';
 
+import { PaginationTable } from '@/components/table';
 import { GradeViewToggle } from './GradeViewToggle';
 
 import { EnrollmentStudentsCard } from './EnrollmentStudentsCard';
@@ -175,16 +176,9 @@ describe('Student grade table', () => {
 
     expect(view.html).not.toContain('Alumno11');
 
-    const next = find(
-      view.tree,
-      (element) =>
-        element.type === Button &&
-        String((element.props.children as React.ReactElement<{ className?: string }>)?.props?.className).includes(
-          'arrow-right-s-line',
-        ),
-    )[0];
+    const next = find(view.tree, (element) => element.type === PaginationTable)[0];
 
-    (next.props.onClick as () => void)();
+    (next.props.onPageChange as (event: null, page: number) => void)(null, 1);
     view = h.render();
     expect(view.html).toContain('Alumno11');
     expect(view.html).toContain('Alumno12');
@@ -212,4 +206,27 @@ describe('Student grade table', () => {
     expect(retry).toHaveBeenCalledTimes(1);
     expect(harness({ summaryLoading: true }).render().html).toContain('MuiSkeleton');
   });
+});
+
+it('renders only the server page and uses meta.total instead of slicing/filtering it locally', () => {
+  const changeQuery = vi.fn();
+
+  const h = harness({
+    students: students.slice(10),
+    pagination: {
+      query: { page: 2, limit: 10, search: 'server search' },
+      meta: { page: 2, limit: 10, total: 42, totalPages: 5 },
+      changeQuery,
+    },
+  });
+
+  const view = h.render();
+
+  expect(view.html).toContain('Alumno11');
+  const pagination = find(view.tree, (element) => element.type === PaginationTable)[0];
+
+  expect(pagination.props.count).toBe(42);
+  expect(pagination.props.page).toBe(1);
+  (pagination.props.onPageChange as (event: null, page: number) => void)(null, 2);
+  expect(changeQuery).toHaveBeenCalledWith({ page: 3 });
 });

@@ -19,7 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/hooks/useSnackbar';
 
 // Type Imports
-import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
+import type { IMyEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 
 // Utils Imports
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
@@ -31,27 +31,34 @@ import { UserRole } from '@/enums/userRole';
 import { EnrollmentCard } from '@/components/principal/EnrollmentCard';
 
 export function Principal() {
-  const [enrollments, setEnrollments] = useState<IEnrollment[]>([]);
+  const [enrollments, setEnrollments] = useState<IMyEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
 
   const snackbar = useSnackbar();
   const { user } = useAuth();
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    setLoading(true);
+    setEnrollments([]);
+
     const loadEnrollments = async () => {
       try {
-        const data = await getMyEnrollments();
+        const data = await getMyEnrollments(controller.signal);
 
-        setEnrollments(data);
+        if (!controller.signal.aborted) setEnrollments(data);
       } catch (error) {
-        snackbar.error(getApiErrorMessage(error));
+        if (!controller.signal.aborted) snackbar.error(getApiErrorMessage(error));
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     void loadEnrollments();
-  }, [snackbar]);
+
+    return () => controller.abort();
+  }, [snackbar, user?.idUser]);
 
   const studentEnrollments = enrollments.filter((enrollment) => enrollment.role === UserRole.STUDENT);
 

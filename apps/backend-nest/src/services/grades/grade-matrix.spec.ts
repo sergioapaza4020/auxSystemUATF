@@ -1,3 +1,4 @@
+import * as roster from '@common/utils/student-roster';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
@@ -447,4 +448,27 @@ describe('Atomic bulk activity grades', () => {
     await migration.down(runner as unknown as QueryRunner);
     expect(runner.query).toHaveBeenLastCalledWith('DROP INDEX "UQ_grade_enrollment_activity"');
   });
+});
+
+it('paginates students before grades while retaining every active activity in order', async () => {
+  const f = fixture();
+  const page = [f.students[1]];
+  const spy = jest.spyOn(roster, 'getStudentRosterPage').mockResolvedValue({
+    data: page,
+    meta: { page: 2, limit: 1, total: f.students.length, totalPages: f.students.length },
+  });
+  try {
+    const matrix = await f.service.getMatrix(4, 1, undefined, { page: 2, limit: 1, search: 'Ana' });
+    expect(matrix.students.map((student) => student.idEnrollment)).toEqual(
+      page.map((student) => student.idEnrollment),
+    );
+    expect(matrix.meta?.page).toBe(2);
+    expect(matrix.activities.map((activity) => activity.idActivity)).toEqual([21, 20]);
+    expect(f.query.andWhere).toHaveBeenCalledWith('grade.id_enrollment IN (:...studentIds)', {
+      studentIds: page.map((student) => student.idEnrollment),
+    });
+    expect(f.studentsRepository.find).not.toHaveBeenCalled();
+  } finally {
+    spy.mockRestore();
+  }
 });

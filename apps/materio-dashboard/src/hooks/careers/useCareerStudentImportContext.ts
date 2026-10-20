@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { getCareers } from '@/api/careers.service';
+import { getCareerById } from '@/api/careers.service';
 import type { ICareer } from '@/interfaces/careers/career.interface';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 
@@ -19,9 +19,9 @@ export function useCareerStudentImportContext(id: number, enabled: boolean) {
     setCareer(null);
     setError('');
     setLoading(true);
-    getCareers('all', controller.signal)
+    getCareerById(id, controller.signal)
       .then((data) => {
-        if (!controller.signal.aborted) setCareer(data.find((item) => item.idCareer === id) ?? null);
+        if (!controller.signal.aborted) setCareer(data);
       })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted) setError(getApiErrorMessage(cause));

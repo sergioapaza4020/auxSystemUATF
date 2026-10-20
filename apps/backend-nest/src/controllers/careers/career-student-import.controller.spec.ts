@@ -9,7 +9,7 @@ import { CareerStudentImportController } from './career-student-import.controlle
 
 describe('Career student import authorization', () => {
   const guard = new PermissionsGuard(new Reflector());
-  it.each(['template', 'preview', 'import'] as const)(
+  it.each(['template', 'preview', 'getPreview', 'status', 'import'] as const)(
     'requires career.update for %s, with SUPERADMIN bypass',
     (method) => {
       const context = (roles: string[], permissions: string[]) =>

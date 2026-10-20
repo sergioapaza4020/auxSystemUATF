@@ -11,3 +11,5 @@ export interface IEnrollment {
   semester: ISemester;
   user: IUser;
 }
+
+export type IMyEnrollment = Pick<IEnrollment, 'idEnrollment' | 'role' | 'isActive' | 'course' | 'semester'>;

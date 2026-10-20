@@ -1,3 +1,4 @@
+import { GradeMatrixQueryDto } from 'src/dtos/grades/grade-matrix-query.dto';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
@@ -29,9 +30,17 @@ export class GradesController {
   async getMatrix(
     @CurrentUser() user: JwtPayload,
     @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
-    @Query('detailId', new ParseIntPipe({ optional: true })) detailId?: number,
+    @Query() query: GradeMatrixQueryDto,
   ) {
-    return this.gradesService.getMatrix(user.idUser, idEnrollment, detailId);
+    const { meta, ...data } = await this.gradesService.getMatrix(
+      user.idUser,
+      idEnrollment,
+      query.detailId,
+      query.page !== undefined || query.limit !== undefined || query.search !== undefined
+        ? query
+        : undefined,
+    );
+    return meta ? { data, meta } : data;
   }
 
   @Permissions('grade.create', 'grade.update')

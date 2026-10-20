@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import axios from 'axios';
 
+import type { StudentRosterQuery } from '@/api/enrollments.service';
+
 import { getGradeMatrix, saveActivityGrades } from '@/api/grade-matrix.service';
 import type { IGradeMatrix } from '@/interfaces/grades/grade-matrix.interface';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
@@ -17,6 +19,18 @@ import {
 } from './grade-matrix-state';
 
 export function useGradeMatrix(idEnrollment: number, enabled: boolean, idUser?: number) {
+  const [query, setQuery] = useState<StudentRosterQuery>({ page: 1, limit: 25, search: '' });
+  const request = useRef<AbortController | null>(null);
+  const delay = useRef(0);
+
+  const changeQuery = (patch: Partial<StudentRosterQuery>) => {
+    if (busy.current) return;
+    request.current?.abort();
+    setLoading(true);
+    delay.current = patch.search !== undefined ? 350 : 0;
+    setQuery((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
+  };
+
   const [matrix, setMatrix] = useState<IGradeMatrix | null>(null);
   const [detailId, setDetailId] = useState<number | undefined>();
   const [originals, setOriginals] = useState<GradeOriginals>({});
@@ -76,23 +90,42 @@ export function useGradeMatrix(idEnrollment: number, enabled: boolean, idUser?: 
 
     const controller = new AbortController();
 
+    request.current = controller;
+
     setLoading(true);
     setError(null);
-    void getGradeMatrix(idEnrollment, detailId, controller.signal)
-      .then((data) => {
-        if (controller.signal.aborted) return;
-        setMatrix(data);
-        setOriginals((current) => mergeMatrixOriginals(data, current, draftRef.current));
-      })
-      .catch((reason) => {
-        if (!controller.signal.aborted && !axios.isCancel(reason)) setError(getApiErrorMessage(reason));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
 
-    return () => controller.abort();
-  }, [idEnrollment, detailId, enabled, revision]);
+    const load = () => {
+      void getGradeMatrix(idEnrollment, detailId, controller.signal, query)
+        .then((data) => {
+          if (controller.signal.aborted) return;
+
+          if (query.page > Math.max(1, data.meta?.totalPages ?? 1)) {
+            setQuery((current) => ({ ...current, page: Math.max(1, data.meta?.totalPages ?? 1) }));
+
+            return;
+          }
+
+          setMatrix(data);
+          setOriginals((current) => mergeMatrixOriginals(data, current, draftRef.current));
+        })
+        .catch((reason) => {
+          if (!controller.signal.aborted && !axios.isCancel(reason)) setError(getApiErrorMessage(reason));
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    };
+
+    const timer = delay.current ? window.setTimeout(load, delay.current) : undefined;
+
+    if (timer === undefined) load();
+
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [idEnrollment, detailId, enabled, revision, query]);
 
   const changes = useMemo(() => getGradeChanges(originals, drafts), [originals, drafts]);
   const invalidCount = changes.filter((change) => change.error).length;
@@ -158,6 +191,8 @@ export function useGradeMatrix(idEnrollment: number, enabled: boolean, idUser?: 
 
   return {
     matrix,
+    query,
+    changeQuery,
     loading,
     saving,
     error,
@@ -168,7 +203,11 @@ export function useGradeMatrix(idEnrollment: number, enabled: boolean, idUser?: 
     edit,
     save,
     selectCriterion: (id: number) => {
-      if (!busy.current) setDetailId(id);
+      if (!busy.current) {
+        request.current?.abort();
+        setDetailId(id);
+        setQuery((current) => ({ ...current, page: 1 }));
+      }
     },
     discard: () => {
       if (!busy.current) setDrafts({});

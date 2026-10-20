@@ -8,7 +8,14 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
   rows: T[],
   defaultOrderBy: SortableIds<T, TColumns>,
   defaultRowsPerPage = 5,
-  options: { preserveOrder?: boolean } = {},
+  options: {
+    preserveOrder?: boolean;
+    remote?: {
+      page: number;
+      limit: number;
+      changeQuery: (patch: { page?: number; limit?: number }) => void;
+    };
+  } = {},
 ) {
   const [order, setOrder] = useState<Order>('desc');
 
@@ -23,10 +30,11 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
     : page;
 
   const visibleRows = useMemo(() => {
+    if (options.remote) return rows;
     const orderedRows = options.preserveOrder ? rows : [...rows].sort(getComparator(order, orderBy));
 
     return orderedRows.slice(currentPage * rowsPerPage, currentPage * rowsPerPage + rowsPerPage);
-  }, [rows, order, orderBy, currentPage, rowsPerPage, options.preserveOrder]);
+  }, [rows, order, orderBy, currentPage, rowsPerPage, options.preserveOrder, options.remote]);
 
   const handleRequestSort = (_: React.MouseEvent<unknown>, property: SortableIds<T, TColumns>) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -36,10 +44,17 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
   };
 
   const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
+    if (options.remote) options.remote.changeQuery({ page: newPage + 1 });
+    else setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (options.remote) {
+      options.remote.changeQuery({ limit: Number(event.target.value) });
+
+      return;
+    }
+
     setRowsPerPage(Number(event.target.value));
     setPage(0);
   };
@@ -48,8 +63,8 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
     order,
     orderBy,
 
-    page: currentPage,
-    rowsPerPage,
+    page: options.remote ? options.remote.page - 1 : currentPage,
+    rowsPerPage: options.remote?.limit ?? rowsPerPage,
 
     visibleRows,
 

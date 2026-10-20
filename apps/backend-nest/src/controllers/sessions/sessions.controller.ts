@@ -1,9 +1,10 @@
-import { Controller, Get, Patch, Param, ParseIntPipe, Post, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Param, ParseIntPipe, Post, Body, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { SessionsService } from 'src/services/sessions/sessions.service';
 import { User } from 'src/entities/users/users.entity';
 import { LogoutDto } from 'src/dtos/sessions/logout.dto';
+import { SessionQueryDto } from 'src/dtos/sessions/session-query.dto';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 
 @ApiBearerAuth('access-token')
@@ -14,12 +15,12 @@ export class SessionsController {
 
   @Permissions('session.get-all')
   @Get()
-  async getAllSessions() {
-    const sessions = await this.sessionsService.getAllSessions();
+  async getAllSessions(@Query() query: SessionQueryDto) {
+    const sessions = await this.sessionsService.getAllSessions(query);
 
     return {
       message: 'Sesiones recuperadas con éxito',
-      data: sessions,
+      ...sessions,
     };
   }
 

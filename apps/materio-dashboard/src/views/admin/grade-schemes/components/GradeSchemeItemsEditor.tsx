@@ -29,6 +29,7 @@ interface GradeSchemeItemsEditorProps<T extends IGradeSchemeDetailBase> {
 
   onPercentageChange(idGradeItem: number, percentage: number): void;
   onPermissionWeightChange?(idGradeItem: number, permissionWeight: number): void;
+  getGradeItemLabel?(name: string): string | undefined;
 }
 
 export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: GradeSchemeItemsEditorProps<T>) {
@@ -40,6 +41,7 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
     onGradeItemChange,
     onPercentageChange,
     onPermissionWeightChange,
+    getGradeItemLabel,
   } = props;
 
   const totalIsValid = totalPercentage === 100;
@@ -134,6 +136,7 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
         }}
       >
         {gradeItems.map((gradeItem: IGradeItem, index) => {
+          const label = getGradeItemLabel?.(gradeItem.name) ?? gradeItem.name;
           const detail = getDetail(gradeItem.idGradeItem, details);
 
           const percentage = detail?.percentage ?? 0;
@@ -172,7 +175,7 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
                 checked={!!detail}
                 onChange={(event) => onGradeItemChange(gradeItem, event.target.checked)}
                 inputProps={{
-                  'aria-label': `Seleccionar ${gradeItem.name}`,
+                  'aria-label': `Seleccionar ${label}`,
                 }}
                 sx={{
                   p: 0.5,
@@ -220,7 +223,7 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {gradeItem.name}
+                  {label}
                 </Typography>
               </Stack>
 
@@ -238,7 +241,7 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
                 inputProps={{
                   min: 0,
                   max: 100,
-                  'aria-label': `Porcentaje de ${gradeItem.name}`,
+                  'aria-label': `Porcentaje de ${label}`,
                 }}
                 InputProps={{
                   endAdornment: <InputAdornment position='end'>%</InputAdornment>,

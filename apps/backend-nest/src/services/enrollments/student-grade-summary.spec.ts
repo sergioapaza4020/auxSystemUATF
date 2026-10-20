@@ -1,4 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
+import { CourseRelations } from '@common/enums/courseRelations';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import {
   attendancePercentage,
@@ -67,15 +68,31 @@ function fixture(count = 2) {
     [AttendanceSession, sessions],
   ]);
   const getRepository = jest.fn((entity: unknown) => repositories.get(entity));
-  const repository = { manager: { getRepository } } as unknown as Repository<Enrollment>;
+  const repository = {
+    findOne: jest.fn(),
+    manager: { getRepository },
+  } as unknown as Repository<Enrollment>;
   const service = new EnrollmentsService(
     repository,
     {} as UsersService,
     {} as SemestersService,
     {} as CoursesService,
   );
-  jest.spyOn(service, 'getStudentsByEnrollment').mockResolvedValue(students as Enrollment[]);
-  return { service, scheme, schemes, activities, grades, attendances, sessions, getRepository };
+  const studentsSpy = jest
+    .spyOn(service, 'getStudentsByEnrollment')
+    .mockResolvedValue(students as Enrollment[]);
+  return {
+    service,
+    scheme,
+    schemes,
+    activities,
+    grades,
+    attendances,
+    sessions,
+    getRepository,
+    studentsSpy,
+    repository,
+  };
 }
 
 describe('Student grade summary', () => {
@@ -210,4 +227,136 @@ describe('Student grade summary', () => {
     ).toBe(32);
     expect(weightedScore(85, 20)).toBe(17);
   });
+});
+
+it('returns only the selected roster page with unchanged per-student calculations and global activity/session divisors', async () => {
+  const f = fixture();
+  const full = await f.service.getStudentGradeSummary(2, 7);
+  jest.spyOn(f.service, 'getStudentsPage').mockResolvedValue({
+    data: [{ idEnrollment: 10 } as Enrollment],
+    meta: { page: 2, limit: 1, total: 9, totalPages: 9 },
+  });
+  const page = await f.service.getStudentGradeSummaryPage(2, 7, {
+    page: 2,
+    limit: 1,
+    search: 'Ana',
+  });
+  expect(page.data.students).toEqual([full.students[0]]);
+  expect(page.data.roster).toEqual([{ idEnrollment: 10 }]);
+  expect(page.meta.total).toBe(9);
+  expect(f.grades.andWhere).toHaveBeenLastCalledWith(expect.any(String));
+  expect(f.grades.andWhere).toHaveBeenCalledWith('grade.id_enrollment IN (:...studentIds)', {
+    studentIds: [10],
+  });
+});
+
+it('validates ownership before querying either paginated roster or summary', async () => {
+  const f = fixture();
+  jest.spyOn(f.service, 'getAssistantEnrollment').mockRejectedValue(new ForbiddenException());
+  await expect(f.service.getStudentsPage(99, 7, { page: 1, limit: 25 })).rejects.toThrow(
+    ForbiddenException,
+  );
+  await expect(f.service.getStudentGradeSummaryPage(99, 7, { page: 1, limit: 25 })).rejects.toThrow(
+    ForbiddenException,
+  );
+  expect(f.getRepository).not.toHaveBeenCalled();
+  expect(f.studentsSpy).not.toHaveBeenCalled();
+});
+
+describe('Individual student grade summary', () => {
+  function individualFixture() {
+    const f = fixture();
+    const assistant = { course: { idCourse: 3 }, semester: { idSemester: 4 } } as Enrollment;
+    jest.spyOn(f.service, 'getAssistantEnrollment').mockResolvedValue(assistant);
+    const findOne = jest
+      .spyOn(f.repository, 'findOne')
+      .mockResolvedValue({ idEnrollment: 10 } as Enrollment);
+    return { ...f, findOne };
+  }
+  it('returns only the requested student with identical academic results', async () => {
+    const f = individualFixture();
+    const expected = await f.service.getStudentGradeSummary(2, 7);
+    f.studentsSpy.mockClear();
+    const result = await f.service.getIndividualStudentGradeSummary(2, 7, 10);
+    expect(result).toEqual({ scheme: expected.scheme, student: expected.students[0] });
+    expect(result).not.toHaveProperty('students');
+    expect(f.studentsSpy).not.toHaveBeenCalled();
+    expect(f.findOne).toHaveBeenCalledWith({
+      where: {
+        idEnrollment: 10,
+        course: { idCourse: 3 },
+        semester: { idSemester: 4 },
+        role: CourseRelations.STUDENT,
+        isActive: true,
+      },
+      select: { idEnrollment: true },
+    });
+    expect(f.grades.andWhere).toHaveBeenCalledWith('grade.id_enrollment IN (:...studentIds)', {
+      studentIds: [10],
+    });
+    expect(f.attendances.andWhere).toHaveBeenCalledWith(
+      'attendance.id_enrollment IN (:...studentIds)',
+      { studentIds: [10] },
+    );
+  });
+  it.each(['missing', 'other course', 'other semester', 'inactive'])(
+    'rejects %s student before computing results',
+    async () => {
+      const f = individualFixture();
+      f.findOne.mockResolvedValue(null);
+      await expect(f.service.getIndividualStudentGradeSummary(2, 7, 99)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(f.grades.getRawMany).not.toHaveBeenCalled();
+    },
+  );
+  it('rejects another assistant ownership before querying the student', async () => {
+    const f = individualFixture();
+    jest.spyOn(f.service, 'getAssistantEnrollment').mockRejectedValue(new ForbiddenException());
+    await expect(f.service.getIndividualStudentGradeSummary(99, 7, 10)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(f.findOne).not.toHaveBeenCalled();
+  });
+  it('protects the individual endpoint with the existing grade permission', () => {
+    expect(
+      Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        Object.getOwnPropertyDescriptor(
+          EnrollmentsController.prototype,
+          'getIndividualStudentGradeSummary',
+        )?.value as object,
+      ),
+    ).toEqual(['grade.get-by-enrollment']);
+  });
+});
+
+describe('Managed student enrollment projection', () => {
+  it.each([false, true])(
+    'loads the course scheme only when requested (%s)',
+    async (includeCourseScheme) => {
+      const f = fixture();
+      const student = {
+        idEnrollment: 10,
+        course: { idCourse: 3 },
+        semester: { idSemester: 4 },
+      } as Enrollment;
+      const find = jest
+        .spyOn(f.repository, 'findOne')
+        .mockResolvedValueOnce(student)
+        .mockResolvedValueOnce({ idEnrollment: 7 } as Enrollment)
+        .mockResolvedValueOnce(student);
+      expect(await f.service.getManagedEnrollment(2, 10, includeCourseScheme)).toBe(student);
+      expect(find).toHaveBeenNthCalledWith(3, {
+        where: { idEnrollment: 10, isActive: true },
+        relations: {
+          user: true,
+          semester: true,
+          course: includeCourseScheme
+            ? { gradeScheme: { details: { gradeItem: true, activities: true } } }
+            : true,
+        },
+      });
+    },
+  );
 });

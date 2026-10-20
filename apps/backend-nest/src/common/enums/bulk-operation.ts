@@ -1,7 +1,7 @@
 export enum BulkOperationType {
   USER_IMPORT = 'USER_IMPORT',
-  // Future types (with a corresponding enum migration):
-  // CAREER_STUDENT_ASSIGNMENT, COURSE_ENROLLMENT, GRADE_IMPORT.
+  ENROLLMENT_IMPORT = 'ENROLLMENT_IMPORT',
+  CAREER_STUDENT_IMPORT = 'CAREER_STUDENT_IMPORT',
 }
 
 export enum BulkOperationStatus {

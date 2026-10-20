@@ -1,4 +1,11 @@
 import {
+  ExecuteImportDto,
+  ImportPreviewQueryDto,
+} from 'src/dtos/bulk-operations/import-preview.dto';
+import {
+  Body,
+  Query,
+  ParseUUIDPipe,
   Controller,
   Get,
   HttpCode,
@@ -53,23 +60,45 @@ export class CareerStudentImportController {
   @ApiConsumes('multipart/form-data')
   @ApiBody(importBody)
   @UseInterceptors(FileInterceptor('file', studentRuImportUploadOptions))
-  preview(
-    @Param() params: CareerStudentImportParamsDto,
-    @UploadedFile() file: Express.Multer.File | undefined,
-  ) {
-    return this.service.preview(file, params.careerId);
-  }
-
-  @Post()
-  @Permissions('career.update')
-  @ApiConsumes('multipart/form-data')
-  @ApiBody(importBody)
-  @UseInterceptors(FileInterceptor('file', studentRuImportUploadOptions))
-  import(
+  async preview(
     @Param() params: CareerStudentImportParamsDto,
     @UploadedFile() file: Express.Multer.File | undefined,
     @CurrentUser() actor: JwtPayload,
   ) {
-    return this.service.import(file, params.careerId, actor.idUser);
+    return { data: await this.service.preview(file, params.careerId, actor.idUser) };
+  }
+
+  @Get('preview/:operationId')
+  @Permissions('career.update')
+  async getPreview(
+    @Param() params: CareerStudentImportParamsDto,
+    @Param('operationId', ParseUUIDPipe) operationId: string,
+    @Query() query: ImportPreviewQueryDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return {
+      data: await this.service.getPreview(operationId, params.careerId, actor.idUser, query),
+    };
+  }
+
+  @Get(':operationId/status')
+  @Permissions('career.update')
+  status(
+    @Param() params: CareerStudentImportParamsDto,
+    @Param('operationId', ParseUUIDPipe) operationId: string,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.service.status(operationId, params.careerId, actor.idUser);
+  }
+
+  @Post()
+  @Permissions('career.update')
+  @ApiBody({ type: ExecuteImportDto })
+  import(
+    @Param() params: CareerStudentImportParamsDto,
+    @Body() dto: ExecuteImportDto,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.service.import(dto.operationId, params.careerId, actor.idUser);
   }
 }

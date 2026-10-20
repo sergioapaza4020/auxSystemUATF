@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
@@ -23,8 +23,6 @@ import {
 
 import { isAttendanceCriterion } from '@repo/grade-calculations';
 
-import { attendanceSnapshot, normalizeAttendanceObservation } from '@/utils/attendance-draft';
-
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/utils/hasPermission';
 import { AttendanceSidebar } from '@/views/attendance/AttendanceSidebar';
@@ -37,9 +35,7 @@ import { useAttendances } from '@/hooks/attendances/useAttendances';
 
 import { getMyAssistantGradeScheme } from '@/api/assistant-grade-schemes.service';
 import { deleteAttendanceSession, updateAttendanceSession } from '@/api/attendances.service';
-import { getEnrollmentStudents } from '@/api/enrollments.service';
-
-import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
+import { useAttendanceRoster } from '@/hooks/attendances/useAttendanceRoster';
 
 import { AttendanceStatus } from '@/enums/attendanceStatus';
 import { AttendancePageHeader } from '@/views/attendance/AttendancePageHeader';
@@ -74,6 +70,12 @@ export default function AttendancePage() {
 
   const {
     sessions,
+    recentSessions,
+    recentLoading,
+    meta: historyMeta,
+    changeQuery: changeHistoryQuery,
+    findSessionByDate,
+    error: historyError,
     loading: loadingSessions,
     saving,
     createSession,
@@ -83,8 +85,12 @@ export default function AttendancePage() {
     session,
   } = useAttendances(idEnrollment);
 
-  const [students, setStudents] = useState<IEnrollmentStudent[]>([]);
-  const [loadingStudents, setLoadingStudents] = useState(false);
+  const historyNotification = useRef(snackbar);
+
+  historyNotification.current = snackbar;
+  useEffect(() => {
+    if (historyError) historyNotification.current.error(historyError);
+  }, [historyError]);
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date();
@@ -97,15 +103,15 @@ export default function AttendancePage() {
 
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
-  const [attendance, setAttendance] = useState<Record<number, AttendanceStatus>>({});
+  const roster = useAttendanceRoster(idEnrollment, selectedSessionId);
+  const { students, attendance, observations, modifiedStudentIds, hasChanges } = roster;
+  const { present: presentCount, excused: excusedCount, absent: absentCount } = roster.counts;
+  const search = roster.query.search ?? '';
+  const loadingStudents = roster.loading;
 
-  /*
-   * Snapshot de los datos guardados.
-   * Nos permite saber si existen cambios y cancelar.
-   */
-  const [savedAttendance, setSavedAttendance] = useState<Record<number, AttendanceStatus>>({});
-
-  const [search, setSearch] = useState('');
+  useEffect(() => {
+    if (roster.error) historyNotification.current.error(roster.error);
+  }, [roster.error]);
   const [pendingAction, setPendingAction] = useState<PendingAttendanceAction | null>(null);
   const [openingSession, setOpeningSession] = useState(false);
 
@@ -114,8 +120,6 @@ export default function AttendancePage() {
   );
 
   const [tab, setTab] = useState(0);
-  const [observations, setObservations] = useState<Record<number, string | null>>({});
-  const [savedObservations, setSavedObservations] = useState<Record<number, string | null>>({});
   const [editingConfig, setEditingConfig] = useState(false);
   const [historyAction, setHistoryAction] = useState<{ kind: 'delete' | 'update'; idSession: number } | null>(null);
   const [historyDate, setHistoryDate] = useState('');
@@ -153,123 +157,6 @@ export default function AttendancePage() {
       active = false;
     };
   }, [enrollment, user]);
-
-  /*
-   * ============================
-   * CARGAR ESTUDIANTES
-   * ============================
-   */
-
-  useEffect(() => {
-    const loadStudents = async () => {
-      if (!enrollment) {
-        return;
-      }
-
-      setLoadingStudents(true);
-
-      try {
-        const data = await getEnrollmentStudents(enrollment.idEnrollment);
-
-        setStudents(data);
-      } catch {
-        snackbar.error('No se pudieron cargar los estudiantes.');
-      } finally {
-        setLoadingStudents(false);
-      }
-    };
-
-    void loadStudents();
-  }, [enrollment, snackbar]);
-
-  /*
-   * ============================
-   * CARGAR ASISTENCIA DE SESIÓN
-   * ============================
-   */
-
-  useEffect(() => {
-    if (!session || students.length === 0) {
-      return;
-    }
-
-    const initial = attendanceSnapshot(
-      students.map((student) => student.idEnrollment),
-      session.attendances ?? [],
-    );
-
-    setObservations(initial.observations);
-    setSavedObservations(initial.observations);
-    setAttendance(initial.attendance);
-    setSavedAttendance(initial.attendance);
-  }, [session, students]);
-
-  /*
-   * ============================
-   * DERIVADOS
-   * ============================
-   */
-
-  const filteredStudents = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) {
-      return students;
-    }
-
-    return students.filter((student) => {
-      const user = student.user;
-
-      const searchable = [user.name, user.lastname, user.ci, user.ru, user.username]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      return searchable.includes(query);
-    });
-  }, [students, search]);
-
-  const excusedCount = useMemo(
-    () => students.filter((student) => attendance[student.idEnrollment] === AttendanceStatus.EXCUSED).length,
-    [students, attendance],
-  );
-
-  const presentCount = useMemo(
-    () => students.filter((student) => attendance[student.idEnrollment] === AttendanceStatus.PRESENT).length,
-    [students, attendance],
-  );
-
-  const absentCount = useMemo(
-    () =>
-      students.filter(
-        (student) => (attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT) === AttendanceStatus.ABSENT,
-      ).length,
-    [students, attendance],
-  );
-
-  const modifiedStudentIds = useMemo(
-    () =>
-      selectedSessionId
-        ? students
-            .filter(
-              (student) =>
-                (attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT) !==
-                  (savedAttendance[student.idEnrollment] ?? AttendanceStatus.ABSENT) ||
-                normalizeAttendanceObservation(
-                  attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT,
-                  observations[student.idEnrollment],
-                ) !==
-                  normalizeAttendanceObservation(
-                    savedAttendance[student.idEnrollment] ?? AttendanceStatus.ABSENT,
-                    savedObservations[student.idEnrollment],
-                  ),
-            )
-            .map((student) => student.idEnrollment)
-        : [],
-    [attendance, savedAttendance, observations, savedObservations, students, selectedSessionId],
-  );
-
-  const hasChanges = modifiedStudentIds.length > 0;
 
   useEffect(() => {
     if (!hasChanges) return;
@@ -314,10 +201,7 @@ export default function AttendancePage() {
 
           if (action.idSession === selectedSessionId) {
             setSelectedSessionId(null);
-            setAttendance({});
-            setSavedAttendance({});
-            setObservations({});
-            setSavedObservations({});
+            roster.discard();
           }
 
           if (action.idSession !== selectedSessionId) handleCancelChanges();
@@ -343,7 +227,7 @@ export default function AttendancePage() {
           return;
         }
 
-        const existing = sessions.find((item) => item.date.slice(0, 10) === selectedDate);
+        const existing = await findSessionByDate(selectedDate);
         const created = existing ?? (await createSession(selectedDate));
 
         await openSession(created.idAttendanceSession);
@@ -381,45 +265,9 @@ export default function AttendancePage() {
     }
   };
 
-  const handleChangeAttendance = (idStudentEnrollment: number, status: AttendanceStatus) => {
-    if (status !== AttendanceStatus.EXCUSED)
-      setObservations((current) => ({ ...current, [idStudentEnrollment]: null }));
-    setAttendance((current) => ({
-      ...current,
-      [idStudentEnrollment]: status,
-    }));
-  };
-
-  const handleMarkAll = (status: AttendanceStatus) => {
-    if (status !== AttendanceStatus.EXCUSED)
-      setObservations((current) => {
-        const updated = { ...current };
-
-        students.forEach((student) => {
-          updated[student.idEnrollment] = null;
-        });
-
-        return updated;
-      });
-    setAttendance((current) => {
-      const updated = { ...current };
-
-      /*
-       * Aplicamos la acción a TODOS los estudiantes,
-       * no solamente a los filtrados.
-       */
-      students.forEach((student) => {
-        updated[student.idEnrollment] = status;
-      });
-
-      return updated;
-    });
-  };
-
-  const handleCancelChanges = () => {
-    setAttendance({ ...savedAttendance });
-    setObservations({ ...savedObservations });
-  };
+  const handleChangeAttendance = (id: number, status: AttendanceStatus) => roster.edit(id, status);
+  const handleMarkAll = (status: AttendanceStatus) => roster.markAllStudents(status);
+  const handleCancelChanges = () => roster.discard();
 
   const handleSave = async () => {
     if (
@@ -432,27 +280,8 @@ export default function AttendancePage() {
     }
 
     try {
-      const confirmed = await saveSessionAttendances(selectedSessionId, {
-        attendances: students.map((student) => ({
-          enrollmentId: student.idEnrollment,
-
-          status: attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT,
-          observation: normalizeAttendanceObservation(
-            attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT,
-            observations[student.idEnrollment],
-          ),
-        })),
-      });
-
-      const saved = attendanceSnapshot(
-        students.map((student) => student.idEnrollment),
-        confirmed,
-      );
-
-      setAttendance(saved.attendance);
-      setSavedAttendance(saved.attendance);
-      setObservations(saved.observations);
-      setSavedObservations(saved.observations);
+      await saveSessionAttendances(selectedSessionId, roster.payload());
+      roster.confirmed();
     } catch (error) {
       snackbar.error(`No se pudo guardar la asistencia: ${getApiErrorMessage(error)}`);
 
@@ -496,7 +325,7 @@ export default function AttendancePage() {
     <Stack spacing={3}>
       <AttendancePageHeader
         enrollment={enrollment}
-        studentCount={students.length}
+        studentCount={roster.total}
         onBack={() => requestAction({ kind: 'back' })}
       />
 
@@ -530,14 +359,12 @@ export default function AttendancePage() {
 
               {selectedSessionId && (
                 <AttendanceSheet
-                  students={filteredStudents}
-                  totalStudents={students.length}
+                  pagination={{ meta: roster.meta, query: roster.query, changeQuery: roster.changeQuery }}
+                  students={students}
+                  totalStudents={roster.total}
                   attendance={attendance}
                   observations={observations}
-                  onChangeObservation={(id, value) => {
-                    if (attendance[id] === AttendanceStatus.EXCUSED)
-                      setObservations((current) => ({ ...current, [id]: value }));
-                  }}
+                  onChangeObservation={(id, value) => roster.edit(id, AttendanceStatus.EXCUSED, value)}
                   loading={loadingStudents || openingSession || !session}
                   saving={saving}
                   readOnly={!canSave}
@@ -548,10 +375,11 @@ export default function AttendancePage() {
                   absentCount={absentCount}
                   hasChanges={hasChanges}
                   modifiedStudentIds={modifiedStudentIds}
+                  markAllActive={roster.markAllActive}
                   permissionWeight={permissionConfig.weight}
                   permissionWeightLoading={permissionConfig.loading}
                   permissionWeightError={permissionConfig.error}
-                  onSearchChange={setSearch}
+                  onSearchChange={(value) => roster.changeQuery({ search: value })}
                   onChangeAttendance={handleChangeAttendance}
                   onMarkAllPresent={() => handleMarkAll(AttendanceStatus.PRESENT)}
                   onMarkAllAbsent={() => handleMarkAll(AttendanceStatus.ABSENT)}
@@ -566,7 +394,7 @@ export default function AttendancePage() {
                     Planilla de asistencia
                   </Typography>
                   <Typography color='text.secondary'>
-                    {students.length
+                    {roster.total
                       ? 'Crea una sesión o abre una del historial para tomar asistencia.'
                       : 'No hay estudiantes matriculados en esta materia.'}
                   </Typography>
@@ -576,14 +404,15 @@ export default function AttendancePage() {
           </Grid>
           <Grid item xs={12} lg={3}>
             <AttendanceSidebar
-              sessions={sessions}
+              sessions={recentSessions}
+              summary={roster.session?.idAttendanceSession === selectedSessionId ? roster.session : null}
               selectedSessionId={selectedSessionId}
               present={presentCount}
               excused={excusedCount}
               absent={absentCount}
-              total={students.length}
+              total={roster.total}
               hasChanges={hasChanges}
-              loading={loadingSessions}
+              loading={recentLoading}
               permissionWeight={permissionConfig.weight}
               configLoading={permissionConfig.loading}
               configError={permissionConfig.error}
@@ -599,12 +428,13 @@ export default function AttendancePage() {
       <Box role='tabpanel' id='attendance-panel-1' aria-labelledby='attendance-tab-1' hidden={tab !== 1}>
         <AttendanceHistory
           sessions={sessions}
+          meta={historyMeta}
+          onPageChange={(page) => changeHistoryQuery({ page })}
+          onLimitChange={(limit) => changeHistoryQuery({ limit })}
           onEditDate={
             hasPermission(user, 'attendance.session.update')
-              ? (idSession) => {
-                  setHistoryDate(
-                    sessions.find((item) => item.idAttendanceSession === idSession)?.date.slice(0, 10) ?? '',
-                  );
+              ? (idSession, date) => {
+                  setHistoryDate(date);
                   setHistoryAction({ kind: 'update', idSession });
                 }
               : undefined

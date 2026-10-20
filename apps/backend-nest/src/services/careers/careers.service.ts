@@ -13,9 +13,9 @@ import { In, Repository } from 'typeorm';
 export class CareersService {
   constructor(@InjectRepository(Career) private readonly careerRepository: Repository<Career>) {}
 
-  async getAll(status: RecordStatus = RecordStatus.ACTIVE): Promise<Career[]> {
+  async getAll(status: RecordStatus = RecordStatus.ACTIVE, idCareer?: number): Promise<Career[]> {
     return this.careerRepository.find({
-      where: statusFilter(status),
+      where: { ...statusFilter(status), ...(idCareer !== undefined ? { idCareer } : {}) },
       relations: { faculty: true, director: true },
     });
   }

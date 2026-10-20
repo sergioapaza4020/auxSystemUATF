@@ -23,21 +23,25 @@ Tener una asignación de auxiliar no sustituye el permiso general de creación.
 
 - `GET /api/enrollments/import/template?courseId=10&semesterId=20`
 - `POST /api/enrollments/import/preview`
+- `GET /api/enrollments/import/preview/:operationId?page=1&limit=25&status=all&search=...`
+- `GET /api/enrollments/import/:operationId/status`
 - `POST /api/enrollments/import`
 
-Los POST reciben multipart con `file`, `courseId` y `semesterId`. No reciben roles
-ni resultados de un preview anterior. Los identificadores son enteros positivos.
-La plantilla se entrega como binario `.xlsx`; los otros resultados conservan el
-envoltorio global `{ status, statusCode, message, data }`.
+El POST preview recibe multipart con `file`, `courseId` y `semesterId`. El POST
+final recibe JSON `{ "operationId": "uuid" }`; no vuelve a recibir archivo, filas
+ni destino. El contexto guardado en la operación determina la ejecución.
+La plantilla sigue siendo binaria y las respuestas conservan el envelope global.
+Las operaciones y sus páginas son accesibles únicamente por su creador.
 
 Preview (HTTP 200, también cuando existen filas inválidas), dentro de `data`:
 
 ```json
 {
+  "operationId": "00000000-0000-4000-8000-000000000001",
   "total": 1,
   "valid": 1,
   "invalid": 0,
-  "rows": [{
+  "data": [{
     "row": 2,
     "studentId": 123,
     "ru": "00123456",
@@ -46,7 +50,8 @@ Preview (HTTP 200, también cuando existen filas inválidas), dentro de `data`:
     "email": "ejemplo@example.com",
     "status": "VALID",
     "errors": []
-  }]
+  }],
+  "meta": { "page": 1, "limit": 25, "total": 1, "totalPages": 1 }
 }
 ```
 
@@ -78,13 +83,13 @@ Se resuelven usuarios/roles y matrículas por lotes de 500 identificadores, usan
 mapas y conjuntos para las validaciones. No hay una consulta por estudiante.
 Solo se seleccionan campos necesarios; nunca contraseñas.
 
-Confirmar vuelve a leer el archivo y valida el estado de BD dentro de una única
+Confirmar lee las filas normalizadas persistidas y revalida el estado de BD dentro de una única
 transacción TypeORM `SERIALIZABLE`. Las inserciones de 500 filas comparten esa
 transacción. Cualquier error se propaga fuera del callback para provocar rollback.
 
 Se reutiliza `UNIQUE(id_user, id_course, id_semester)`, ya declarado por la entidad
 y la migración `1787831378220-ModifyEnrollmentEntity`; también cubre matrículas de
-otros roles y registros inactivos. No se necesita una migración nueva. Conflictos
+otros roles y registros inactivos. La migración de Fase 3 amplía únicamente el enum de tipos BulkOperation. Conflictos
 23505/40001/40P01 se traducen a un mensaje seguro para volver a revisar el archivo.
 
 ## Verificación
@@ -93,3 +98,24 @@ Las pruebas usan ExcelJS con libros reales y dobles de repositorios/transaccione
 validaciones, revalidación, lotes, fallo del segundo lote sin commit, permisos y
 alcance del auxiliar. No constituyen una prueba de concurrencia o rollback contra
 PostgreSQL real. No se ejecutan seeds ni migraciones.
+
+
+## Preview persistido (Fase 3)
+
+Se reutilizan BulkOperation/BulkOperationRow y findRows. El POST persiste todas las
+filas y devuelve solo 25. GET acepta page >= 1, limit 25/50/100, status
+all/valid/invalid y search (máximo 200 caracteres). Los totales externos son del
+archivo completo; meta.total es filtrado. Orden fijo rowNumber ASC. Buscar/filtrar
+ocurre en PostgreSQL antes del límite/offset. No hay filtros ni slice locales.
+
+READY → IMPORTING → COMPLETED comparte una transacción SERIALIZABLE con las
+matrículas y las filas PROCESSED. Una segunda ejecución devuelve conflicto. Si
+falla la revalidación o una escritura, todo revierte y la operación sigue READY.
+La ejecución exige cero filas inválidas, como antes; no importa parcialmente.
+También se verifica que el RU siga resolviendo al mismo studentId del preview.
+La lectura paginada no carga el archivo completo. El parsing y la ejecución siguen
+siendo síncronos y pueden conservar el conjunto completo en memoria.
+
+No se introduce Redis, cola ni cleanup. Las operaciones permanecen hasta una
+política futura; desmontar la pantalla no las elimina. Ver el informe
+[de Fase 3](../../../PAGINATION_PHASE_3.md) para contratos y verificación.

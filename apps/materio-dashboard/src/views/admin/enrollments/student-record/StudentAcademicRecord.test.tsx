@@ -93,18 +93,16 @@ function fixture(): StudentAcademicRecordProps {
           maximumScore: weightedScore(100, detail.percentage, 0.2)!,
         })),
       },
-      students: [
-        {
-          idEnrollment: 10,
-          details: [
-            { idGradeSchemeDetail: 1, rawScore: 37.5, weightedScore: 4.5 },
-            { idGradeSchemeDetail: 2, rawScore: 90, weightedScore: 5.4 },
-            { idGradeSchemeDetail: 3, rawScore: null, weightedScore: null },
-          ],
-          totalRaw: 49.5,
-          assistantContribution: 9.9,
-        },
-      ],
+      student: {
+        idEnrollment: 10,
+        details: [
+          { idGradeSchemeDetail: 1, rawScore: 37.5, weightedScore: 4.5 },
+          { idGradeSchemeDetail: 2, rawScore: 90, weightedScore: 5.4 },
+          { idGradeSchemeDetail: 3, rawScore: null, weightedScore: null },
+        ],
+        totalRaw: 49.5,
+        assistantContribution: 9.9,
+      },
     },
     grades: [80, 70, null, 0].flatMap((score, index) =>
       score === null
@@ -186,7 +184,7 @@ describe('Ficha académica individual', () => {
   it('does not recompute authoritative backend results in the view', () => {
     const props = fixture();
 
-    props.summary.students[0].details[0].rawScore = 61.2;
+    props.summary.student.details[0].rawScore = 61.2;
     expect(markup(props, 'raw')).toContain('61.2 / 100');
   });
   it('keeps attendance separate from activities', () => {
@@ -206,7 +204,7 @@ describe('Ficha académica individual', () => {
     const props = fixture();
 
     props.grades = [];
-    props.summary.students[0].details[0] = { idGradeSchemeDetail: 1, rawScore: 0, weightedScore: 0 };
+    props.summary.student.details[0] = { idGradeSchemeDetail: 1, rawScore: 0, weightedScore: 0 };
     expect(markup(props)).toMatch(/Entrega 1[\s\S]*?--/);
     expect(markup(props)).toContain('0.0 / 12');
   });
@@ -239,8 +237,8 @@ describe('Ficha académica individual', () => {
     const raw = studentCriterionResult(10, [1, 2, 3, 4], { '10:1': 80, '10:2': 70, '10:4': 0 }, {});
 
     expect(raw).toBe(averageScores([80, 70, null, 0]));
-    expect(raw).toBe(props.summary.students[0].details[0].rawScore);
-    expect(weightedScore(raw, 60, 0.2)).toBe(props.summary.students[0].details[0].weightedScore);
+    expect(raw).toBe(props.summary.student.details[0].rawScore);
+    expect(weightedScore(raw, 60, 0.2)).toBe(props.summary.student.details[0].weightedScore);
     expect(studentCriterionResult(10, [1, 2, 3], { '10:1': 80, '10:2': 70 }, {})).toBe(50);
   });
   it('integrates the representation selector into the performance section', () => {
@@ -278,7 +276,7 @@ describe('Ficha académica individual', () => {
 
     props.scheme!.details[0].percentage = 0;
     props.summary.scheme!.details[0].maximumScore = 0;
-    props.summary.students[0].details[0].weightedScore = 0;
+    props.summary.student.details[0].weightedScore = 0;
     expect(markup(props)).toContain('Proyectos dinámicos');
     expect(markup(props)).toContain('0%');
     expect(markup(props)).toContain('0.0 / 0');

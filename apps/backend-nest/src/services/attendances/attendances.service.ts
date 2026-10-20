@@ -1,4 +1,7 @@
+import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
+import { buildStudentRosterQuery, getStudentRosterPage } from '@common/utils/student-roster';
 import {
+  attendanceSummary,
   attendancePermissionWeight,
   summarizeAttendanceStatuses,
 } from '@common/utils/attendance-summary';
@@ -18,7 +21,7 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
 
@@ -160,7 +163,11 @@ export class AttendancesService {
     });
   }
 
-  async getSession(idUser: number, idSession: number): Promise<AttendanceSession> {
+  async getSession(
+    idUser: number,
+    idSession: number,
+    includeMarks = true,
+  ): Promise<AttendanceSession> {
     const session = await this.attendanceSessionRepository.findOne({
       where: {
         idAttendanceSession: idSession,
@@ -171,11 +178,7 @@ export class AttendancesService {
           course: true,
           semester: true,
         },
-        attendances: {
-          enrollment: {
-            user: true,
-          },
-        },
+        ...(includeMarks ? { attendances: { enrollment: { user: true } } } : {}),
       },
     });
 
@@ -195,6 +198,65 @@ export class AttendancesService {
     }
 
     return session;
+  }
+
+  async getSessionPage(idUser: number, idSession: number, query: StudentRosterQueryDto) {
+    const session = await this.getSession(idUser, idSession, false);
+    const assistant = session.assistantEnrollment;
+    const roster = await getStudentRosterPage(this.enrollmentRepository, assistant, query);
+    const ids = roster.data.map((student) => student.idEnrollment);
+    const [marks, total, counts, weight] = await Promise.all([
+      ids.length
+        ? this.attendanceRepository.find({
+            where: {
+              attendanceSession: { idAttendanceSession: idSession },
+              enrollment: { idEnrollment: In(ids) },
+            },
+            relations: { enrollment: true },
+          })
+        : Promise.resolve([]),
+      buildStudentRosterQuery(this.enrollmentRepository, assistant).getCount(),
+      this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .select('attendance.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .innerJoin('attendance.enrollment', 'student')
+        .where('attendance.id_attendance_session = :idSession', { idSession })
+        .andWhere('student.id_course = :courseId', { courseId: assistant.course.idCourse })
+        .andWhere('student.id_semester = :semesterId', {
+          semesterId: assistant.semester.idSemester,
+        })
+        .andWhere('student.role = :role', { role: CourseRelations.STUDENT })
+        .andWhere('student.isActive = true')
+        .groupBy('attendance.status')
+        .getRawMany<{ status: AttendanceStatus; count: string }>(),
+      this.getPermissionWeight(assistant),
+    ]);
+    const count = (status: AttendanceStatus) =>
+      Number(counts.find((row) => row.status === status)?.count ?? 0);
+    const summary = attendanceSummary(
+      count(AttendanceStatus.PRESENT),
+      count(AttendanceStatus.EXCUSED),
+      total,
+      weight,
+    );
+    return {
+      data: {
+        idAttendanceSession: session.idAttendanceSession,
+        date: session.date,
+        students: roster.data,
+        attendances: marks.map((mark) => ({
+          ...mark,
+          observation: mark.status === AttendanceStatus.EXCUSED ? mark.observation : null,
+        })),
+        presentCount: summary.present,
+        excusedCount: summary.excused,
+        absentCount: summary.absent,
+        totalStudents: total,
+        percentage: summary.percentage,
+      },
+      meta: roster.meta,
+    };
   }
 
   async getSessionsPage(idUser: number, idEnrollment: number, query: AttendanceHistoryQueryDto) {
@@ -221,7 +283,7 @@ export class AttendancesService {
     idSession: number,
     dto: AttendanceSaveDto,
   ): Promise<Attendance[]> {
-    const session = await this.getSession(idUser, idSession);
+    const session = await this.getSession(idUser, idSession, false);
 
     const studentEnrollments = await this.enrollmentRepository.find({
       where: {
@@ -234,9 +296,7 @@ export class AttendancesService {
         role: CourseRelations.STUDENT,
         isActive: true,
       },
-      relations: {
-        user: true,
-      },
+      select: { idEnrollment: true },
     });
 
     const validStudentIds = new Set(
@@ -268,31 +328,58 @@ export class AttendancesService {
         lock: { mode: 'pessimistic_write' },
       });
       const repository = manager.getRepository(Attendance);
-      const saved: Attendance[] = [];
-      for (const record of dto.attendances) {
-        const existing = await repository.findOne({
-          relations: { enrollment: true },
-          where: {
+      const ids = dto.markAll ? [...validStudentIds] : [...submittedIds];
+      if (!ids.length) return [];
+      const existing = await repository.find({
+        where: {
+          attendanceSession: { idAttendanceSession: idSession },
+          enrollment: { idEnrollment: In(ids) },
+        },
+        relations: { enrollment: true },
+      });
+      const previous = new Map(existing.map((record) => [record.enrollment.idEnrollment, record]));
+      const overrides = new Map(dto.attendances.map((record) => [record.enrollmentId, record]));
+      const values = ids
+        .map((id) => {
+          const override = overrides.get(id);
+          const status = override?.status ?? dto.markAll!;
+          const oldObservation = dto.markAll ? null : previous.get(id)?.observation;
+          return {
             attendanceSession: { idAttendanceSession: idSession },
-            enrollment: { idEnrollment: record.enrollmentId },
-          },
-        });
-        const attendance =
-          existing ??
-          repository.create({
-            attendanceSession: session,
-            enrollment: { idEnrollment: record.enrollmentId },
-          });
-        attendance.status = record.status;
-        attendance.observation =
-          record.status === AttendanceStatus.EXCUSED
-            ? record.observation === undefined
-              ? attendance.observation?.trim() || null
-              : record.observation?.trim() || null
-            : null;
-        saved.push(await repository.save(attendance));
-      }
-      return saved;
+            enrollment: { idEnrollment: id },
+            status,
+            observation:
+              status === AttendanceStatus.EXCUSED
+                ? (override?.observation === undefined
+                    ? oldObservation
+                    : override.observation
+                  )?.trim() || null
+                : null,
+          };
+        })
+        .filter(
+          (record) =>
+            record.status !== AttendanceStatus.ABSENT ||
+            previous.has(record.enrollment.idEnrollment),
+        );
+      // Keep missing absences implicit; only existing marks need to be updated to ABSENT.
+      // Chunk writes to stay below PostgreSQL's parameter limit, with one session lock for the entire bulk.
+      for (let offset = 0; offset < values.length; offset += 1000)
+        await repository.upsert(values.slice(offset, offset + 1000), [
+          'attendanceSession',
+          'enrollment',
+        ]);
+      // A global intent can affect thousands of rows; return only explicit overrides to the paginated client.
+      const confirmedIds = dto.markAll ? [...submittedIds] : ids;
+      return confirmedIds.length
+        ? repository.find({
+            where: {
+              attendanceSession: { idAttendanceSession: idSession },
+              enrollment: { idEnrollment: In(confirmedIds) },
+            },
+            relations: { enrollment: true },
+          })
+        : [];
     });
   }
 
@@ -370,30 +457,30 @@ export class AttendancesService {
       );
     }
 
-    const sessions = await this.attendanceSessionRepository.find({
-      where: {
-        assistantEnrollment: {
-          idEnrollment: assistantEnrollment.idEnrollment,
-        },
-      },
-      relations: {
-        attendances: {
-          enrollment: true,
-        },
-      },
-      order: {
-        date: 'ASC',
-      },
-    });
-
-    const summary = summarizeAttendanceStatuses(
-      sessions.flatMap((session) =>
-        session.attendances
-          .filter((item) => item.enrollment.idEnrollment === studentEnrollment.idEnrollment)
-          .map((item) => item.status),
-      ),
-      sessions.length,
-      await this.getPermissionWeight(assistantEnrollment),
+    const [totalSessions, counts, permissionWeight] = await Promise.all([
+      this.attendanceSessionRepository.countBy({
+        assistantEnrollment: { idEnrollment: assistantEnrollment.idEnrollment },
+      }),
+      this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .select('COUNT(*) FILTER (WHERE attendance.status = :present)', 'present')
+        .addSelect('COUNT(*) FILTER (WHERE attendance.status = :excused)', 'excused')
+        .innerJoin('attendance.attendanceSession', 'session')
+        .where('session.id_assistant_enrollment = :assistantId', {
+          assistantId: assistantEnrollment.idEnrollment,
+        })
+        .andWhere('attendance.id_enrollment = :studentId', {
+          studentId: studentEnrollment.idEnrollment,
+        })
+        .setParameters({ present: AttendanceStatus.PRESENT, excused: AttendanceStatus.EXCUSED })
+        .getRawOne<{ present: string; excused: string }>(),
+      this.getPermissionWeight(assistantEnrollment),
+    ]);
+    const summary = attendanceSummary(
+      Number(counts?.present ?? 0),
+      Number(counts?.excused ?? 0),
+      totalSessions,
+      permissionWeight,
     );
     return {
       totalSessions: summary.total,

@@ -23,21 +23,34 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+
 import { alpha } from '@mui/material/styles';
 
 import { useAuth } from '@/hooks/useAuth';
+
 import { useSnackbar } from '@/hooks/useSnackbar';
+
 import { useGradeMatrix } from '@/hooks/grades/useGradeMatrix';
+
 import { useDataTable } from '@/hooks/table/useDataTable';
 import { nextStudentCell } from '@/hooks/grades/grade-matrix-state';
+
 import { PaginationTable, type HeadCell } from '@/components/table';
+
 import { hasPermission } from '@/utils/hasPermission';
+
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
+
 import type { IGradeMatrix } from '@/interfaces/grades/grade-matrix.interface';
+
 import { createActivity, updateActivity, type IActivityCreate } from '@/api/activities.service';
+
 import { ActivityFormDialog } from '../ActivityFormDialog';
+
 import { GradePlanTable, formatGradeDeadline } from './GradePlanTable';
+
 import { GradeChangesBar } from './GradeChangesBar';
+
 import { DEFAULT_GRADE_DISPLAY_MODE, GradeViewToggle, type GradeDisplayMode } from '../GradeViewToggle';
 
 type MatrixStudent = IGradeMatrix['students'][number];
@@ -50,44 +63,52 @@ const criterionColors = ['primary', 'secondary', 'success', 'warning'] as const;
 
 export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
   const router = useRouter();
+
   const { user } = useAuth();
+
   const snackbar = useSnackbar();
+
   const canRead = hasPermission(user, 'grade.get-by-enrollment');
+
   const canEdit = hasPermission(user, 'grade.create') && hasPermission(user, 'grade.update');
+
   const canManageActivities = hasPermission(user, 'activity.create');
 
   const grades = useGradeMatrix(
     idEnrollment,
+
     canRead && Number.isInteger(idEnrollment) && idEnrollment > 0,
+
     user?.idUser,
   );
 
-  const [search, setSearch] = useState('');
+  const search = grades.query.search ?? '';
+
   const [mode, setMode] = useState<'sheet' | 'activity'>('sheet');
+
   const [displayMode, setDisplayMode] = useState<GradeDisplayMode>(DEFAULT_GRADE_DISPLAY_MODE);
+
   const [activityId, setActivityId] = useState<number | null>(null);
+
   const [activityFormOpen, setActivityFormOpen] = useState(false);
+
   const [creatingActivity, setCreatingActivity] = useState(false);
+
   const activityBusy = useRef(false);
+
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
+
   const [confirm, setConfirm] = useState<{ kind: 'discard' | 'leave'; target?: string } | null>(null);
+
   const backUrl = `/dashboard/enrollments/${idEnrollment}`;
+
   const matrix = grades.matrix;
 
-  const filteredStudents = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
-
-    return (matrix?.students ?? []).filter(
-      (student) =>
-        !query ||
-        `${student.name} ${student.lastname} ${student.ci ?? ''} ${student.ru ?? ''}`
-          .toLocaleLowerCase()
-          .includes(query),
-    );
-  }, [matrix?.students, search]);
+  const filteredStudents = matrix?.students ?? [];
 
   const table = useDataTable<MatrixStudent, typeof studentColumns>(filteredStudents, 'lastname', 25, {
     preserveOrder: true,
+    remote: { ...grades.query, changeQuery: grades.changeQuery },
   });
 
   const selectedActivity =
@@ -98,18 +119,22 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
 
   const resultActivityIds = useMemo(
     () => matrix?.activities.map((activity) => activity.idActivity) ?? [],
+
     [matrix?.activities],
   );
 
   const clearPendingFocus = useCallback(() => setPendingFocus(null), []);
+
   const dirtyCount = grades.changes.length;
 
   const leave = useCallback(
     (target: string) => {
       if (grades.saving) return;
+
       if (dirtyCount) setConfirm({ kind: 'leave', target });
       else router.push(target);
     },
+
     [dirtyCount, grades.saving, router],
   );
 
@@ -118,14 +143,17 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
 
     const unload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
+
       event.returnValue = '';
     };
 
     const navigation = (event: MouseEvent) => {
       if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
 
       if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
       const url = new URL(link.href);
 
       if (
@@ -133,28 +161,32 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
         url.pathname + url.search === window.location.pathname + window.location.search
       )
         return;
+
       event.preventDefault();
+
       event.stopPropagation();
+
       leave(url.pathname + url.search + url.hash);
     };
 
     window.addEventListener('beforeunload', unload);
+
     document.addEventListener('click', navigation, true);
 
     return () => {
       window.removeEventListener('beforeunload', unload);
+
       document.removeEventListener('click', navigation, true);
     };
   }, [dirtyCount, leave]);
 
   const move = (enrollmentId: number, columnId: number, direction: 1 | -1) => {
     const ids = filteredStudents.map((student) => student.idEnrollment);
+
     const key = nextStudentCell(enrollmentId, columnId, ids, direction);
 
     if (!key) return;
-    const nextIndex = ids.indexOf(Number(key.split(':')[0]));
 
-    table.handleChangePage(null, Math.floor(nextIndex / table.rowsPerPage));
     setPendingFocus(key);
   };
 
@@ -168,24 +200,32 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
 
   const create = async (data: IActivityCreate) => {
     if (!canManageActivities || !matrix?.detail || grades.saving || activityBusy.current) return;
+
     activityBusy.current = true;
+
     setCreatingActivity(true);
 
     try {
       const activity = await createActivity(matrix.enrollment.idCourse, {
         ...data,
+
         gradeSchemeDetailId: matrix.detail.idGradeSchemeDetail,
       });
 
       // Pin the current criterion before refreshing, including the initial default selection.
+
       if (mode === 'activity' && selectedActivity) setActivityId(selectedActivity.idActivity);
+
       grades.selectCriterion(matrix.detail.idGradeSchemeDetail);
+
       grades.reload();
+
       snackbar.success('Actividad creada correctamente.');
 
       return activity;
     } finally {
       activityBusy.current = false;
+
       setCreatingActivity(false);
     }
   };
@@ -205,6 +245,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
         >
           Volver a la materia
         </Button>
+
         {matrix && (
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -219,15 +260,18 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
               >
                 <i className='ri-graduation-cap-line' />
               </Box>
+
               <Box>
                 <Typography variant='h6' fontWeight={700}>
                   {matrix.enrollment.code} · {matrix.enrollment.name}
                 </Typography>
+
                 <Typography variant='body2' color='text.secondary'>
                   Grupo {matrix.enrollment.group} · Auxiliar: {matrix.enrollment.assistantName}
                 </Typography>
               </Box>
             </Stack>
+
             <Button
               variant='outlined'
               startIcon={<i className='ri-bar-chart-line' />}
@@ -238,13 +282,16 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
             </Button>
           </Stack>
         )}
+
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent='space-between' sx={{ mb: 2 }}>
           <Box>
             <Typography variant='h4' component='h1' fontWeight={700}>
               Calificaciones
             </Typography>
+
             <Typography color='text.secondary'>Gestiona las notas de las actividades de cada criterio</Typography>
           </Box>
+
           <ToggleButtonGroup
             exclusive
             size='small'
@@ -255,22 +302,28 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
             aria-label='Vista de calificaciones'
             sx={{
               alignSelf: 'flex-start',
+
               '& .MuiToggleButton-root.Mui-selected': {
                 bgcolor: 'primary.main',
+
                 color: 'primary.contrastText',
+
                 '&:hover': { bgcolor: 'primary.dark' },
               },
             }}
           >
             <ToggleButton value='sheet'>Planilla</ToggleButton>
+
             <ToggleButton value='activity'>Por actividad</ToggleButton>
           </ToggleButtonGroup>
         </Stack>
+
         {!canEdit && (
           <Alert severity='info' sx={{ mb: 2 }}>
             Puedes consultar la planilla. Para editar se requieren los permisos de creación y actualización de notas.
           </Alert>
         )}
+
         {!!matrix?.criteria.length && (
           <Stack
             direction='row'
@@ -283,6 +336,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
           >
             {matrix.criteria.map((criterion, index) => {
               const selected = matrix.detail?.idGradeSchemeDetail === criterion.idGradeSchemeDetail;
+
               const color = criterionColors[index % criterionColors.length];
 
               return (
@@ -292,18 +346,28 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
                   aria-pressed={selected}
                   onClick={() => {
                     setActivityId(null);
+
                     table.handleChangePage(null, 0);
+
                     grades.selectCriterion(criterion.idGradeSchemeDetail);
                   }}
                   sx={{
                     border: 1,
+
                     borderColor: selected ? 'primary.main' : 'divider',
+
                     borderRadius: 1.5,
+
                     p: 2,
+
                     minWidth: 220,
+
                     textAlign: 'left',
+
                     justifyContent: 'flex-start',
+
                     bgcolor: (theme) => alpha(theme.palette[color].main, 0.04),
+
                     '&.Mui-focusVisible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
                   }}
                 >
@@ -311,17 +375,22 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
                     <Box
                       sx={{
                         p: 1,
+
                         borderRadius: 1.5,
+
                         color: `${color}.main`,
+
                         bgcolor: (theme) => alpha(theme.palette[color].main, 0.1),
                       }}
                     >
                       <i className='ri-file-list-3-line' />
                     </Box>
+
                     <Box>
                       <Typography variant='body2' fontWeight={700}>
                         {criterion.name}
                       </Typography>
+
                       <Typography variant='caption' color='text.secondary'>
                         {criterion.activityCount} {criterion.activityCount === 1 ? 'actividad' : 'actividades'} ·{' '}
                         {criterion.percentage}%
@@ -333,6 +402,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
             })}
           </Stack>
         )}
+
         {canManageActivities && matrix?.detail && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
             <Button
@@ -346,12 +416,15 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
             </Button>
           </Box>
         )}
+
         <Stack direction='row' spacing={2} alignItems='center' useFlexGap flexWrap='wrap' sx={{ mb: 2 }}>
           <GradeViewToggle value={displayMode} onChange={setDisplayMode} />
+
           <Typography variant='caption' color='text.secondary'>
             Las actividades se registran siempre sobre 100.
           </Typography>
         </Stack>
+
         {mode === 'activity' && !!matrix?.activities.length && (
           <Stack spacing={0.5} sx={{ mb: 2 }}>
             <TextField
@@ -368,6 +441,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
                 </MenuItem>
               ))}
             </TextField>
+
             {selectedActivity && (
               <Typography variant='caption' color='text.secondary'>
                 Fecha límite: {formatGradeDeadline(selectedActivity.dueDate)}
@@ -375,14 +449,14 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
             )}
           </Stack>
         )}
+
         <TextField
           fullWidth
           size='small'
           placeholder='Buscar estudiante por nombre, CI o RU...'
           value={search}
           onChange={(event) => {
-            setSearch(event.target.value);
-            table.handleChangePage(null, 0);
+            grades.changeQuery({ search: event.target.value });
           }}
           inputProps={{ 'aria-label': 'Buscar estudiante por nombre, CI o RU' }}
           InputProps={{
@@ -394,6 +468,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
           }}
           sx={{ mb: 2 }}
         />
+
         {grades.error ? (
           <Alert severity='error' action={<Button onClick={grades.reload}>Reintentar</Button>}>
             {grades.error}
@@ -424,7 +499,11 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
               : 'No existen criterios con actividades para esta planilla. La asistencia y las notas directas se gestionan desde sus pantallas actuales.'}
           </Alert>
         ) : !matrix.students.length ? (
-          <Alert severity='info'>No hay estudiantes matriculados en esta materia.</Alert>
+          <Alert severity='info'>
+            {search
+              ? 'No se encontraron estudiantes para esta búsqueda.'
+              : 'No hay estudiantes matriculados en esta materia.'}
+          </Alert>
         ) : !filteredStudents.length ? (
           <Alert severity='info'>No se encontraron estudiantes. Intenta con otro nombre, CI o RU.</Alert>
         ) : (
@@ -434,6 +513,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
                 Todavía no hay calificaciones registradas en este criterio. Las celdas vacías se muestran con --.
               </Typography>
             )}
+
             <GradePlanTable
               displayMode={displayMode}
               percentage={matrix.detail.percentage}
@@ -450,8 +530,9 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
               onEdit={grades.edit}
               onMove={move}
             />
+
             <PaginationTable
-              count={filteredStudents.length}
+              count={matrix.meta?.total ?? filteredStudents.length}
               rowsPerPage={table.rowsPerPage}
               page={table.page}
               onPageChange={table.handleChangePage}
@@ -460,6 +541,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
           </Box>
         )}
       </Paper>
+
       {canManageActivities && matrix?.detail && activityFormOpen && (
         <ActivityFormDialog
           open
@@ -474,6 +556,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
           onUpdate={updateActivity}
         />
       )}
+
       <GradeChangesBar
         count={dirtyCount}
         invalidCount={grades.invalidCount}
@@ -482,6 +565,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
         onDiscard={() => setConfirm({ kind: 'discard' })}
         onSave={() => void save()}
       />
+
       <Dialog
         open={!!confirm}
         onClose={() => {
@@ -490,20 +574,25 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
         aria-labelledby='discard-grade-title'
       >
         <DialogTitle id='discard-grade-title'>Descartar cambios</DialogTitle>
+
         <DialogContent>
           <Typography>Se perderán {dirtyCount} calificaciones modificadas que todavía no fueron guardadas.</Typography>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setConfirm(null)} disabled={grades.saving}>
             Cancelar
           </Button>
+
           <Button
             color='error'
             onClick={() => {
               grades.discard();
+
               const target = confirm?.kind === 'leave' ? confirm.target : undefined;
 
               setConfirm(null);
+
               if (target) router.push(target);
             }}
             disabled={grades.saving}

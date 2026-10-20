@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { assistantGradeItemLabel, isAssistantGradeItem } from '@repo/grade-calculations/assistant-grade-items';
+
 import { Button, Card, CardContent, CardHeader, Grid, TextField } from '@mui/material';
 
 import Form from '@components/Form';
@@ -101,7 +103,8 @@ export function AssistantGradeSchemeForm({ idCourse }: AssistantGradeSchemeFormP
 
             <Grid item xs={12} md={9}>
               <GradeSchemeItemsEditor
-                gradeItems={gradeItems}
+                gradeItems={gradeItems.filter(isAssistantGradeItem)}
+                getGradeItemLabel={assistantGradeItemLabel}
                 details={form.details}
                 loading={loadingGradeItems}
                 totalPercentage={totalPercentage}

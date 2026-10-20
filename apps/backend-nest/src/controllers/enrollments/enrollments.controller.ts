@@ -1,4 +1,5 @@
-import { Query } from '@nestjs/common';
+import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
+import { DefaultValuePipe, ParseBoolPipe, Query } from '@nestjs/common';
 import { EnrollmentQueryDto } from 'src/dtos/enrollments/enrollment-query.dto';
 import { EnrollmentUpdateDto } from 'src/dtos/enrollments/enrollments-update.dto';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
@@ -38,8 +39,11 @@ export class EnrollmentsController {
 
   @Permissions('enrollment.get-my-enrollments')
   @Get('my-enrollments')
-  async getMyEnrollments(@CurrentUser() user: JwtPayload) {
-    return this.enrollmentsService.getUserEnrollments(user.idUser);
+  async getMyEnrollments(
+    @CurrentUser() user: JwtPayload,
+    @Query('current', new DefaultValuePipe(false), ParseBoolPipe) current = false,
+  ) {
+    return this.enrollmentsService.getUserEnrollments(user.idUser, current);
   }
 
   @Permissions('enrollment.get-my-enrollment')
@@ -56,26 +60,52 @@ export class EnrollmentsController {
   async getManagedEnrollment(
     @CurrentUser() user: JwtPayload,
     @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+    @Query('includeCourseScheme', new DefaultValuePipe(true), ParseBoolPipe)
+    includeCourseScheme = true,
   ) {
-    return this.enrollmentsService.getManagedEnrollment(user.idUser, idEnrollment);
+    return this.enrollmentsService.getManagedEnrollment(
+      user.idUser,
+      idEnrollment,
+      includeCourseScheme,
+    );
   }
 
   @Permissions('enrollment.get-students-by-enrollment')
   @Get(':idEnrollment/students')
   async getStudentsByEnrollment(
+    @Query() query: StudentRosterQueryDto,
     @CurrentUser() user: JwtPayload,
     @Param('idEnrollment', ParseIntPipe)
     idEnrollment: number,
   ) {
+    if (query.page !== undefined || query.limit !== undefined || query.search !== undefined)
+      return this.enrollmentsService.getStudentsPage(user.idUser, idEnrollment, query);
     return this.enrollmentsService.getStudentsByEnrollment(user.idUser, idEnrollment);
+  }
+
+  @Permissions('grade.get-by-enrollment')
+  @Get(':idEnrollment/students/:studentEnrollmentId/grade-summary')
+  async getIndividualStudentGradeSummary(
+    @CurrentUser() user: JwtPayload,
+    @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
+    @Param('studentEnrollmentId', ParseIntPipe) studentEnrollmentId: number,
+  ) {
+    return this.enrollmentsService.getIndividualStudentGradeSummary(
+      user.idUser,
+      idEnrollment,
+      studentEnrollmentId,
+    );
   }
 
   @Permissions('grade.get-by-enrollment')
   @Get(':idEnrollment/student-grade-summary')
   async getStudentGradeSummary(
+    @Query() query: StudentRosterQueryDto,
     @CurrentUser() user: JwtPayload,
     @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
   ) {
+    if (query.page !== undefined || query.limit !== undefined || query.search !== undefined)
+      return this.enrollmentsService.getStudentGradeSummaryPage(user.idUser, idEnrollment, query);
     return this.enrollmentsService.getStudentGradeSummary(user.idUser, idEnrollment);
   }
 

@@ -1,4 +1,5 @@
-import type { ApiResponse } from '@/interfaces/apiResponse';
+import type { CatalogPageQuery } from '@/interfaces/catalog-page.interface';
+import type { PaginatedApiResponse, ApiResponse } from '@/interfaces/apiResponse';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
 import { instance } from './config/config';
 import type { IGradeSchemeCreateOrEdit } from '@/interfaces/grade-schemes/grade-scheme-edit.interface';
@@ -35,3 +36,6 @@ export const deleteGradeScheme = async (idGradeScheme: number): Promise<void> =>
 export const reactivateGradeScheme = async (idGradeScheme: number): Promise<void> => {
   await instance.patch(`/grade-schemes/reactivate/${idGradeScheme}`);
 };
+
+export const getGradeSchemesPage = async (query: CatalogPageQuery, signal?: AbortSignal) =>
+  (await instance.get<PaginatedApiResponse<IGradeScheme[]>>('/grade-schemes', { params: query, signal })).data;

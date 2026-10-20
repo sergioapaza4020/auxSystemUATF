@@ -1,3 +1,11 @@
+import { BulkOperationsService } from '../bulk-operations/bulk-operations.service';
+import { BulkOperationType, BulkOperationStatus } from '@common/enums/bulk-operation';
+import { ImportPreviewQueryDto } from 'src/dtos/bulk-operations/import-preview.dto';
+import {
+  studentImportPreviewRow,
+  studentImportSearchCondition,
+} from '@common/imports/student-import-preview';
+import type { BulkOperation } from 'src/entities/bulk-operations/bulk-operation.entity';
 import {
   BadRequestException,
   ConflictException,
@@ -31,7 +39,10 @@ const BATCH_SIZE = 500;
 
 @Injectable()
 export class EnrollmentImportService {
-  constructor(@InjectRepository(Enrollment) private readonly repository: Repository<Enrollment>) {}
+  constructor(
+    @InjectRepository(Enrollment) private readonly repository: Repository<Enrollment>,
+    private readonly bulk: BulkOperationsService,
+  ) {}
 
   async template(target: EnrollmentImportTargetDto, actor: JwtPayload): Promise<Buffer> {
     return this.handleErrors(async () => {
@@ -47,45 +58,155 @@ export class EnrollmentImportService {
   ): Promise<EnrollmentImportPreviewDto> {
     return this.handleErrors(async () => {
       await this.validateTarget(this.repository.manager, target, actor);
-      return this.validateRows(this.repository.manager, await parseEnrollmentImport(file), target);
+      const preview = await this.validateRows(
+        this.repository.manager,
+        await parseEnrollmentImport(file),
+        target,
+      );
+      const operation = await this.bulk.create(
+        {
+          type: BulkOperationType.ENROLLMENT_IMPORT,
+          metadata: { ...target, originalFileName: file?.originalname ?? '' },
+        },
+        actor.idUser,
+        preview.rows.map((row) => ({
+          rowNumber: row.row,
+          valid: row.status === 'VALID',
+          errors: row.errors,
+          data: {
+            studentId: row.studentId,
+            ru: row.ru,
+            fullName: row.fullName,
+            username: row.username,
+            email: row.email,
+          },
+        })),
+      );
+      try {
+        await this.bulk.update(operation.idBulkOperation, actor.idUser, {
+          status: BulkOperationStatus.READY,
+        });
+      } catch (cause) {
+        await this.bulk
+          .update(operation.idBulkOperation, actor.idUser, { status: BulkOperationStatus.FAILED })
+          .catch(() => undefined);
+        throw cause;
+      }
+      return this.getPreview(operation.idBulkOperation, actor);
     });
   }
 
-  async import(
-    file: Express.Multer.File | undefined,
-    target: EnrollmentImportTargetDto,
+  private async operation(operationId: string, ownerId: number) {
+    const operation = await this.bulk.getById(operationId, ownerId);
+    if (operation.type !== BulkOperationType.ENROLLMENT_IMPORT)
+      throw new NotFoundException('Enrollment import not found');
+    return operation;
+  }
+
+  private target(operation: BulkOperation): EnrollmentImportTargetDto {
+    const { courseId, semesterId } = operation.metadata ?? {};
+    if (
+      typeof courseId !== 'number' ||
+      !Number.isSafeInteger(courseId) ||
+      courseId < 1 ||
+      typeof semesterId !== 'number' ||
+      !Number.isSafeInteger(semesterId) ||
+      semesterId < 1
+    )
+      throw new InternalServerErrorException('Invalid enrollment import context');
+    return { courseId, semesterId };
+  }
+
+  async getPreview(
+    operationId: string,
     actor: JwtPayload,
-  ): Promise<EnrollmentImportResultDto> {
+    query = new ImportPreviewQueryDto(),
+  ): Promise<EnrollmentImportPreviewDto> {
+    const operation = await this.operation(operationId, actor.idUser);
+    if (operation.status !== BulkOperationStatus.READY)
+      throw new BadRequestException('Enrollment import preview is not ready');
+    await this.validateTarget(this.repository.manager, this.target(operation), actor);
+    const rows = await this.bulk.findRows(
+      operationId,
+      actor.idUser,
+      {
+        page: query.page,
+        limit: query.limit,
+        valid: query.status === 'all' ? undefined : query.status === 'valid',
+      },
+      studentImportSearchCondition(query.search),
+    );
+    return {
+      operationId,
+      total: operation.totalRows,
+      valid: operation.validRows,
+      invalid: operation.invalidRows,
+      data: rows.data.map(studentImportPreviewRow),
+      meta: rows.meta,
+    };
+  }
+
+  async status(operationId: string, actor: JwtPayload) {
+    const operation = await this.operation(operationId, actor.idUser);
+    return {
+      operationId,
+      status: operation.status,
+      total: operation.totalRows,
+      valid: operation.validRows,
+      invalid: operation.invalidRows,
+      imported: operation.processedRows,
+      failed: operation.failedRows,
+    };
+  }
+
+  async import(operationId: string, actor: JwtPayload): Promise<EnrollmentImportResultDto> {
     return this.handleErrors(async () => {
-      const rows = await parseEnrollmentImport(file);
-      // Revalidate all database state in the same transaction that performs every insert.
-      return this.repository.manager.transaction('SERIALIZABLE', async (manager) => {
-        await this.validateTarget(manager, target, actor);
-        const preview = await this.validateRows(manager, rows, target);
-        if (preview.invalid > 0)
-          throw new BadRequestException(
-            `El archivo contiene ${preview.invalid} filas inválidas. No se creó ninguna matrícula. Vuelve a revisar el archivo.`,
-          );
-        for (let offset = 0; offset < preview.rows.length; offset += BATCH_SIZE) {
-          const values = preview.rows.slice(offset, offset + BATCH_SIZE).map((row) => {
-            if (row.studentId === null) throw new BadRequestException('Estudiante no resuelto');
-            return {
-              user: { idUser: row.studentId },
-              course: { idCourse: target.courseId },
-              semester: { idSemester: target.semesterId },
-              role: CourseRelations.STUDENT,
-              createdBy: actor.idUser,
-            };
-          });
-          await manager.getRepository(Enrollment).insert(values);
-        }
-        return {
-          imported: preview.total,
-          total: preview.total,
-          courseId: target.courseId,
-          semesterId: target.semesterId,
-        };
-      });
+      const operation = await this.operation(operationId, actor.idUser);
+      if (operation.invalidRows)
+        throw new BadRequestException(
+          `El archivo contiene ${operation.invalidRows} filas inválidas. No se creó ninguna matrícula. Vuelve a revisar el archivo.`,
+        );
+      return this.bulk.executeReady(
+        operationId,
+        actor.idUser,
+        BulkOperationType.ENROLLMENT_IMPORT,
+        async (manager, persisted, rows) => {
+          const target = this.target(persisted);
+          await this.validateTarget(manager, target, actor);
+          const inputs = rows.map((row) => ({
+            row: row.rowNumber,
+            ru: studentImportPreviewRow(row).ru,
+            errors: [],
+          }));
+          const preview = await this.validateRows(manager, inputs, target);
+          if (
+            preview.invalid > 0 ||
+            preview.rows.some((row, index) => row.studentId !== rows[index].data.studentId)
+          )
+            throw new BadRequestException(
+              `El archivo contiene ${preview.invalid || 1} filas inválidas. No se creó ninguna matrícula. Vuelve a revisar el archivo.`,
+            );
+          for (let offset = 0; offset < preview.rows.length; offset += BATCH_SIZE) {
+            const values = preview.rows.slice(offset, offset + BATCH_SIZE).map((row) => {
+              if (row.studentId === null) throw new BadRequestException('Estudiante no resuelto');
+              return {
+                user: { idUser: row.studentId },
+                course: { idCourse: target.courseId },
+                semester: { idSemester: target.semesterId },
+                role: CourseRelations.STUDENT,
+                createdBy: actor.idUser,
+              };
+            });
+            await manager.getRepository(Enrollment).insert(values);
+          }
+          return {
+            imported: preview.total,
+            total: preview.total,
+            courseId: target.courseId,
+            semesterId: target.semesterId,
+          };
+        },
+      );
     });
   }
 
@@ -126,7 +247,7 @@ export class EnrollmentImportService {
     manager: EntityManager,
     inputs: EnrollmentImportInputRow[],
     target: EnrollmentImportTargetDto,
-  ): Promise<EnrollmentImportPreviewDto> {
+  ): Promise<{ total: number; valid: number; invalid: number; rows: EnrollmentImportRowDto[] }> {
     const counts = new Map<string, number>();
     for (const row of inputs) if (row.ru) counts.set(row.ru, (counts.get(row.ru) ?? 0) + 1);
     const rus = [...counts.keys()];

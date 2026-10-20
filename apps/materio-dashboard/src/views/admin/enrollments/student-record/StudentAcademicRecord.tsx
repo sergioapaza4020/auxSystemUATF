@@ -12,7 +12,7 @@ import { alpha } from '@mui/material/styles';
 
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 import type { IAssistantGradeScheme } from '@/interfaces/grade-schemes/assistant-grade-scheme.interface';
-import type { IStudentGradeSummary } from '@/interfaces/enrollments/student-grade-summary.interface';
+import type { IIndividualStudentGradeSummary } from '@/interfaces/enrollments/student-grade-summary.interface';
 import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IStudentAttendance } from '@/interfaces/attendances/attendance.interface';
 import { DEFAULT_GRADE_DISPLAY_MODE, GradeViewToggle, type GradeDisplayMode } from '../GradeViewToggle';
@@ -23,7 +23,7 @@ export interface StudentAcademicRecordProps {
   idEnrollment: number;
   enrollment: IEnrollment;
   scheme: IAssistantGradeScheme | null;
-  summary: IStudentGradeSummary;
+  summary: IIndividualStudentGradeSummary;
   grades: IGrade[];
   attendance: IStudentAttendance | null;
   attendanceError?: string | null;
@@ -57,7 +57,7 @@ export function StudentAcademicRecord({
   onManageDirect,
 }: StudentAcademicRecordProps) {
   const [mode, setMode] = useState<GradeDisplayMode>(DEFAULT_GRADE_DISPLAY_MODE);
-  const student = summary.students.find((item) => item.idEnrollment === enrollment.idEnrollment);
+  const student = summary.student;
   const baseUrl = `/dashboard/enrollments/${idEnrollment}`;
   const { user, course } = enrollment;
   const details = [...(scheme?.details ?? [])].sort((a, b) => a.order - b.order);

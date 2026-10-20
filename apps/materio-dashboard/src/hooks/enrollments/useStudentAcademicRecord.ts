@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import { getManagedEnrollment } from '@/api/enrollments.service';
+import type { IIndividualStudentGradeSummary } from '@/interfaces/enrollments/student-grade-summary.interface';
+
+import { getManagedEnrollment, getIndividualStudentGradeSummary } from '@/api/enrollments.service';
 import { getMyAssistantGradeScheme } from '@/api/assistant-grade-schemes.service';
 import { getGradesByEnrollment } from '@/api/grades.service';
 import { getStudentAttendance } from '@/api/attendances.service';
@@ -11,6 +13,7 @@ import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IStudentAttendance } from '@/interfaces/attendances/attendance.interface';
 
 interface AcademicRecord {
+  summary: IIndividualStudentGradeSummary;
   enrollment: IEnrollment;
   scheme: IAssistantGradeScheme | null;
   grades: IGrade[];
@@ -33,7 +36,9 @@ export function useStudentAcademicRecord(idEnrollment: number, studentEnrollment
 
     const load = async () => {
       try {
-        const enrollment = await getManagedEnrollment(studentEnrollmentId);
+        // Validate both route IDs before loading the individual resources.
+        const summary = await getIndividualStudentGradeSummary(idEnrollment, studentEnrollmentId);
+        const enrollment = await getManagedEnrollment(studentEnrollmentId, false);
 
         if (!enrollment) throw new Error('No se encontró la matriculación del estudiante.');
 
@@ -48,6 +53,7 @@ export function useStudentAcademicRecord(idEnrollment: number, studentEnrollment
 
         if (active) {
           setRecord({
+            summary,
             enrollment,
             scheme: scheme.value,
             grades: grades.value,

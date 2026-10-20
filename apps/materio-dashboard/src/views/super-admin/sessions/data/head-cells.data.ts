@@ -5,42 +5,42 @@ export const sessionHeadCellsData = [
   {
     id: 'idSession',
     label: '#',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'user',
     label: 'Usuario',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'browser',
     label: 'Navegador',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'os',
     label: 'Sistema Operativo',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'device',
     label: 'Dispositivo',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'ipAddress',
     label: 'Dirección IP',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'isActive',
     label: 'Estado',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'lastUsedAt',
     label: 'Última vez activo',
-    sortable: true,
+    sortable: false,
   },
   {
     id: 'actions',

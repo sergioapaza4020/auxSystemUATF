@@ -36,6 +36,14 @@ export class AttendanceRecordDto {
 }
 
 export class AttendanceSaveDto {
+  @ApiPropertyOptional({
+    enum: AttendanceStatus,
+    description: 'Apply to the entire active roster before individual overrides',
+  })
+  @IsOptional()
+  @IsEnum(AttendanceStatus)
+  markAll?: AttendanceStatus;
+
   @ApiProperty({
     type: [AttendanceRecordDto],
     example: [

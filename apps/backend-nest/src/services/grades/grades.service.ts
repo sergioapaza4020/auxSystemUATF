@@ -1,3 +1,5 @@
+import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
+import { getStudentRosterPage } from '@common/utils/student-roster';
 import {
   BadRequestException,
   ConflictException,
@@ -179,7 +181,7 @@ export class GradesService {
     }
 
     if (enrollment.user.idUser !== idUser) {
-      await this.enrollmentsService.getManagedEnrollment(idUser, idEnrollment);
+      await this.enrollmentsService.getManagedEnrollment(idUser, idEnrollment, false);
     }
 
     return this.gradeRepository.find({
@@ -258,6 +260,7 @@ export class GradesService {
     idUser: number,
     idAssistantEnrollment: number,
     detailId?: number,
+    query?: StudentRosterQueryDto,
   ): Promise<GradeMatrixDto> {
     const assistant = await this.enrollmentsService.getAssistantEnrollment(
       idUser,
@@ -289,6 +292,10 @@ export class GradesService {
       students: [],
       grades: [],
     };
+    const roster = query
+      ? await getStudentRosterPage(manager.getRepository(Enrollment), assistant, query)
+      : undefined;
+    if (roster) matrix.meta = roster.meta;
     if (!scheme) return matrix;
     const details = [...scheme.details]
       .filter((detail) => !isAttendanceCriterion(detail.gradeItem.name))
@@ -340,20 +347,22 @@ export class GradesService {
         },
         order: ACTIVITY_ORDER,
       }),
-      manager.getRepository(Enrollment).find({
-        where: {
-          course: { idCourse: assistant.course.idCourse },
-          semester: { idSemester: assistant.semester.idSemester },
-          role: CourseRelations.STUDENT,
-          isActive: true,
-        },
-        select: {
-          idEnrollment: true,
-          user: { idUser: true, name: true, lastname: true, ci: true, ru: true },
-        },
-        relations: { user: true },
-        order: { user: { lastname: 'ASC', name: 'ASC' }, idEnrollment: 'ASC' },
-      }),
+      roster
+        ? Promise.resolve(roster.data)
+        : manager.getRepository(Enrollment).find({
+            where: {
+              course: { idCourse: assistant.course.idCourse },
+              semester: { idSemester: assistant.semester.idSemester },
+              role: CourseRelations.STUDENT,
+              isActive: true,
+            },
+            select: {
+              idEnrollment: true,
+              user: { idUser: true, name: true, lastname: true, ci: true, ru: true },
+            },
+            relations: { user: true },
+            order: { user: { lastname: 'ASC', name: 'ASC' }, idEnrollment: 'ASC' },
+          }),
     ]);
     matrix.activities = activities.map((activity) => ({
       idActivity: activity.idActivity,

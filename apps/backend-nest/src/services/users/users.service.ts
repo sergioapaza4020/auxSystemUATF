@@ -145,7 +145,6 @@ export class UsersService {
         roles: {
           permissions: true,
         },
-        enrollments: true,
       },
     });
   }

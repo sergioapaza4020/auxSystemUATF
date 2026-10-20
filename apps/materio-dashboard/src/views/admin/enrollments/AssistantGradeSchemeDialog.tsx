@@ -1,5 +1,7 @@
 'use client';
 
+import { assistantGradeItemLabel, isAssistantGradeItem } from '@repo/grade-calculations/assistant-grade-items';
+
 import {
   Box,
   Button,
@@ -168,7 +170,8 @@ export function AssistantGradeSchemeDialog({
 
             <Grid item xs={12}>
               <GradeSchemeItemsEditor
-                gradeItems={gradeItems}
+                gradeItems={gradeItems.filter(isAssistantGradeItem)}
+                getGradeItemLabel={assistantGradeItemLabel}
                 details={form.details}
                 loading={loadingGradeItems}
                 totalPercentage={totalPercentage}

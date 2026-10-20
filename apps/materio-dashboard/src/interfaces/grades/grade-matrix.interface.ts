@@ -1,4 +1,7 @@
+import type { PaginationMeta } from '@/interfaces/apiResponse';
+
 export interface IGradeMatrix {
+  meta?: PaginationMeta;
   enrollment: {
     idEnrollment: number;
     idCourse: number;

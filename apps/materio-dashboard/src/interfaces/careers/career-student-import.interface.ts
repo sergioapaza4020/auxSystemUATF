@@ -1,3 +1,5 @@
+import type { ImportPreviewPage } from '../import-preview.interface';
+
 export interface ICareerStudentImportRow {
   row: number;
   studentId: number | null;
@@ -10,12 +12,7 @@ export interface ICareerStudentImportRow {
   errors: string[];
 }
 
-export interface ICareerStudentImportPreview {
-  total: number;
-  valid: number;
-  invalid: number;
-  rows: ICareerStudentImportRow[];
-}
+export interface ICareerStudentImportPreview extends ImportPreviewPage<ICareerStudentImportRow> {}
 
 export interface ICareerStudentImportResult {
   careerId: number;

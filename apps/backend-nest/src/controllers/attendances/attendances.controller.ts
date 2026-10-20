@@ -1,3 +1,4 @@
+import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
 import { StudentAttendanceResponseDto } from 'src/dtos/attendances/student-attendance-response.dto';
 import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
 import { Query } from '@nestjs/common';
@@ -44,10 +45,13 @@ export class AttendancesController {
   @Permissions('attendance.session.get-one')
   @Get('sessions/:idSession')
   async getSession(
+    @Query() query: StudentRosterQueryDto,
     @CurrentUser() user: JwtPayload,
     @Param('idSession', ParseIntPipe)
     idSession: number,
   ) {
+    if (query.page !== undefined || query.limit !== undefined || query.search !== undefined)
+      return this.attendancesService.getSessionPage(user.idUser, idSession, query);
     return this.attendancesService.getSession(user.idUser, idSession);
   }
 

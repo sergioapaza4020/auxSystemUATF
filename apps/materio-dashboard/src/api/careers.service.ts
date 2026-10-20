@@ -1,3 +1,4 @@
+import type { ImportPreviewQuery } from '@/interfaces/import-preview.interface';
 import { instance } from './config/config';
 import type { ApiResponse } from '@/interfaces/apiResponse';
 import type { ICareer, ICareerCreate, ICareerUpdate, IFacultyOption } from '@/interfaces/careers/career.interface';
@@ -9,6 +10,17 @@ import type {
 
 export const getCareers = async (status?: RecordStatus, signal?: AbortSignal): Promise<ICareer[]> =>
   (await instance.get<ApiResponse<ICareer[]>>('/careers', { params: { status }, signal })).data.data;
+
+// Keep the existing list permission and inactive-context behavior, but query only one ID.
+export const getCareerById = async (idCareer: number, signal?: AbortSignal): Promise<ICareer | null> => {
+  const response = await instance.get<ApiResponse<ICareer[]>>('/careers', {
+    params: { idCareer, status: 'all' },
+    signal,
+  });
+
+  return response.data.data[0] ?? null;
+};
+
 export const getCareerFaculties = async (): Promise<IFacultyOption[]> =>
   (await instance.get<ApiResponse<IFacultyOption[]>>('/faculties')).data.data;
 
@@ -56,10 +68,29 @@ export const previewCareerStudentImport = async (
   return response.data.data;
 };
 
-export const importCareerStudents = async (file: File, careerId: number): Promise<ICareerStudentImportResult> => {
+export const getCareerStudentImportPreviewPage = async (
+  careerId: number,
+  operationId: string,
+  query: ImportPreviewQuery,
+  signal?: AbortSignal,
+): Promise<ICareerStudentImportPreview> => {
+  const response = await instance.get<ApiResponse<ICareerStudentImportPreview>>(
+    `/careers/${careerId}/students/import/preview/${operationId}`,
+    { params: query, signal },
+  );
+
+  if (!response.data.status) throw new Error(response.data.message || 'No se pudo cargar el preview.');
+
+  return response.data.data;
+};
+
+export const importCareerStudents = async (
+  operationId: string,
+  careerId: number,
+): Promise<ICareerStudentImportResult> => {
   const response = await instance.post<ApiResponse<ICareerStudentImportResult>>(
     `/careers/${careerId}/students/import`,
-    careerStudentImportForm(file),
+    { operationId },
   );
 
   if (!response.data.status) throw new Error(response.data.message || 'No se pudo confirmar la asignación.');

@@ -18,7 +18,7 @@ import { UserRole } from '@/enums/userRole';
 
 import { useGradeItems } from '@/hooks/grade-items';
 import { useActivities } from '@/hooks/activities/useActivities';
-import { useStudentGradeSummary } from '@/hooks/enrollments/useStudentGradeSummary';
+import { useEnrollmentStudentsPage } from '@/hooks/enrollments/useEnrollmentStudentsPage';
 import { hasPermission } from '@/utils/hasPermission';
 import { useAuth } from '@/hooks/useAuth';
 import { canImportEnrollmentStudents } from '@/utils/enrollmentImportAccess';
@@ -64,9 +64,7 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
   const {
     enrollment,
     grades,
-    students,
     loadingGrades,
-    loadingStudents,
     assistantGradeScheme,
     loadingAssistantGradeScheme,
     savingAssistantGradeScheme,
@@ -100,8 +98,9 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
   const isAssistant = enrollment.role === UserRole.ASSISTANT;
   const canReadGrades = hasPermission(user, 'grade.get-by-enrollment');
 
-  const studentGrades = useStudentGradeSummary(
-    isAssistant && canReadGrades ? enrollment.idEnrollment : null,
+  const studentGrades = useEnrollmentStudentsPage(
+    isAssistant ? enrollment.idEnrollment : null,
+    canReadGrades,
     assistantGradeScheme,
   );
 
@@ -149,13 +148,14 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
               ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/import`)
               : undefined
           }
+          pagination={studentGrades}
           summary={studentGrades.summary}
           summaryLoading={studentGrades.loading}
           summaryError={studentGrades.error}
           onRetrySummary={studentGrades.reload}
           showGrades={canReadGrades}
-          students={students}
-          loading={loadingStudents}
+          students={studentGrades.students}
+          loading={studentGrades.loading}
           onSelectStudent={(student) => {
             router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/${student.idEnrollment}`);
           }}

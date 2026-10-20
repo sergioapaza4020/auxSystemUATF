@@ -71,7 +71,7 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
   const [confirm, setConfirm] = useState(false);
   const lock = useRef(false);
   const step = result ? 2 : preview ? 1 : 0;
-  const canImport = !!file && canConfirmEnrollmentImport(preview);
+  const canImport = canConfirmEnrollmentImport(preview);
 
   const run = async (action: () => Promise<void>) => {
     if (lock.current || !enrollment || !canImportEnrollmentStudents(user, enrollment)) return;
@@ -132,9 +132,9 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
   };
 
   const submit = () => {
-    if (!canImport || !file || !target || lock.current) return;
+    if (!canImport || !preview || lock.current) return;
     setConfirm(false);
-    void run(async () => setResult(await importEnrollments(file, target)));
+    void run(async () => setResult(await importEnrollments(preview.operationId)));
   };
 
   const back = (
@@ -293,7 +293,7 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
                   ? `Se encontraron ${preview.invalid} filas con errores. Corrige el archivo y vuelve a revisarlo. No se matriculará ningún estudiante mientras existan errores.`
                   : 'El archivo no contiene filas inválidas y está listo para matricular.'}
               </Alert>
-              <EnrollmentImportReviewTable rows={preview.rows} busy={busy} />
+              <EnrollmentImportReviewTable key={preview.operationId} preview={preview} busy={busy} />
               <Divider />
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent='space-between'>
                 <Button variant='outlined' disabled={busy} onClick={reset}>

@@ -12,6 +12,7 @@ import { permissionWeightToPercentage } from '@/utils/attendance-permission';
 
 interface Props {
   sessions: IAttendanceSessionSummary[];
+  summary: IAttendanceSessionSummary | null;
   selectedSessionId: number | null;
   present: number;
   excused: number;
@@ -30,7 +31,7 @@ interface Props {
 }
 
 export function AttendanceSidebar(props: Props) {
-  const summary = props.sessions.find((item) => item.idAttendanceSession === props.selectedSessionId);
+  const summary = props.summary;
   const percentage = summary?.percentage;
 
   const counts = [
@@ -135,7 +136,7 @@ export function AttendanceSidebar(props: Props) {
           </Typography>
         ) : (
           <Stack spacing={1}>
-            {props.sessions.slice(0, 5).map((item) => (
+            {props.sessions.map((item) => (
               <Box key={item.idAttendanceSession} sx={{ borderBottom: 1, borderColor: 'divider', pb: 1 }}>
                 <Stack direction='row' justifyContent='space-between' alignItems='center'>
                   <Button

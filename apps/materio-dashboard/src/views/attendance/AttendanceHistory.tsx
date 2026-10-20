@@ -27,8 +27,8 @@ import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import { attendanceStatusColor } from '@/utils/attendance-status';
 import { AttendanceStatus } from '@/enums/attendanceStatus';
 
-import { PaginationTable, type HeadCell } from '@/components/table';
-import { useDataTable } from '@/hooks/table/useDataTable';
+import { PaginationTable } from '@/components/table';
+import type { PaginationMeta } from '@/interfaces/apiResponse';
 
 interface AttendanceSession {
   idAttendanceSession: number;
@@ -40,12 +40,11 @@ interface AttendanceSession {
   percentage: number;
 }
 
-const columns = [
-  { id: 'date', label: 'Fecha', sortable: true },
-] as const satisfies readonly HeadCell<AttendanceSession>[];
-
 interface AttendanceHistoryProps {
   sessions: AttendanceSession[];
+  meta: PaginationMeta;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
   loading: boolean;
 
   selectedSessionId: number | null;
@@ -53,12 +52,15 @@ interface AttendanceHistoryProps {
   onSelectSession: (idSession: number) => void;
   onCreateSession?: () => void;
   disabled?: boolean;
-  onEditDate?: (id: number) => void;
+  onEditDate?: (id: number, date: string) => void;
   onDeleteSession?: (id: number) => void;
 }
 
 export function AttendanceHistory({
   sessions,
+  meta,
+  onPageChange,
+  onLimitChange,
   loading,
   selectedSessionId,
   onSelectSession,
@@ -67,8 +69,7 @@ export function AttendanceHistory({
   onEditDate,
   onDeleteSession,
 }: AttendanceHistoryProps) {
-  const table = useDataTable<AttendanceSession, typeof columns>(sessions, 'date', 5, { preserveOrder: true });
-  const [menu, setMenu] = useState<{ anchor: HTMLElement; sessionId: number } | null>(null);
+  const [menu, setMenu] = useState<{ anchor: HTMLElement; sessionId: number; date: string } | null>(null);
 
   const formatDate = (date: string) => {
     const [year, month, day] = date.slice(0, 10).split('-');
@@ -89,7 +90,8 @@ export function AttendanceHistory({
       </Box>
 
       <Box sx={{ p: 2 }}>
-        {loading ? (
+        {loading && <LinearProgress />}
+        {loading && !sessions.length ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <CircularProgress size={24} />
           </Box>
@@ -123,7 +125,7 @@ export function AttendanceHistory({
               </TableHead>
 
               <TableBody>
-                {table.visibleRows.map((item) => {
+                {sessions.map((item) => {
                   const percentage = item.percentage;
 
                   const selected = selectedSessionId === item.idAttendanceSession;
@@ -195,7 +197,11 @@ export function AttendanceHistory({
                               aria-haspopup='menu'
                               aria-expanded={menu?.sessionId === item.idAttendanceSession ? true : undefined}
                               onClick={(event) =>
-                                setMenu({ anchor: event.currentTarget, sessionId: item.idAttendanceSession })
+                                setMenu({
+                                  anchor: event.currentTarget,
+                                  sessionId: item.idAttendanceSession,
+                                  date: item.date,
+                                })
                               }
                             >
                               <MoreVertOutlinedIcon fontSize='small' />
@@ -211,13 +217,13 @@ export function AttendanceHistory({
           </TableContainer>
         )}
       </Box>
-      {!!sessions.length && !loading && (
+      {!!meta.total && (
         <PaginationTable
-          count={sessions.length}
-          page={table.page}
-          rowsPerPage={table.rowsPerPage}
-          onPageChange={table.handleChangePage}
-          onRowsPerPageChange={table.handleChangeRowsPerPage}
+          count={meta.total}
+          page={meta.page - 1}
+          rowsPerPage={meta.limit}
+          onPageChange={(_, page) => onPageChange(page + 1)}
+          onRowsPerPageChange={(event) => onLimitChange(Number(event.target.value))}
         />
       )}
       <Menu anchorEl={menu?.anchor} open={!!menu} onClose={() => setMenu(null)}>
@@ -235,7 +241,7 @@ export function AttendanceHistory({
           <MenuItem
             disabled={disabled}
             onClick={() => {
-              if (menu) onEditDate(menu.sessionId);
+              if (menu) onEditDate(menu.sessionId, menu.date.slice(0, 10));
               setMenu(null);
             }}
           >

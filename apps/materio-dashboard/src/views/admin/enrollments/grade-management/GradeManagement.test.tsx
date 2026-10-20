@@ -59,6 +59,8 @@ function state(extra: Partial<GradeState> = {}): GradeState {
       })),
       grades: [],
     },
+    query: { page: 1, limit: 25, search: '' },
+    changeQuery: vi.fn(),
     loading: false,
     saving: false,
     error: null,
@@ -237,7 +239,8 @@ describe('Mass grading screen interactions', () => {
     expect((table.props.activities as { idActivity: number }[]).map((activity) => activity.idActivity)).toEqual([
       11, 10,
     ]);
-    expect(table.props.firstRow).toBe(25);
+    expect(grades.changeQuery).toHaveBeenCalledWith({ page: 2 });
+    expect(table.props.firstRow).toBe((grades.query.page - 1) * grades.query.limit);
     expect(table.props.displayMode).toBe('raw');
     expect(table.props.drafts).toBe(grades.drafts);
     expect(grades.discard).not.toHaveBeenCalled();
@@ -314,12 +317,12 @@ describe('Mass grading screen interactions', () => {
 
     (find(tree, PaginationTable)[0].props.onPageChange as (event: null, page: number) => void)(null, 1);
     tree = h.render();
-    expect((find(tree, GradePlanTable)[0].props.students as { idEnrollment: number }[])[0].idEnrollment).toBe(125);
+    expect(grades.changeQuery).toHaveBeenCalledWith({ page: 2 });
     (find(tree, TextField)[0].props.onChange as (event: { target: { value: string } }) => void)({
       target: { value: 'RU0' },
     });
     tree = h.render();
-    expect(find(tree, GradePlanTable)[0].props.students as unknown[]).toHaveLength(1);
+    expect(grades.changeQuery).toHaveBeenCalledWith({ search: 'RU0' });
     (find(tree, ToggleButtonGroup)[0].props.onChange as (event: null, value: string) => void)(null, 'activity');
     tree = h.render();
     expect(find(tree, TextField).some((element) => element.props.label === 'Actividad')).toBe(true);

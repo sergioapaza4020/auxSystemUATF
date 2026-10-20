@@ -1,7 +1,7 @@
 'use client';
 
 // React Imports
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 // Next Imports
@@ -54,11 +54,12 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const submitLocked = useRef(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (isLoading) return;
+    if (submitLocked.current) return;
 
     const data = new FormData(e.currentTarget);
 
@@ -72,6 +73,8 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
     }
 
     try {
+      // Lock synchronously, including submits before React renders the disabled controls.
+      submitLocked.current = true;
       setIsLoading(true);
 
       await apiLogin({
@@ -79,11 +82,12 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
         password,
       });
 
-      router.push('/dashboard');
+      // Keep the form locked until navigation unmounts Login.
+      router.replace('/dashboard');
     } catch (error) {
-      snackbar.error(getApiErrorMessage(error));
-    } finally {
+      submitLocked.current = false;
       setIsLoading(false);
+      snackbar.error(getApiErrorMessage(error));
     }
   };
 
@@ -255,7 +259,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
             </Box>
 
             {/* Formulario */}
-            <Box component='form' noValidate autoComplete='off' onSubmit={handleSubmit}>
+            <Box component='form' noValidate autoComplete='on' onSubmit={handleSubmit}>
               <Stack spacing={2.5}>
                 {/* Usuario */}
                 <TextField
@@ -264,6 +268,8 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                   required
                   id='username'
                   name='username'
+                  type='text'
+                  autoComplete='username'
                   label='Usuario'
                   placeholder='Ingresa tu usuario'
                   disabled={isLoading}
@@ -287,6 +293,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                   required
                   id='password'
                   name='password'
+                  autoComplete='current-password'
                   label='Contraseña'
                   placeholder='Ingresa tu contraseña'
                   type={showPassword ? 'text' : 'password'}
@@ -299,7 +306,12 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                     ),
                     endAdornment: (
                       <InputAdornment position='end'>
-                        <IconButton edge='end' type='button' onClick={() => setShowPassword((current) => !current)}>
+                        <IconButton
+                          edge='end'
+                          type='button'
+                          disabled={isLoading}
+                          onClick={() => setShowPassword((current) => !current)}
+                        >
                           {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
                         </IconButton>
                       </InputAdornment>

@@ -253,3 +253,44 @@ describe('Mass grading lifecycle', () => {
     expect(saveActivityGrades).not.toHaveBeenCalled();
   });
 });
+
+it('preserves dirty values across remote pages, saves every page and resets criterion/search pagination', async () => {
+  vi.mocked(getGradeMatrix).mockImplementation(async (_id, _detail, _signal, query) => ({
+    ...matrix,
+    students: [{ ...matrix.students[0], idEnrollment: query?.page === 2 ? 200 : 100 }],
+    meta: { page: query?.page ?? 1, limit: 25, total: 50, totalPages: 2 },
+  }));
+  const h = harness();
+
+  h.render();
+  await settle();
+  h.render().edit('100:10', '75');
+  h.render().changeQuery({ page: 2 });
+  h.render();
+  await settle();
+  h.render().edit('200:10', '85');
+  h.render().changeQuery({ page: 1 });
+  h.render();
+  await settle();
+  expect(h.render().drafts['100:10']).toBe('75');
+  expect(h.render().matrix?.activities).toHaveLength(1);
+  expect(h.render().matrix?.meta?.total).toBe(50);
+  vi.mocked(saveActivityGrades).mockResolvedValue([
+    { idGrade: 1, enrollmentId: 100, activityId: 10, score: 75 },
+    { idGrade: 2, enrollmentId: 200, activityId: 10, score: 85 },
+  ]);
+  await h.render().save();
+  expect(saveActivityGrades).toHaveBeenCalledWith(1, [
+    { enrollmentId: 100, activityId: 10, score: 75 },
+    { enrollmentId: 200, activityId: 10, score: 85 },
+  ]);
+  expect(h.render().changes).toHaveLength(0);
+  h.render().changeQuery({ page: 2 });
+  h.render().selectCriterion(3);
+  expect(h.render().query.page).toBe(1);
+  vi.stubGlobal('window', { setTimeout, clearTimeout });
+  h.render().changeQuery({ page: 2 });
+  h.render().changeQuery({ search: 'Ana' });
+  expect(h.render().query.page).toBe(1);
+  h.unmount();
+});

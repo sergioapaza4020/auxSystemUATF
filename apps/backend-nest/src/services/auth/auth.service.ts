@@ -9,6 +9,7 @@ import { User } from 'src/entities/users/users.entity';
 import { SessionsService } from '../sessions/sessions.service';
 import { Request } from 'express';
 import { UAParser } from 'ua-parser-js';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class AuthService {
@@ -35,7 +36,8 @@ export class AuthService {
     const user = await this.validateUser(loginDto);
 
     const refreshToken = this.jwtService.sign(
-      { idUser: user.idUser },
+      // Put session entropy first: bcrypt only compares the first 72 bytes of a token.
+      { jti: randomUUID(), idUser: user.idUser },
       {
         secret: process.env.JWT_ACCESS_REFRESH,
         expiresIn: process.env.JWT_ACCESS_REFRESH_EXPIRES_IN as number | undefined,

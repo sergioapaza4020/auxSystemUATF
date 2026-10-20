@@ -23,6 +23,10 @@ import {
   Typography,
 } from '@mui/material';
 
+import { useCatalogPage } from '@/hooks/useCatalogPage';
+import { PaginationTable } from '@/components/table';
+import { useDataTable } from '@/hooks/table';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/hooks/useSnackbar';
 
@@ -38,7 +42,7 @@ import {
   updateCareer,
 } from '@/api/careers.service';
 
-import { createCourse, deactivateCourse, getCourses, reactivateCourse, updateCourse } from '@/api/courses.service';
+import { createCourse, deactivateCourse, getCoursesPage, reactivateCourse, updateCourse } from '@/api/courses.service';
 
 import type { ICareer, ICareerCreate } from '@/interfaces/careers/career.interface';
 
@@ -53,6 +57,7 @@ import type { RecordStatus } from '@/interfaces/status-query.interface';
 type Kind = 'careers' | 'courses';
 
 type RecordItem = ICareer | ICourse;
+const courseColumns = [{ id: 'code', label: 'Código', sortable: true }] as const;
 
 export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
   const router = useRouter();
@@ -82,12 +87,25 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
   const [members, setMembers] = useState<IUser[]>([]);
 
   const can = (action: string) => hasPermission(user, `${prefix}.${action}`);
+  const canRead = can('get-all');
+  const courses = useCatalogPage(getCoursesPage, kind === 'courses' && !authLoading && canRead);
+  const { reload: reloadCourses } = courses;
+
+  const courseTable = useDataTable<ICourse, typeof courseColumns>(courses.rows, 'code', 5, {
+    remote: { page: courses.query.page, limit: courses.query.limit, changeQuery: courses.changeQuery },
+  });
 
   const load = useCallback(async () => {
+    if (kind === 'courses') {
+      await reloadCourses();
+
+      return;
+    }
+
     setLoading(true);
 
     try {
-      setRecords(await (kind === 'careers' ? getCareers('all') : getCourses('all')));
+      setRecords(await getCareers('all'));
 
       if (kind === 'careers') {
         setFaculty(await getCareerFaculties());
@@ -97,13 +115,13 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
     } finally {
       setLoading(false);
     }
-  }, [kind, snackbar]);
+  }, [kind, snackbar, reloadCourses]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (kind === 'careers' && !authLoading && canRead) void load();
+  }, [load, authLoading, canRead, kind]);
 
-  const filtered = useMemo(
+  const localFiltered = useMemo(
     () =>
       records.filter((item) => {
         const text =
@@ -119,6 +137,9 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
       }),
     [records, search, status, kind],
   );
+
+  const filtered = kind === 'courses' ? courseTable.visibleRows : localFiltered;
+  const tableLoading = kind === 'courses' ? courses.loading : loading;
 
   const open = (item: RecordItem | null) => {
     setEditor(item);
@@ -218,7 +239,7 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
     return <Typography>Cargando…</Typography>;
   }
 
-  if (!can('get-all')) {
+  if (!canRead) {
     return <Alert severity='warning'>No tienes permiso para consultar este catálogo.</Alert>;
   }
 
@@ -235,16 +256,17 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
       </Stack>
 
       <CatalogToolbar
-        search={search}
+        search={kind === 'courses' ? courses.query.search : search}
         searchLabel={kind === 'careers' ? 'Buscar carrera' : 'Buscar código, nombre o grupo'}
-        onSearch={setSearch}
-        status={status as RecordStatus}
-        onStatus={setStatus}
+        onSearch={(value) => (kind === 'courses' ? courses.changeQuery({ search: value }) : setSearch(value))}
+        status={kind === 'courses' ? courses.query.status : (status as RecordStatus)}
+        onStatus={(value) => (kind === 'courses' ? courses.changeQuery({ status: value }) : setStatus(value))}
         onReload={() => void load()}
-        disabled={loading || busy}
+        disabled={busy || (kind === 'careers' && loading)}
       />
 
-      {loading ? (
+      {kind === 'courses' && courses.error && <Alert severity='error'>{courses.error}</Alert>}
+      {tableLoading ? (
         <Typography sx={{ p: 4 }}>Cargando…</Typography>
       ) : (
         <Paper>
@@ -318,6 +340,15 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
               )}
             </TableBody>
           </Table>
+          {kind === 'courses' && (
+            <PaginationTable
+              count={courses.meta.total}
+              page={courses.query.page - 1}
+              rowsPerPage={courses.query.limit}
+              onPageChange={(_, page) => courses.changeQuery({ page: page + 1 })}
+              onRowsPerPageChange={(event) => courses.changeQuery({ limit: Number(event.target.value) })}
+            />
+          )}
         </Paper>
       )}
 

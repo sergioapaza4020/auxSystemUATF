@@ -136,7 +136,7 @@ const LoginBrandPanel = () => {
             color: 'common.white',
           }}
         >
-          Sistema Auxiliares
+          Sistema de Auxiliares de Docencia
           <br />
           UATF
         </Typography>

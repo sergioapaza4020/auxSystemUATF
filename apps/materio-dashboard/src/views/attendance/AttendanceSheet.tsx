@@ -31,6 +31,9 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 
+import type { PaginationMeta } from '@/interfaces/apiResponse';
+import type { StudentRosterQuery } from '@/api/enrollments.service';
+
 import { attendanceStatusColor } from '@/utils/attendance-status';
 import { permissionWeightToPercentage } from '@/utils/attendance-permission';
 
@@ -46,6 +49,11 @@ const columns = [
 
 interface AttendanceSheetProps {
   students: IEnrollmentStudent[];
+  pagination?: {
+    meta: PaginationMeta;
+    query: StudentRosterQuery;
+    changeQuery: (patch: Partial<StudentRosterQuery>) => void;
+  };
   totalStudents: number;
   attendance: Record<number, AttendanceStatus>;
   observations?: Record<number, string | null>;
@@ -60,6 +68,7 @@ interface AttendanceSheetProps {
   absentCount: number;
   hasChanges: boolean;
   modifiedStudentIds: number[];
+  markAllActive?: boolean;
   permissionWeight: number | null;
   permissionWeightLoading: boolean;
   permissionWeightError: boolean;
@@ -73,6 +82,7 @@ interface AttendanceSheetProps {
 
 export function AttendanceSheet({
   students,
+  pagination,
   totalStudents,
   attendance,
   observations = {},
@@ -87,6 +97,7 @@ export function AttendanceSheet({
   absentCount,
   hasChanges,
   modifiedStudentIds,
+  markAllActive = false,
   permissionWeight,
   permissionWeightLoading,
   permissionWeightError,
@@ -242,13 +253,19 @@ export function AttendanceSheet({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  table.visibleRows.map((student, index) => (
+                  (pagination ? students : table.visibleRows).map((student, index) => (
                     <AttendanceStudentRow
                       key={student.idEnrollment}
-                      number={table.page * table.rowsPerPage + index + 1}
+                      number={
+                        (pagination
+                          ? (pagination.query.page - 1) * pagination.query.limit
+                          : table.page * table.rowsPerPage) +
+                        index +
+                        1
+                      }
                       student={student}
                       status={attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT}
-                      modified={modifiedStudentIds.includes(student.idEnrollment)}
+                      modified={markAllActive || modifiedStudentIds.includes(student.idEnrollment)}
                       observation={observations[student.idEnrollment]}
                       onEditObservation={onChangeObservation ? () => setObservationStudent(student) : undefined}
                       disabled={saving || readOnly}
@@ -261,11 +278,17 @@ export function AttendanceSheet({
           </TableContainer>
           {students.length > 0 && (
             <PaginationTable
-              count={students.length}
-              page={table.page}
-              rowsPerPage={table.rowsPerPage}
-              onPageChange={table.handleChangePage}
-              onRowsPerPageChange={table.handleChangeRowsPerPage}
+              count={pagination?.meta.total ?? students.length}
+              page={pagination ? pagination.query.page - 1 : table.page}
+              rowsPerPage={pagination?.query.limit ?? table.rowsPerPage}
+              onPageChange={
+                pagination ? (_, page) => pagination.changeQuery({ page: page + 1 }) : table.handleChangePage
+              }
+              onRowsPerPageChange={
+                pagination
+                  ? (event) => pagination.changeQuery({ limit: Number(event.target.value) })
+                  : table.handleChangeRowsPerPage
+              }
             />
           )}
         </>
@@ -302,7 +325,7 @@ export function AttendanceSheet({
             )}
             <Typography variant='body2' color='text.secondary'>
               {hasChanges
-                ? `${modifiedStudentIds.length} ${modifiedStudentIds.length === 1 ? 'estudiante modificado' : 'estudiantes modificados'}`
+                ? `${markAllActive ? totalStudents : modifiedStudentIds.length} ${(markAllActive ? totalStudents : modifiedStudentIds.length) === 1 ? 'estudiante modificado' : 'estudiantes modificados'}`
                 : 'Sin cambios pendientes'}
             </Typography>
           </Stack>

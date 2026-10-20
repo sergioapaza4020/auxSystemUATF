@@ -1,13 +1,13 @@
 'use client';
 
-import { Paper, Table, TableBody, TableContainer } from '@mui/material';
+import { useEffect, useRef } from 'react';
+
+import { LinearProgress, Paper, Table, TableBody, TableContainer, TableHead, TableRow, TableCell } from '@mui/material';
 
 import { revokeSessionById } from '@/api/sessions.service';
-import type { ISession } from '@/interfaces/sessions/session.interface';
 
 import { sessionHeadCellsData } from '@/views/super-admin/sessions/data/head-cells.data';
 
-import { EnhancedTableHead } from '@/components/table/components/HeaderTable';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import { PaginationTable } from '@/components/table/components/PaginationTable';
 import { SessionRow } from './components/SessionRow';
@@ -15,27 +15,23 @@ import { SessionRow } from './components/SessionRow';
 import { useAuth } from '@/hooks/useAuth';
 import { useDialog } from '@/hooks/useDialog';
 
-import { useDataTable } from '@/hooks/table';
+import { useSnackbar } from '@/hooks/useSnackbar';
 import { useSessions } from '@/hooks/sessions';
 
 export const SessionsTable = () => {
   const { user } = useAuth();
   const dialog = useDialog();
 
-  const { sessions, loading, load } = useSessions();
+  const { sessions, loading, load, meta, error, changeQuery } = useSessions();
+  const snackbar = useSnackbar();
+  const notification = useRef(snackbar);
 
-  const {
-    order,
-    orderBy,
-    page,
-    rowsPerPage,
-    visibleRows,
-    handleRequestSort,
-    handleChangePage,
-    handleChangeRowsPerPage,
-  } = useDataTable<ISession, typeof sessionHeadCellsData>(sessions, 'idSession');
+  notification.current = snackbar;
+  useEffect(() => {
+    if (error) notification.current.error(error);
+  }, [error]);
 
-  if (loading) return <LoadingTable />;
+  if (loading && !sessions.length) return <LoadingTable />;
 
   const handleOpenDeleteButton = async (idSession: number) => {
     const confirmed = await dialog.confirm({
@@ -48,7 +44,7 @@ export const SessionsTable = () => {
     try {
       await revokeSessionById(idSession);
 
-      await load();
+      load();
 
       await dialog.success('Sesión revocada con éxito');
     } catch (error) {
@@ -60,16 +56,32 @@ export const SessionsTable = () => {
 
   return (
     <Paper sx={{ width: '100%', mb: 2 }}>
+      {loading && <LinearProgress />}
       <TableContainer>
-        <Table sx={{ minWidth: 750 }} aria-label='sessions-table'>
-          <EnhancedTableHead<ISession, typeof sessionHeadCellsData>
-            headCells={sessionHeadCellsData}
-            order={order}
-            orderBy={orderBy}
-            onRequestSort={handleRequestSort}
-          />
+        <Table sx={{ minWidth: 750 }} aria-label='sessions-table' aria-busy={loading}>
+          <TableHead>
+            <TableRow>
+              {sessionHeadCellsData.map((column) => (
+                <TableCell
+                  key={column.id}
+                  sx={{
+                    py: 2,
+                    bgcolor: 'action.hover',
+                    color: 'text.secondary',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  {column.label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
           <TableBody>
-            {visibleRows.map((session) => (
+            {sessions.map((session) => (
               <SessionRow
                 key={session.idSession}
                 session={session}
@@ -80,11 +92,11 @@ export const SessionsTable = () => {
         </Table>
       </TableContainer>
       <PaginationTable
-        count={sessions.length}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
+        count={meta.total}
+        page={meta.page - 1}
+        rowsPerPage={meta.limit}
+        onPageChange={(_, page) => changeQuery({ page: page + 1 })}
+        onRowsPerPageChange={(event) => changeQuery({ limit: Number(event.target.value) })}
       />
     </Paper>
   );

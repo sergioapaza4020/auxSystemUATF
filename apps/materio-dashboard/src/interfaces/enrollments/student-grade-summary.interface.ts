@@ -11,3 +11,8 @@ export interface IStudentGradeSummary {
     assistantContribution: number | null;
   }[];
 }
+
+export interface IIndividualStudentGradeSummary {
+  scheme: IStudentGradeSummary['scheme'];
+  student: IStudentGradeSummary['students'][number];
+}

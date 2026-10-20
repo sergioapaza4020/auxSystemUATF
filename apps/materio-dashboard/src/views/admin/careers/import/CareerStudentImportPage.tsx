@@ -67,7 +67,7 @@ export function CareerStudentImportPage({ careerId }: { careerId: number }) {
   const [confirm, setConfirm] = useState(false);
   const lock = useRef(false);
   const step = result ? 2 : preview ? 1 : 0;
-  const canImport = !!file && canConfirmCareerStudentImport(preview);
+  const canImport = canConfirmCareerStudentImport(preview);
 
   const run = async (action: () => Promise<void>) => {
     if (lock.current || !career || !allowed || !career.isActive) return;
@@ -123,9 +123,9 @@ export function CareerStudentImportPage({ careerId }: { careerId: number }) {
   };
 
   const submit = () => {
-    if (!canImport || !file || lock.current) return;
+    if (!canImport || !preview || lock.current) return;
     setConfirm(false);
-    void run(async () => setResult(await importCareerStudents(file, careerId)));
+    void run(async () => setResult(await importCareerStudents(preview.operationId, careerId)));
   };
 
   const back = (
@@ -284,7 +284,12 @@ export function CareerStudentImportPage({ careerId }: { careerId: number }) {
                   ? `Se encontraron ${preview.invalid} filas con errores. Corrige el archivo y vuelve a revisarlo. No se asignará ningún estudiante mientras existan errores.`
                   : 'El archivo no contiene filas inválidas y está listo para asignar.'}
               </Alert>
-              <CareerStudentImportReviewTable rows={preview.rows} busy={busy} />
+              <CareerStudentImportReviewTable
+                key={preview.operationId}
+                preview={preview}
+                careerId={careerId}
+                busy={busy}
+              />
               <Divider />
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent='space-between'>
                 <Button variant='outlined' disabled={busy} onClick={reset}>

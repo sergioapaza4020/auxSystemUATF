@@ -1,3 +1,4 @@
+import type { ImportPreviewPage } from '../bulk-operations/import-preview.dto';
 import { Type } from 'class-transformer';
 import { IsInt, Max, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -23,12 +24,7 @@ export class CareerStudentImportRowDto {
   errors: string[];
 }
 
-export class CareerStudentImportPreviewDto {
-  total: number;
-  valid: number;
-  invalid: number;
-  rows: CareerStudentImportRowDto[];
-}
+export type CareerStudentImportPreviewDto = ImportPreviewPage<CareerStudentImportRowDto>;
 
 export class CareerStudentImportResultDto {
   imported: number;

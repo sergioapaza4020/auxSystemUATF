@@ -5,6 +5,7 @@ import * as React from 'react';
 
 // MUI Imports
 import {
+  Alert,
   Box,
   Button,
   InputAdornment,
@@ -41,8 +42,6 @@ import { useDataTable } from '@/hooks/table';
 
 import { useGradeSchemes, useGradeSchemeEditor, useGradeSchemeMutations } from '@/hooks/grade-schemes';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
-
 export const GradeSchemesTable = () => {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
@@ -50,11 +49,9 @@ export const GradeSchemesTable = () => {
 
   const dialog = useDialog();
 
-  const [search, setSearch] = React.useState('');
-
-  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('all');
-
-  const { gradeSchemes, loading, load: loadGS } = useGradeSchemes();
+  const { gradeSchemes, loading, error, query, meta, changeQuery, load: loadGS } = useGradeSchemes();
+  const search = query.search;
+  const statusFilter = query.status;
 
   const {
     create: createGS,
@@ -86,44 +83,19 @@ export const GradeSchemesTable = () => {
     }
   };
 
-  /*
-   * Búsqueda + filtro.
-   *
-   * useMemo evita recalcular innecesariamente
-   * al renderizar diálogos u otros estados.
-   */
-  const filteredGradeSchemes = React.useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+  const { page, rowsPerPage, visibleRows, handleChangePage, handleChangeRowsPerPage } = useDataTable<
+    IGradeScheme,
+    typeof gradeSchemeHeadCellsData
+  >(gradeSchemes, 'idGradeScheme', 5, {
+    remote: { page: query.page, limit: query.limit, changeQuery },
+  });
 
-    return gradeSchemes.filter((gradeScheme) => {
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        gradeScheme.name.toLowerCase().includes(normalizedSearch) ||
-        gradeScheme.description?.toLowerCase().includes(normalizedSearch);
+  const order = query.sortOrder === 'ASC' ? 'asc' : 'desc';
+  const orderBy = query.sortBy ?? 'idGradeScheme';
 
-      const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && gradeScheme.isActive) ||
-        (statusFilter === 'inactive' && !gradeScheme.isActive);
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [gradeSchemes, search, statusFilter]);
-
-  const {
-    order,
-    orderBy,
-    page,
-    rowsPerPage,
-    visibleRows,
-    handleRequestSort,
-    handleChangePage,
-    handleChangeRowsPerPage,
-  } = useDataTable<IGradeScheme, typeof gradeSchemeHeadCellsData>(filteredGradeSchemes, 'idGradeScheme');
-
-  if (loading) {
-    return <LoadingTable />;
-  }
+  const handleRequestSort = (_: React.MouseEvent<unknown>, property: 'idGradeScheme' | 'name' | 'isActive') => {
+    changeQuery({ sortBy: property, sortOrder: orderBy === property && order === 'asc' ? 'DESC' : 'ASC' });
+  };
 
   const handleOpenDeleteButton = async (name: string, idGradeScheme: number) => {
     const confirmed = await dialog.confirm({
@@ -191,6 +163,7 @@ export const GradeSchemesTable = () => {
         </Button>
       </Stack>
 
+      {error && <Alert severity='error'>{error}</Alert>}
       {/* Tabla */}
       <Paper
         variant='outlined'
@@ -227,7 +200,9 @@ export const GradeSchemesTable = () => {
           <TextField
             size='small'
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              changeQuery({ search: event.target.value });
+            }}
             placeholder='Buscar esquemas de notas...'
             sx={{
               width: {
@@ -249,7 +224,9 @@ export const GradeSchemesTable = () => {
             select
             size='small'
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+            onChange={(event) => {
+              changeQuery({ status: event.target.value as 'all' | 'active' | 'inactive' });
+            }}
             sx={{
               width: {
                 xs: '100%',
@@ -276,7 +253,7 @@ export const GradeSchemesTable = () => {
               },
             }}
           >
-            {filteredGradeSchemes.length} {filteredGradeSchemes.length === 1 ? 'resultado' : 'resultados'}
+            {meta.total} {meta.total === 1 ? 'resultado' : 'resultados'}
           </Typography>
         </Stack>
 
@@ -304,7 +281,13 @@ export const GradeSchemesTable = () => {
             />
 
             <TableBody>
-              {visibleRows.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6}>
+                    <LoadingTable />
+                  </td>
+                </tr>
+              ) : visibleRows.length > 0 ? (
                 visibleRows.map((gradeScheme) => (
                   <GradeSchemeRow
                     key={gradeScheme.idGradeScheme}
@@ -364,7 +347,7 @@ export const GradeSchemesTable = () => {
         </TableContainer>
 
         <PaginationTable
-          count={filteredGradeSchemes.length}
+          count={meta.total}
           page={page}
           rowsPerPage={rowsPerPage}
           onPageChange={handleChangePage}

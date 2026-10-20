@@ -45,7 +45,33 @@ const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) =
 
 const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
   const theme = useTheme();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const can = (permission: string) => !loading && hasPermission(user, permission);
+
+  const visible = {
+    permissions: can('permission.get-all'),
+    sessions: can('session.get-all'),
+    roles: can('role.get-all'),
+    faculties: can('faculty.get-all'),
+    careers: can('career.get-all'),
+    courses: can('course.get-all'),
+    semesters: can('semester.get-all'),
+    users: can('user.get-all'),
+    gradeItems: can('grade-item.get-all'),
+    gradeSchemes: can('grade-scheme.get-all'),
+    enrollments: can('enrollment.get-all'),
+  };
+
+  const showSuperAdministration =
+    visible.permissions ||
+    visible.sessions ||
+    visible.roles ||
+    visible.faculties ||
+    visible.careers ||
+    visible.courses ||
+    visible.semesters;
+
+  const showAdministration = visible.users || visible.gradeItems || visible.gradeSchemes || visible.enrollments;
 
   const { isBreakpointReached, transitionDuration } = useVerticalNav();
 
@@ -92,61 +118,73 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
           </MenuItem>
 
           {/* SUPER ADMIN */}
-          <MenuSection label='Super Admininistración'>
-            {hasPermission(user, 'permission.get-all') && (
-              <MenuItem href='/dashboard/super-admin/permissions' icon={<i className='ri-key-2-line' />}>
-                Permisos
-              </MenuItem>
-            )}
-            <MenuItem href='/dashboard/super-admin/sessions' icon={<i className='ri-shield-user-line' />}>
-              Sesiones
-            </MenuItem>
+          {showSuperAdministration && (
+            <MenuSection label='Super Admininistración'>
+              {visible.permissions && (
+                <MenuItem href='/dashboard/super-admin/permissions' icon={<i className='ri-key-2-line' />}>
+                  Permisos
+                </MenuItem>
+              )}
+              {visible.sessions && (
+                <MenuItem href='/dashboard/super-admin/sessions' icon={<i className='ri-shield-user-line' />}>
+                  Sesiones
+                </MenuItem>
+              )}
 
-            <MenuItem href='/dashboard/super-admin/roles' icon={<i className='ri-user-settings-line' />}>
-              Roles
-            </MenuItem>
-            {hasPermission(user, 'faculty.get-all') && (
-              <MenuItem href='/dashboard/admin/faculties' icon={<i className='ri-community-line' />}>
-                Facultades
-              </MenuItem>
-            )}
-            {hasPermission(user, 'career.get-all') && (
-              <MenuItem href='/dashboard/admin/careers' icon={<i className='ri-bookmark-3-line' />}>
-                Carreras
-              </MenuItem>
-            )}
-            {hasPermission(user, 'course.get-all') && (
-              <MenuItem href='/dashboard/admin/courses' icon={<i className='ri-book-2-line' />}>
-                Cursos
-              </MenuItem>
-            )}
-            {hasPermission(user, 'semester.get-all') && (
-              <MenuItem href='/dashboard/admin/semesters' icon={<i className='ri-calendar-line' />}>
-                Semestres
-              </MenuItem>
-            )}
-          </MenuSection>
+              {visible.roles && (
+                <MenuItem href='/dashboard/super-admin/roles' icon={<i className='ri-user-settings-line' />}>
+                  Roles
+                </MenuItem>
+              )}
+              {visible.faculties && (
+                <MenuItem href='/dashboard/admin/faculties' icon={<i className='ri-community-line' />}>
+                  Facultades
+                </MenuItem>
+              )}
+              {visible.careers && (
+                <MenuItem href='/dashboard/admin/careers' icon={<i className='ri-bookmark-3-line' />}>
+                  Carreras
+                </MenuItem>
+              )}
+              {visible.courses && (
+                <MenuItem href='/dashboard/admin/courses' icon={<i className='ri-book-2-line' />}>
+                  Cursos
+                </MenuItem>
+              )}
+              {visible.semesters && (
+                <MenuItem href='/dashboard/admin/semesters' icon={<i className='ri-calendar-line' />}>
+                  Semestres
+                </MenuItem>
+              )}
+            </MenuSection>
+          )}
 
           {/* ADMINISTRACIÓN */}
-          <MenuSection label='Administración'>
-            {hasPermission(user, 'user.get-all') && (
-              <MenuItem href='/dashboard/super-admin/users' icon={<i className='ri-user-line' />}>
-                Usuarios
-              </MenuItem>
-            )}
-            {hasPermission(user, 'grade-item.get-all') && (
-              <MenuItem href='/dashboard/admin/grade-items' icon={<i className='ri-list-check' />}>
-                Ítems de calificación
-              </MenuItem>
-            )}
-            <MenuItem href='/dashboard/admin/grade-schemes' icon={<i className='ri-file-list-3-line' />}>
-              Formas de calificar
-            </MenuItem>
+          {showAdministration && (
+            <MenuSection label='Administración'>
+              {visible.users && (
+                <MenuItem href='/dashboard/super-admin/users' icon={<i className='ri-user-line' />}>
+                  Usuarios
+                </MenuItem>
+              )}
+              {visible.gradeItems && (
+                <MenuItem href='/dashboard/admin/grade-items' icon={<i className='ri-list-check' />}>
+                  Ítems de calificación
+                </MenuItem>
+              )}
+              {visible.gradeSchemes && (
+                <MenuItem href='/dashboard/admin/grade-schemes' icon={<i className='ri-file-list-3-line' />}>
+                  Formas de calificar
+                </MenuItem>
+              )}
 
-            <MenuItem href='/dashboard/admin/enrollments' icon={<i className='ri-group-line' />}>
-              Matriculaciones
-            </MenuItem>
-          </MenuSection>
+              {visible.enrollments && (
+                <MenuItem href='/dashboard/admin/enrollments' icon={<i className='ri-group-line' />}>
+                  Matriculaciones
+                </MenuItem>
+              )}
+            </MenuSection>
+          )}
         </Menu>
 
         {/* Información inferior */}
@@ -167,7 +205,7 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
               lineHeight: 1.5,
             }}
           >
-            Sistema Auxiliares UATF
+            Sistema de Gestión de Auxiliaturas de Docencia
           </Typography>
         </Box>
       </Box>

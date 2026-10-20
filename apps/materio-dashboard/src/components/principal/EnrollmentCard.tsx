@@ -14,13 +14,13 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 // Type Imports
-import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
+import type { IMyEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 
 // Enum Imports
 import { UserRole } from '@/enums/userRole';
 
 interface EnrollmentCardProps {
-  enrollment: IEnrollment;
+  enrollment: IMyEnrollment;
 }
 
 export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {

@@ -81,6 +81,10 @@ function recordState(): ReturnType<typeof useStudentAcademicRecord> {
           },
         ],
       },
+      summary: {
+        scheme: { idGradeScheme: 1, assistantPercentage: 20, details: [] },
+        student: { idEnrollment: 10, details: [], totalRaw: null, assistantContribution: null },
+      },
       grades: [],
       attendance: null,
       attendanceError: null,
@@ -140,11 +144,16 @@ describe('Academic record page integration', () => {
     expect(renderToStaticMarkup(<Page />)).toContain('Fallo de carga');
     expect(renderToStaticMarkup(<Page />)).toContain('Reintentar');
   });
-  it('rejects a student not in the parent enrollment summary', () => {
-    const state = summaryState();
+  it('renders from direct route IDs without querying the group summary', () => {
+    expect(renderToStaticMarkup(<Page />)).toContain('Juan');
+    expect(mocks.record).toHaveBeenCalledWith(7, 10, false);
+    expect(mocks.summary).not.toHaveBeenCalled();
+  });
+  it('rejects an unexpected student identity', () => {
+    const state = recordState();
 
-    state.summary!.students = [];
-    mocks.summary.mockReturnValue(state);
+    state.record!.summary.student.idEnrollment = 99;
+    mocks.record.mockReturnValue(state);
     expect(renderToStaticMarkup(<Page />)).toContain('No se encontró al estudiante en esta materia');
   });
   it('hides Matrix action without both edit permissions', () => {
