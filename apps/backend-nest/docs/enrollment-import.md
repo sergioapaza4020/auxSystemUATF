@@ -1,121 +1,103 @@
-# Importación de matrículas de estudiantes existentes
+# Importación de estudiantes y matrículas
 
-## Modelo y destino
+## Destino y autorización
 
-`Enrollment` relaciona `User`, `Course` y `Semester`. El estudiante es un usuario
-activo con rol `STUDENT` activo; no existe una entidad Student independiente.
-`Course.group` identifica el grupo/paralelo y `Semester` contiene gestión y periodo.
-El destino es, por tanto, `courseId + semesterId`, no solamente la materia.
-No se crea ninguna oferta, usuario, rol, carrera, nota ni asistencia.
+La importación pertenece a `courseId + semesterId`. Los endpoints existentes requieren
+`enrollment.create`, autenticación y ownership de la operación. Un ASSISTANT sin
+ADMIN/SUPERADMIN necesita matrícula ASSISTANT activa en ese mismo destino.
+No se otorgan permisos globales de usuarios ni se aceptan roles desde Excel.
+El destino se guarda en BulkOperation y se revalida al confirmar.
 
-No existe un catálogo de ofertas habilitadas por periodo ni un estado de cierre
-de matrícula. Se exige materia y semestre activos, como en el CRUD existente.
-Las fechas del semestre no se usan como ventana de inscripción: el CRUD actual
-tampoco aplica esa regla. La relación antigua `UserCourse` no contiene periodo
-y no se utiliza en este proceso.
+## Plantillas
 
-## API
+La plantilla nueva contiene, en este orden:
 
-Todos los endpoints requieren autenticación y `enrollment.create` mediante los
-guards globales. Se conserva el bypass de SUPERADMIN. Un actor con rol ASSISTANT,
-sin ADMIN/SUPERADMIN, debe tener matrícula ASSISTANT activa en ese mismo destino.
-Tener una asignación de auxiliar no sustituye el permiso general de creación.
+`Nombres | Apellidos | CI | RU | Email`
 
-- `GET /api/enrollments/import/template?courseId=10&semesterId=20`
-- `POST /api/enrollments/import/preview`
-- `GET /api/enrollments/import/preview/:operationId?page=1&limit=25&status=all&search=...`
-- `GET /api/enrollments/import/:operationId/status`
-- `POST /api/enrollments/import`
+Para cuentas nuevas son obligatorios todos los campos y un email válido. Se recortan
+espacios y se normaliza email a minúsculas, como en la importación administrativa.
+El usuario será RU y la contraseña inicial será CI con bcrypt costo 10; la cuenta
+recibe únicamente STUDENT. Carrera es opcional y no se infiere ni modifica.
+Para estudiantes existentes basta RU; los datos suministrados no sobrescriben su cuenta.
+Se sigue aceptando la plantilla antigua de una columna `RU` para cuentas existentes.
+El parser compartido con importaciones de carrera permanece intacto.
 
-El POST preview recibe multipart con `file`, `courseId` y `semesterId`. El POST
-final recibe JSON `{ "operationId": "uuid" }`; no vuelve a recibir archivo, filas
-ni destino. El contexto guardado en la operación determina la ejecución.
-La plantilla sigue siendo binaria y las respuestas conservan el envelope global.
-Las operaciones y sus páginas son accesibles únicamente por su creador.
+Solo se acepta .xlsx de hasta 5 MiB. RU/CI admiten texto o enteros seguros no negativos;
+los ceros iniciales deben conservarse como texto. Se rechazan fórmulas, fechas,
+objetos de celda, columnas extra y filas vacías intermedias.
 
-Preview (HTTP 200, también cuando existen filas inválidas), dentro de `data`:
+## Identidades y preview
 
-```json
-{
-  "operationId": "00000000-0000-4000-8000-000000000001",
-  "total": 1,
-  "valid": 1,
-  "invalid": 0,
-  "data": [{
-    "row": 2,
-    "studentId": 123,
-    "ru": "00123456",
-    "fullName": "Nombre Apellido",
-    "username": "00123456",
-    "email": "ejemplo@example.com",
-    "status": "VALID",
-    "errors": []
-  }],
-  "meta": { "page": 1, "limit": 25, "total": 1, "totalPages": 1 }
-}
-```
+El preview no crea usuarios ni matrículas. Las filas exponen una acción:
 
-Resultado confirmado (HTTP 201), dentro de `data`:
-`{ "total": 1, "imported": 1, "courseId": 10, "semesterId": 20 }`.
-Ante cualquier fila inválida, la confirmación devuelve HTTP 400 y cero inserciones.
-Para volver a obtener errores por fila se debe solicitar un nuevo preview.
-El filtro global de errores devuelve mensajes, no objetos adicionales del error.
-Un conflicto concurrente devuelve HTTP 409; los errores internos se ocultan.
+- CREATE_ACCOUNT: crear cuenta y matricular.
+- ENROLL: usar cuenta existente y matricular.
+- SKIP: matrícula STUDENT activa existente; no se duplica.
+- ERROR: error real que impide confirmar el archivo completo.
 
-## Excel y validaciones
+RU duplicado, CI/email duplicados, identidad contradictoria, usuario inactivo/eliminado,
+rol STUDENT ausente/inactivo y matrícula inactiva/eliminada/de otra participación son
+conflictos. Una cuenta existente válida nunca se rechaza por existir.
+El CI suministrado debe coincidir con el usuario resuelto por RU. CI/email/username
+pertenecientes a otra identidad no se fusionan. Las contraseñas y demás datos de las
+cuentas existentes no se modifican.
 
-- Solo `.xlsx`, hasta 5 MiB, en memoria con Multer y ExcelJS ya instalados.
-- Primera hoja: encabezado exacto `RU`, única columna. La plantilla coloca dos
-  ejemplos ficticios en una nota del encabezado, no como estudiantes a importar.
-- RU es único en `User`. Se recortan espacios exteriores; no se altera su contenido.
-- Se aceptan texto y números enteros seguros no negativos; se rechazan fórmulas,
-  fechas y objetos de celda. Los ceros iniciales deben conservarse como texto;
-  no se reconstruyen identificadores que Excel ya convirtió a números.
-- Filas vacías intermedias son inválidas y conservan su número Excel. Filas finales
-  sin valores se ignoran. Una hoja sin registros se rechaza.
-- Se acumulan errores: RU vacío/duplicado, usuario inexistente/inactivo/eliminado,
-  rol de estudiante ausente/inactivo y matrícula ya existente.
-- Matrículas inactivas o eliminadas también bloquean duplicados; no se reactivan.
+El envelope y la paginación siguen siendo los mismos. `valid` incluye filas SKIP;
+`newAccounts`, `existingAccounts` y `skipped` son contadores globales adicionales.
+El filtro valid incluye ejecutables y omitidas; invalid incluye solo errores.
+Los previews antiguos sin acción se interpretan como ENROLL/ERROR según validez.
 
-## Integridad y rendimiento
+Los datos normalizados necesarios para confirmar se guardan en `BulkOperationRow.data.input`.
+CI es un identificador personal sensible, accesible solo dentro del contexto privado de
+la operación; no se incluye en las respuestas de preview de matrículas ni en resultados,
+y no se almacenan hashes ni contraseñas bajo otro campo. Se conserva la política de
+acceso/retención de BulkOperation. No se relaja su protección de campos sensibles.
 
-Se resuelven usuarios/roles y matrículas por lotes de 500 identificadores, usando
-mapas y conjuntos para las validaciones. No hay una consulta por estudiante.
-Solo se seleccionan campos necesarios; nunca contraseñas.
+## Confirmación e integridad
 
-Confirmar lee las filas normalizadas persistidas y revalida el estado de BD dentro de una única
-transacción TypeORM `SERIALIZABLE`. Las inserciones de 500 filas comparten esa
-transacción. Cualquier error se propaga fuera del callback para provocar rollback.
+Se envía únicamente `{ operationId }`. `executeReady` bloquea la operación y ejecuta
+las escrituras en una única transacción SERIALIZABLE. Se reconsultan usuarios por lotes,
+identidades y matrículas antes de escribir. Si una cuenta apareció después del preview,
+se reutiliza solo si su identidad es coherente. Si apareció su matrícula activa, se omite.
+Un usuario existente al revisar debe conservar su ID al confirmar.
 
-Se reutiliza `UNIQUE(id_user, id_course, id_semester)`, ya declarado por la entidad
-y la migración `1787831378220-ModifyEnrollmentEntity`; también cubre matrículas de
-otros roles y registros inactivos. La migración de Fase 3 amplía únicamente el enum de tipos BulkOperation. Conflictos
-23505/40001/40P01 se traducen a un mensaje seguro para volver a revisar el archivo.
+Los nuevos usuarios, su relación STUDENT, las matrículas y la finalización de la operación
+se confirman juntos o se revierten juntos. Se mantienen todas las restricciones únicas.
+Los conflictos 23505/40001/40P01 tienen hasta tres intentos con revalidación; si persisten
+se responde 409 sin escrituras parciales. Una operación completada conserva su resultado
+en metadata y repetir la confirmación devuelve ese resultado sin volver a insertar.
 
-## Verificación
+El resultado conserva `total`, `imported`, `courseId`, `semesterId` y agrega
+`accountsCreated`, `accountsReused`, `skipped`, `errors`. `imported` cuenta matrículas
+nuevas, no filas omitidas; accountsReused cuenta cuentas existentes matriculadas en
+esta ejecución. Las operaciones completamente omitidas son confirmables sin inserciones.
+El status conserva filas procesadas y expone también el resultado desglosado.
 
-Las pruebas usan ExcelJS con libros reales y dobles de repositorios/transacciones:
-validaciones, revalidación, lotes, fallo del segundo lote sin commit, permisos y
-alcance del auxiliar. No constituyen una prueba de concurrencia o rollback contra
-PostgreSQL real. No se ejecutan seeds ni migraciones.
+Frontend mantiene búsqueda/paginación del preview. La confirmación no usa el timeout
+Axios general de 10 s, porque crear hashes puede tardar más; no se cambia el cliente global.
 
+## Validación
 
-## Preview persistido (Fase 3)
+Pruebas con libros Excel reales y dobles transaccionales cubren formatos, identidades,
+cuentas nuevas/existentes, hashing real, omisiones, rollback, reintentos y ownership.
+No equivalen a pruebas de concurrencia/rollback contra PostgreSQL real. Las acciones,
+inputs y contadores usan JSON existente y no requieren una migración nueva. Sí debe
+estar aplicada la migración previa de tipos de importación descrita a continuación.
+No se ejecutan seeds ni migraciones automáticamente.
 
-Se reutilizan BulkOperation/BulkOperationRow y findRows. El POST persiste todas las
-filas y devuelve solo 25. GET acepta page >= 1, limit 25/50/100, status
-all/valid/invalid y search (máximo 200 caracteres). Los totales externos son del
-archivo completo; meta.total es filtrado. Orden fijo rowNumber ASC. Buscar/filtrar
-ocurre en PostgreSQL antes del límite/offset. No hay filtros ni slice locales.
+## Requisito de esquema y diagnóstico
 
-READY → IMPORTING → COMPLETED comparte una transacción SERIALIZABLE con las
-matrículas y las filas PROCESSED. Una segunda ejecución devuelve conflicto. Si
-falla la revalidación o una escritura, todo revierte y la operación sigue READY.
-La ejecución exige cero filas inválidas, como antes; no importa parcialmente.
-También se verifica que el RU siga resolviendo al mismo studentId del preview.
-La lectura paginada no carga el archivo completo. El parsing y la ejecución siguen
-siendo síncronos y pueden conservar el conjunto completo en memoria.
+La BD debe tener aplicada la migración existente
+`AddAcademicImportTypes1792526400000`. Su `up` agrega de forma aditiva e idempotente
+ENROLLMENT_IMPORT y CAREER_STUDENT_IMPORT al enum de operaciones, sin borrar registros.
+Cambiar el parser o el seed no aplica esta migración automáticamente.
+Si solo existe USER_IMPORT, PostgreSQL rechaza el preview antes de persistirlo con
+22P02 (invalid input value for enum bulk_operations_type_enum).
+Ahora esa condición responde 503 con una indicación segura de actualización pendiente;
+los errores desconocidos conservan el 500 genérico. El log registra fase, tipo de error,
+código y nombres de table/column/constraint; nunca SQL, parámetros, CI o contraseñas.
+La pantalla conserva el mensaje seguro devuelto por el backend.
 
-No se introduce Redis, cola ni cleanup. Las operaciones permanecen hasta una
-política futura; desmontar la pantalla no las elimina. Ver el informe
-[de Fase 3](../../../PAGINATION_PHASE_3.md) para contratos y verificación.
+Antes de habilitar este flujo en otra BD, revisar `pnpm --filter aux-system-uatf-backend migration:show`.
+Aplicar migraciones solo con autorización explícita; no usar synchronize ni recrear el enum.
+No hace falta cambiar de nuevo el formato Excel para resolver este requisito.

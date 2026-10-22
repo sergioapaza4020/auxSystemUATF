@@ -8,6 +8,8 @@ import {
 } from 'typeorm';
 import { User } from '../users/users.entity';
 import { SessionRevokeReasons } from '@common/enums/sessionRevokeReasons';
+import { Transform } from 'class-transformer';
+import { normalizeIp } from '@common/utils/normalize-ip';
 
 @Entity('user_sessions')
 export class UserSession {
@@ -25,6 +27,10 @@ export class UserSession {
     name: 'ip_address',
     type: 'varchar',
     nullable: true,
+  })
+  // Normalize historical values only in responses, without rewriting stored sessions.
+  @Transform(({ value }: { value: string | null | undefined }) => normalizeIp(value), {
+    toPlainOnly: true,
   })
   ipAddress: string | null;
 

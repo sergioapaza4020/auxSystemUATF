@@ -32,7 +32,7 @@ export function RoleEditDialog({
   onClose,
   onSubmit,
 }: RoleEditDialogProps) {
-  const { role, updateField, handlePermissionChange, isValid } = useRoleForm({
+  const { role, updateField, isValid } = useRoleForm({
     initialValue,
   });
 
@@ -63,7 +63,6 @@ export function RoleEditDialog({
             permissions={permissions}
             loadingPermissions={loadingPermissions}
             updateField={updateField}
-            handlePermissionChange={handlePermissionChange}
           />
         </Form>
       </DialogContent>

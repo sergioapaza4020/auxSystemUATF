@@ -28,6 +28,7 @@ import type {
 import { getEnrollmentImportPreviewPage } from '@/api/enrollments.service';
 import { useImportPreview } from '@/hooks/imports/useImportPreview';
 import type { ImportPreviewQuery } from '@/interfaces/import-preview.interface';
+import { enrollmentImportActionLabel } from './enrollment-import';
 
 const columns = [
   { id: 'row', label: 'Fila', sortable: true },
@@ -112,8 +113,8 @@ export function EnrollmentImportReviewTable({ preview, busy }: { preview: IEnrol
                   <Chip
                     size='small'
                     variant='outlined'
-                    color={row.status === 'VALID' ? 'success' : 'error'}
-                    label={row.status === 'VALID' ? 'Válido' : 'Con errores'}
+                    color={row.action === 'SKIP' ? 'default' : row.status === 'VALID' ? 'success' : 'error'}
+                    label={enrollmentImportActionLabel(row)}
                   />
                 </TableCell>
                 <TableCell sx={{ minWidth: 240 }}>

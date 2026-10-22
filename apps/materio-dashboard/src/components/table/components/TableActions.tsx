@@ -6,6 +6,7 @@ interface TableActionsProps {
   loadingEdit?: boolean;
   disabled?: boolean;
   disableEdit?: boolean;
+  deleteLabel?: string;
 
   onEdit?: () => void;
   onDelete?: () => void;
@@ -13,7 +14,7 @@ interface TableActionsProps {
 }
 
 export function TableActions(props: TableActionsProps) {
-  const { active, loadingEdit, disabled, disableEdit, onEdit, onDelete, onRestore } = props;
+  const { active, loadingEdit, disabled, disableEdit, onEdit, onDelete, onRestore, deleteLabel = 'Desactivar' } = props;
 
   return (
     <Box
@@ -63,7 +64,7 @@ export function TableActions(props: TableActionsProps) {
 
           {onDelete && (
             <Tooltip
-              title='Desactivar'
+              title={deleteLabel}
               slots={{
                 transition: Zoom,
               }}
@@ -73,7 +74,7 @@ export function TableActions(props: TableActionsProps) {
                   size='small'
                   disabled={disabled}
                   onClick={onDelete}
-                  aria-label='Desactivar'
+                  aria-label={deleteLabel}
                   sx={{
                     width: 36,
                     height: 36,

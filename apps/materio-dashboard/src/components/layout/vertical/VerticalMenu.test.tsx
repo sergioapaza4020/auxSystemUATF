@@ -24,7 +24,7 @@ vi.mock('@menu/vertical-menu', () => ({
 
 const items = [
   ['permission.get-all', '/dashboard/super-admin/permissions'],
-  ['session.get-all', '/dashboard/super-admin/sessions'],
+  ['sessions.get-all', '/dashboard/super-admin/sessions'],
   ['role.get-all', '/dashboard/super-admin/roles'],
   ['faculty.get-all', '/dashboard/admin/faculties'],
   ['career.get-all', '/dashboard/admin/careers'],
@@ -36,7 +36,7 @@ const items = [
   ['enrollment.get-all', '/dashboard/admin/enrollments'],
 ];
 
-function renderMenu(permissions: string[], roles = ['CUSTOM'], loading = false, anonymous = false) {
+function renderMenu(permissions: string[], roles = ['ADMIN'], loading = false, anonymous = false) {
   const user: ICurrentUser = {
     idUser: 1,
     idSession: 1,
@@ -57,62 +57,124 @@ function renderMenu(permissions: string[], roles = ['CUSTOM'], loading = false, 
   return renderToStaticMarkup(<VerticalMenu scrollMenu={vi.fn()} />);
 }
 
-describe('Vertical navigation permissions', () => {
-  it.each(items)('shows only the section granted by %s without requiring ADMIN', (permission, href) => {
+const superItems = items.slice(0, 3);
+const adminItems = items.slice(3);
+const allPermissions = items.map(([permission]) => permission);
+
+function sectionLinks(html: string, label: string) {
+  const section = html.match(new RegExp(`<section aria-label="${label}">([\\s\\S]*?)</section>`))?.[1] ?? '';
+
+  return [...section.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
+}
+
+describe('Vertical navigation sections and permissions', () => {
+  it.each([
+    ['STUDENT', false, false],
+    ['ASSISTANT', false, false],
+    ['ADMIN', false, true],
+    ['TEACHER', false, false],
+    ['DIRECTOR', false, false],
+    ['DEAN', false, true],
+    ['SUPERADMIN', true, true],
+  ] as const)(
+    'uses the real role matrix for %s even when every permission is granted',
+    (role, superSection, adminSection) => {
+      const html = renderMenu(allPermissions, [role]);
+
+      expect(html).toContain('href="/dashboard"');
+      expect(html.includes('aria-label="Superadministración"')).toBe(superSection);
+      expect(html.includes('aria-label="Administración"')).toBe(adminSection);
+      expect(sectionLinks(html, 'Superadministración')).toEqual(superSection ? superItems.map(([, href]) => href) : []);
+      expect(sectionLinks(html, 'Administración')).toEqual(adminSection ? adminItems.map(([, href]) => href) : []);
+
+      if (!superSection && !adminSection) {
+        expect(html).not.toContain('<section');
+        expect([...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1])).toEqual(['/dashboard']);
+      }
+    },
+  );
+
+  it.each(adminItems)('shows only the administrative item granted by %s for ADMIN', (permission, href) => {
     const html = renderMenu([permission]);
 
-    expect(html).toContain(`href="${href}"`);
+    expect(sectionLinks(html, 'Administración')).toEqual([href]);
+    expect(html).not.toContain('aria-label="Superadministración"');
 
     for (const [, otherHref] of items) {
       if (otherHref !== href) expect(html).not.toContain(`href="${otherHref}"`);
     }
   });
 
-  it('does not grant functional modules based on ADMIN or other persona roles alone', () => {
-    for (const role of ['ADMIN', 'ASSISTANT', 'STUDENT', 'DIRECTOR', 'DEAN']) {
-      const html = renderMenu([], [role]);
+  it.each(['STUDENT', 'ASSISTANT', 'ADMIN', 'TEACHER', 'DIRECTOR', 'DEAN', 'CUSTOM'])(
+    'never renders any superadministration title or child for %s',
+    (role) => {
+      const html = renderMenu(allPermissions, [role]);
 
-      expect(html).toContain('href="/dashboard"');
-      expect(html).not.toContain('<section');
+      expect(html).not.toContain('aria-label="Superadministración"');
+      for (const [, href] of superItems) expect(html).not.toContain(`href="${href}"`);
+    },
+  );
 
-      for (const [, href] of items) expect(html).not.toContain(`href="${href}"`);
-    }
+  it.each(['ADMIN', 'DEAN'])('hides empty administration for %s', (role) => {
+    expect(renderMenu([], [role])).not.toContain('<section');
+    expect(renderMenu(['role.get-all', 'permission.get-all', 'sessions.get-all'], [role])).not.toContain('<section');
   });
 
-  it('keeps all modules and their order for SUPERADMIN without explicit permissions', () => {
+  it('keeps only Usuarios for ADMIN with user.get-all and does not grant other items by role', () => {
+    const html = renderMenu(['user.get-all'], ['ADMIN']);
+
+    expect(sectionLinks(html, 'Administración')).toEqual(['/dashboard/super-admin/users']);
+    expect(html).not.toContain('href="/dashboard/super-admin/roles"');
+    expect(html).not.toContain('href="/dashboard/super-admin/permissions"');
+  });
+
+  it.each([
+    [['STUDENT', 'ASSISTANT'], false, false],
+    [['STUDENT', 'ADMIN'], false, true],
+    [['TEACHER', 'DEAN'], false, true],
+    [['ADMIN', 'SUPERADMIN'], true, true],
+    [['CUSTOM', 'SUPERADMIN'], true, true],
+  ] as const)('considers every role in %j', (roles, superSection, adminSection) => {
+    const html = renderMenu(['user.get-all'], [...roles]);
+
+    expect(html.includes('aria-label="Superadministración"')).toBe(superSection);
+    expect(html.includes('aria-label="Administración"')).toBe(adminSection);
+  });
+
+  it('preserves the SUPERADMIN permission bypass and link order', () => {
     const html = renderMenu([], ['CUSTOM', 'SUPERADMIN']);
-    const links = [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
 
-    expect(links).toEqual(['/dashboard', ...items.map(([, href]) => href)]);
-    expect(html).toContain('aria-label="Super Admininistración"');
-    expect(html).toContain('aria-label="Administración"');
+    expect([...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1])).toEqual([
+      '/dashboard',
+      ...items.map(([, href]) => href),
+    ]);
+    expect(sectionLinks(html, 'Superadministración')).toEqual(superItems.map(([, href]) => href));
+    expect(sectionLinks(html, 'Administración')).toEqual(adminItems.map(([, href]) => href));
   });
 
-  it('shows each parent only when at least one of its children is visible', () => {
-    const users = renderMenu(['user.get-all']);
-    const roles = renderMenu(['role.get-all']);
-
-    expect(users).toContain('aria-label="Administración"');
-    expect(users).not.toContain('aria-label="Super Admininistración"');
-    expect(roles).toContain('aria-label="Super Admininistración"');
-    expect(roles).not.toContain('aria-label="Administración"');
+  it('does not infer administration access for a custom role with all permissions', () => {
+    expect(renderMenu(allPermissions, ['CUSTOM'])).not.toContain('<section');
   });
 
-  it('hides protected entries during loading even with a previously privileged user', () => {
-    const html = renderMenu([], ['SUPERADMIN'], true);
+  it('hides protected sections during loading and shows them only after auth resolves', () => {
+    const pending = renderMenu([], ['SUPERADMIN'], true);
+
+    expect(pending).toContain('href="/dashboard"');
+    expect(pending).not.toContain('<section');
+    const ready = renderMenu([], ['SUPERADMIN']);
+
+    expect(ready).toContain('aria-label="Superadministración"');
+    expect(ready).toContain('aria-label="Administración"');
+  });
+
+  it('keeps Inicio without granting sections to a null user', () => {
+    const html = renderMenu(allPermissions, ['SUPERADMIN'], false, true);
 
     expect(html).toContain('href="/dashboard"');
     expect(html).not.toContain('<section');
   });
 
-  it('keeps Inicio but hides protected entries without a known user', () => {
-    const html = renderMenu([], [], false, true);
-
-    expect(html).toContain('href="/dashboard"');
-    expect(html).not.toContain('<section');
-  });
-
-  it('does not substitute creation or the mismatched sessions seed permission for listing access', () => {
-    expect(renderMenu(['user.create', 'role.create', 'sessions.get-all'])).not.toContain('<section');
+  it('does not substitute creation or singular session permissions for listing access', () => {
+    expect(renderMenu(['user.create', 'role.create', 'session.get-all'])).not.toContain('<section');
   });
 });

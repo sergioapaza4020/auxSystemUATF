@@ -10,6 +10,7 @@ export interface IGradeScheme {
 }
 
 export interface IDetail {
+  isActive?: boolean;
   idGradeSchemeDetail: number;
   percentage: number;
   permissionWeight?: number;

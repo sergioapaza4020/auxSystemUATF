@@ -204,10 +204,16 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
                   {formatImportFileSize(file.size)} · {preview.total} filas detectadas
                 </Typography>
               </Box>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap', gap: 2 }}>
                 {[
                   { label: 'Total', value: preview.total, color: 'primary.main' },
-                  { label: 'Válidos', value: preview.valid, color: 'success.main' },
+                  { label: 'Cuentas nuevas', value: preview.newAccounts ?? 0, color: 'success.main' },
+                  {
+                    label: 'Cuentas existentes',
+                    value: preview.existingAccounts ?? preview.valid - (preview.skipped ?? 0),
+                    color: 'primary.main',
+                  },
+                  { label: 'Ya matriculados', value: preview.skipped ?? 0, color: 'text.secondary' },
                   { label: 'Con errores', value: preview.invalid, color: 'error.main' },
                 ].map((item) => (
                   <Paper variant='outlined' key={item.label} sx={{ flex: 1, p: 3 }}>
@@ -236,8 +242,10 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
           {step === 0 && (
             <>
               <Alert severity='info'>
-                Los estudiantes deben existir previamente en el sistema. La plantilla utiliza únicamente el RU para
-                identificarlos. Esta operación solo crea matrículas en la materia y el semestre indicados.
+                La plantilla usa Nombres, Apellidos, CI, RU y Email. Para cuentas nuevas completa todos los campos: el
+                usuario será el RU y la contraseña inicial será el CI. Las cuentas existentes se identifican por RU y se
+                conservan sin cambios. También se admite la plantilla antigua RU. Los estudiantes ya matriculados se
+                omiten.
               </Alert>
               <Box>
                 <Button
@@ -300,7 +308,7 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
                   Elegir otro archivo
                 </Button>
                 <Button variant='contained' disabled={busy || !canImport} onClick={() => setConfirm(true)}>
-                  Matricular {preview.valid} estudiantes
+                  Confirmar importación
                 </Button>
               </Stack>
             </>
@@ -313,7 +321,12 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
               <Typography variant='h5' component='h2'>
                 Matrícula completada
               </Typography>
-              <Typography>{result.imported} estudiantes fueron matriculados correctamente.</Typography>
+              <Typography>{result.imported} matrículas creadas.</Typography>
+              <Typography>
+                {result.accountsCreated ?? 0} cuentas creadas · {result.accountsReused ?? result.imported} cuentas
+                existentes reutilizadas · {result.skipped ?? 0} matrículas ya existentes omitidas · {result.errors ?? 0}{' '}
+                errores.
+              </Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <Button variant='outlined' onClick={reset}>
                   Importar otro archivo
@@ -340,7 +353,9 @@ export function EnrollmentImportPage({ idEnrollment }: { idEnrollment: number })
           <Stack spacing={2}>
             <Destination enrollment={enrollment} />
             <DialogContentText>
-              Se crearán las matrículas correspondientes a {preview?.valid ?? 0} estudiantes en esta materia y semestre.
+              Se crearán hasta {(preview?.valid ?? 0) - (preview?.skipped ?? 0)} matrículas y{' '}
+              {preview?.newAccounts ?? 0} cuentas nuevas en esta materia y semestre. Las cuentas existentes no se
+              modificarán. Se revalidará el estado actual al confirmar.
             </DialogContentText>
           </Stack>
         </DialogContent>

@@ -109,11 +109,13 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
       <EnrollmentHeader enrollment={enrollment} />
 
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={5}>
-          <GradeSchemeCard enrollment={enrollment} />
-        </Grid>
+        {!isAssistant && (
+          <Grid item xs={12} lg={5}>
+            <GradeSchemeCard enrollment={enrollment} />
+          </Grid>
+        )}
 
-        <Grid item xs={12} lg={7}>
+        <Grid item xs={12} lg={isAssistant ? 12 : 7}>
           {isAssistant ? (
             <AssistantGradeSchemeCard
               scheme={assistantGradeScheme}
@@ -171,6 +173,7 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
           loading={savingAssistantGradeScheme}
           gradeItems={gradeItems}
           loadingGradeItems={loadingGradeItems}
+          archivedDetails={assistantGradeScheme?.archivedDetails}
           initialValue={
             assistantGradeScheme
               ? {
@@ -181,6 +184,8 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
                   description: assistantGradeScheme.description ?? '',
 
                   details: assistantGradeScheme.details.map((detail) => ({
+                    idGradeSchemeDetail: detail.idGradeSchemeDetail,
+                    hasAcademicData: detail.hasAcademicData,
                     percentage: detail.percentage,
                     permissionWeight: detail.permissionWeight ?? 1,
 

@@ -96,6 +96,18 @@ function fixture(count = 2) {
 }
 
 describe('Student grade summary', () => {
+  it('uses only the current 30/70 distribution and preserves archived laboratory data', async () => {
+    const f = fixture(1);
+    f.scheme.details[0].percentage = 70;
+    f.scheme.details[1].percentage = 30;
+    Object.assign(f.scheme.details[2], { isActive: false, percentage: 30 });
+    const result = await f.service.getStudentGradeSummary(1, 2);
+    expect(result.scheme?.details.map((detail) => detail.percentage)).toEqual([70, 30]);
+    // Practices 90 * .7 + attendance 80 * .3 = 87; archived direct score 80 is ignored.
+    expect(result.students[0].totalRaw).toBe(87);
+    expect(f.scheme.details).toHaveLength(3);
+  });
+
   it.each([
     { count: 3, total: '150', expected: 50 },
     { count: 3, total: '300', expected: 100 },

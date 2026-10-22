@@ -36,7 +36,7 @@ export class AssistantGradeSchemeDetailDto {
     maximum: 100,
     description: 'Porcentaje del elemento dentro del bloque del auxiliar',
   })
-  @IsNumber()
+  @IsInt()
   @Min(0)
   @Max(100)
   percentage: number;
@@ -88,6 +88,13 @@ export class AssistantGradeSchemeCreateDto {
 }
 
 export class AssistantGradeSchemeUpdateDto {
+  @ApiPropertyOptional({ type: [Number], description: 'Criterios a archivar explícitamente' })
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  deactivateDetailIds?: number[];
+
   @ApiProperty({
     minimum: 0,
     maximum: 100,

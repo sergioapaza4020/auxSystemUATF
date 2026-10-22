@@ -171,7 +171,11 @@ export const getEnrollmentImportPreviewPage = async (
 };
 
 export const importEnrollments = async (operationId: string): Promise<IEnrollmentImportResult> => {
-  const response = await instance.post<ApiResponse<IEnrollmentImportResult>>('/enrollments/import', { operationId });
+  const response = await instance.post<ApiResponse<IEnrollmentImportResult>>(
+    '/enrollments/import',
+    { operationId },
+    { timeout: 0 },
+  );
 
   if (!response.data.status) throw new Error(response.data.message || 'No se pudo confirmar la matriculación.');
 

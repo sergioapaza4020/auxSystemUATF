@@ -33,15 +33,20 @@ import { EnrollmentCard } from '@/components/principal/EnrollmentCard';
 export function Principal() {
   const [enrollments, setEnrollments] = useState<IMyEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const snackbar = useSnackbar();
-  const { user } = useAuth();
+  const { error: showError } = useSnackbar();
+  const { user, loading: authLoading } = useAuth();
+  const canLoad = !authLoading && !!user;
 
   useEffect(() => {
+    if (!canLoad) return;
+
     const controller = new AbortController();
 
     setLoading(true);
     setEnrollments([]);
+    setError(null);
 
     const loadEnrollments = async () => {
       try {
@@ -49,7 +54,12 @@ export function Principal() {
 
         if (!controller.signal.aborted) setEnrollments(data);
       } catch (error) {
-        if (!controller.signal.aborted) snackbar.error(getApiErrorMessage(error));
+        if (!controller.signal.aborted) {
+          const message = getApiErrorMessage(error);
+
+          setError(message);
+          showError(message);
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -58,7 +68,9 @@ export function Principal() {
     void loadEnrollments();
 
     return () => controller.abort();
-  }, [snackbar, user?.idUser]);
+  }, [showError, canLoad]);
+
+  const isLoading = authLoading || (canLoad && loading);
 
   const studentEnrollments = enrollments.filter((enrollment) => enrollment.role === UserRole.STUDENT);
 
@@ -196,7 +208,7 @@ export function Principal() {
           </Box>
 
           {/* Estadísticas */}
-          {!loading && (
+          {!isLoading && !error && canLoad && (
             <Stack
               direction='row'
               spacing={1.5}
@@ -236,7 +248,7 @@ export function Principal() {
             </Typography>
           </Box>
 
-          {!loading && enrollments.length > 0 && (
+          {!isLoading && !error && canLoad && enrollments.length > 0 && (
             <Typography
               variant='body2'
               color='text.secondary'
@@ -253,7 +265,7 @@ export function Principal() {
         </Stack>
 
         {/* Loading */}
-        {loading ? (
+        {isLoading ? (
           <Grid container spacing={3}>
             {[1, 2, 3].map((item) => (
               <Grid item xs={12} sm={6} lg={4} key={item}>
@@ -267,6 +279,8 @@ export function Principal() {
               </Grid>
             ))}
           </Grid>
+        ) : error || !canLoad ? (
+          <Alert severity='error'>{error ?? 'No se pudo verificar tu sesión.'}</Alert>
         ) : enrollments.length === 0 ? (
           <Alert
             severity='info'

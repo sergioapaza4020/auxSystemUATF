@@ -18,6 +18,7 @@ export class EnrollmentImportTargetDto {
 }
 
 export class EnrollmentImportRowDto {
+  action?: 'CREATE_ACCOUNT' | 'ENROLL' | 'SKIP' | 'ERROR';
   row: number;
   studentId: number | null;
   ru: string;
@@ -28,9 +29,17 @@ export class EnrollmentImportRowDto {
   errors: string[];
 }
 
-export type EnrollmentImportPreviewDto = ImportPreviewPage<EnrollmentImportRowDto>;
+export type EnrollmentImportPreviewDto = ImportPreviewPage<EnrollmentImportRowDto> & {
+  newAccounts?: number;
+  existingAccounts?: number;
+  skipped?: number;
+};
 
 export class EnrollmentImportResultDto {
+  accountsCreated: number;
+  accountsReused: number;
+  skipped: number;
+  errors: number;
   imported: number;
   total: number;
   courseId: number;

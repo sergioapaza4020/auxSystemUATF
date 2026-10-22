@@ -3,7 +3,7 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 
 export default function Sessions() {
   return (
-    <PermissionGate permission='session.get-all'>
+    <PermissionGate permission='sessions.get-all'>
       <SessionsTable />
     </PermissionGate>
   );

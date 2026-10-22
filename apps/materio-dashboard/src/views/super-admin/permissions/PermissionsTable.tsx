@@ -20,13 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import {
-  createPermission,
-  deactivatePermission,
-  getPermissions,
-  reactivatePermission,
-  updatePermission,
-} from '@/api/permissions.service';
+import { deactivatePermission, getPermissions, reactivatePermission } from '@/api/permissions.service';
 import { EnhancedTableHead, PaginationTable, StatusChip, TableActions } from '@/components/table';
 import type { HeadCell } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
@@ -34,10 +28,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/utils/hasPermission';
 import { useAdministrativeCatalog } from '@/hooks/catalogs/useAdministrativeCatalog';
 import { useDataTable } from '@/hooks/table';
-import type { IPermission, IPermissionCreate } from '@/interfaces/permissions/permission.interface';
+import type { IPermission } from '@/interfaces/permissions/permission.interface';
 import type { RecordStatus } from '@/interfaces/status-query.interface';
 import { CatalogToolbar } from '@/views/admin/catalogs/CatalogToolbar';
-import { PermissionEditDialog } from './components/PermissionEditDialog';
 import { permissionPrefix } from './permission-rules';
 
 type PermissionRow = IPermission & { prefix: string };
@@ -59,8 +52,6 @@ export function PermissionsTable() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<RecordStatus>('all');
   const [prefix, setPrefix] = useState('');
-  const [editing, setEditing] = useState<IPermission | null>(null);
-  const [open, setOpen] = useState(false);
 
   const groups = useMemo(
     () => [...new Set(catalog.records.map((permission) => permissionPrefix(permission.name)))].sort(),
@@ -90,23 +81,6 @@ export function PermissionsTable() {
   if (authLoading) return <LoadingTable />;
   if (!can('get-all')) return <Alert severity='warning'>No tienes permiso para consultar este catálogo.</Alert>;
 
-  const edit = (permission: IPermission | null) => {
-    if (catalog.busy || catalog.loading || catalog.error || !can(permission ? 'update' : 'create')) return;
-    catalog.clearMutationError();
-    setEditing(permission);
-    setOpen(true);
-  };
-
-  const save = async (data: IPermissionCreate) => {
-    if (!can(editing ? 'update' : 'create')) return;
-    await catalog.mutate(
-      () =>
-        editing ? updatePermission(editing.idPermission, { description: data.description }) : createPermission(data),
-      editing ? 'Descripción actualizada.' : 'Permiso creado.',
-      () => setOpen(false),
-    );
-  };
-
   const changeState = async (permission: IPermission) => {
     if (!can(permission.isActive ? 'delete' : 'reactivate')) return;
     await catalog.mutate(
@@ -132,21 +106,12 @@ export function PermissionsTable() {
         <Typography variant='h4' component='h1'>
           Catálogo de permisos
         </Typography>
-        {can('create') && (
-          <Button
-            variant='contained'
-            disabled={catalog.busy || catalog.loading || !!catalog.error}
-            onClick={() => edit(null)}
-          >
-            Crear permiso
-          </Button>
-        )}
       </Stack>
       <Alert severity='info'>
         Aquí se mantiene el catálogo. La asignación de permisos se realiza en Roles. Las claves existentes no se
         renombran.
       </Alert>
-      {!open && catalog.mutationError && <Alert severity='error'>{catalog.mutationError}</Alert>}
+      {catalog.mutationError && <Alert severity='error'>{catalog.mutationError}</Alert>}
       {catalog.busy && <LinearProgress aria-label='Guardando cambios' />}
       <Paper variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
         <CatalogToolbar
@@ -224,7 +189,6 @@ export function PermissionsTable() {
                         <TableActions
                           active={permission.isActive}
                           disabled={catalog.busy}
-                          onEdit={can('update') ? () => edit(permission) : undefined}
                           onDelete={can('delete') ? () => void changeState(permission) : undefined}
                           onRestore={can('reactivate') ? () => void changeState(permission) : undefined}
                         />
@@ -267,18 +231,6 @@ export function PermissionsTable() {
           </>
         )}
       </Paper>
-      {open && (
-        <PermissionEditDialog
-          permission={editing}
-          records={catalog.records}
-          busy={catalog.busy}
-          error={catalog.mutationError}
-          onClose={() => {
-            if (!catalog.busy) setOpen(false);
-          }}
-          onSave={save}
-        />
-      )}
     </Stack>
   );
 }

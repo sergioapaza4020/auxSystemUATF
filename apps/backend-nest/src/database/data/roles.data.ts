@@ -42,6 +42,7 @@ const studentPermissions: string[] = [
   'grade-scheme.get-all',
   'grade-scheme.get-one-by-name',
 
+  'enrollment.get-my-enrollments',
   'enrollment.get-my-enrollment',
 
   'grade.get-by-enrollment',

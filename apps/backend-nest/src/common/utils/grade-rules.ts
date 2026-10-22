@@ -14,6 +14,9 @@ export function assertGradeSchemeAccess(
   enrollment: Enrollment,
   detail: GradeSchemeDetail,
 ): void {
+  if (detail.isActive === false) {
+    throw new BadRequestException('El criterio está archivado y no admite nuevas calificaciones');
+  }
   const assistant = detail.gradeScheme.assistantEnrollment;
   if (assistant) {
     if (assistant.user.idUser !== idUser) {

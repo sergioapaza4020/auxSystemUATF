@@ -67,10 +67,15 @@ export const updateAssistantGradeScheme = async (
   idAssistantGradeScheme: number,
   data: IAssistantGradeSchemeUpdate,
 ): Promise<IAssistantGradeScheme> => {
-  const response = await instance.put<{ data: SchemeResponse }>(
-    `/assistant-grade-schemes/${idAssistantGradeScheme}`,
-    data,
-  );
+  const response = await instance.put<{ data: SchemeResponse }>(`/assistant-grade-schemes/${idAssistantGradeScheme}`, {
+    ...data,
+    details: data.details.map(({ percentage, permissionWeight, order, gradeItem }) => ({
+      percentage,
+      permissionWeight,
+      order,
+      gradeItem,
+    })),
+  });
 
   return normalizeScheme(response.data.data);
 };

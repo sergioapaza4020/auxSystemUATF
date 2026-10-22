@@ -3,6 +3,12 @@ import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
 
 export interface IAssistantGradeSchemeDetail {
   idGradeSchemeDetail: number;
+  isActive?: boolean;
+  archivedAt?: string | null;
+  hasAcademicData?: boolean;
+  activityCount?: number;
+  gradeCount?: number;
+  attendanceSessionCount?: number;
   percentage: number;
   permissionWeight?: number;
   order: number;
@@ -17,9 +23,12 @@ export interface IAssistantGradeScheme {
   assistantPercentage: number;
   isActive: boolean;
   details: IAssistantGradeSchemeDetail[];
+  archivedDetails?: IAssistantGradeSchemeDetail[];
 }
 
 export interface IAssistantGradeSchemeDetailCreate {
+  idGradeSchemeDetail?: number;
+  hasAcademicData?: boolean;
   percentage: number;
   permissionWeight?: number;
   order: number;
@@ -29,6 +38,7 @@ export interface IAssistantGradeSchemeDetailCreate {
 }
 
 export interface IAssistantGradeSchemeCreate {
+  deactivateDetailIds?: number[];
   assistantPercentage: number;
   name?: string;
   description?: string;

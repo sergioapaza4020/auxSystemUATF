@@ -2,7 +2,14 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { weightedScore, isAttendanceCriterion, criterionScore, totalScore } from '@repo/grade-calculations';
+import {
+  activeCriteria,
+  weightedScore,
+  isAttendanceCriterion,
+  criterionScore,
+  totalScore,
+} from '@repo/grade-calculations';
+
 import { Alert, Box, Card, CardContent, CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
 
 import type { IGrade } from '@/interfaces/grades/grade.interface';
@@ -42,7 +49,7 @@ export function StudentGradesView({
   const [ownAttendance, setOwnAttendance] = useState<IStudentAttendance | null>(null);
   const [loadingOwnAttendance, setLoadingOwnAttendance] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
-  const hasAttendance = scheme.details.some((detail) => isAttendanceCriterion(detail.gradeItem.name));
+  const hasAttendance = activeCriteria(scheme.details).some((detail) => isAttendanceCriterion(detail.gradeItem.name));
 
   useEffect(() => {
     let active = true;
@@ -73,7 +80,7 @@ export function StudentGradesView({
     };
   }, [studentEnrollmentId, hasAttendance]);
   const attendanceSummary = studentEnrollmentId ? ownAttendance : attendance;
-  const details = [...scheme.details].sort((a, b) => a.order - b.order);
+  const details = activeCriteria(scheme.details).sort((a, b) => a.order - b.order);
 
   const results = details.map((detail) => {
     const activities = detail.activities.filter((activity) => activity.isActive);

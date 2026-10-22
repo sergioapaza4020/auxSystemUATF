@@ -47,7 +47,11 @@ describe('Enrollment import API', () => {
     expect(previewBody.get('file')).toBe(file);
     expect(previewBody.get('courseId')).toBe('12');
     expect(previewBody.get('semesterId')).toBe('25');
-    expect(instance.post).toHaveBeenLastCalledWith('/enrollments/import', { operationId: 'operation-id' });
+    expect(instance.post).toHaveBeenLastCalledWith(
+      '/enrollments/import',
+      { operationId: 'operation-id' },
+      { timeout: 0 },
+    );
   });
 
   it('propagates server failures and rejects unsuccessful response envelopes', async () => {

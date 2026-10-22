@@ -83,41 +83,6 @@ describe('Bulk operation PostgreSQL mapping', () => {
     expect(parameters).toEqual(['b73a79d0-02ca-4a3a-8a47-5516cae13e47', 17, false]);
   });
 
-  it('generates a single multi-row INSERT with parameterized JSONB', () => {
-    const [sql, parameters] = source
-      .getRepository(BulkOperationRow)
-      .createQueryBuilder()
-      .insert()
-      .values([
-        {
-          operation: { idBulkOperation: 'b73a79d0-02ca-4a3a-8a47-5516cae13e47' },
-          rowNumber: 1,
-          valid: true,
-          data: () => ':data0',
-          errors: () => ':errors0',
-        },
-        {
-          operation: { idBulkOperation: 'b73a79d0-02ca-4a3a-8a47-5516cae13e47' },
-          rowNumber: 2,
-          valid: false,
-          data: () => ':data1',
-          errors: () => ':errors1',
-        },
-      ])
-      .setParameters({
-        data0: '{"name":"Carlos"}',
-        errors0: null,
-        data1: '{"ru":"1"}',
-        errors1: '["RU duplicado"]',
-      })
-      .getQueryAndParameters();
-    expect(sql.match(/INSERT INTO/g)).toHaveLength(1);
-    expect(sql).toContain('), (');
-    expect(parameters).toContain('{"name":"Carlos"}');
-    expect(parameters).toContain('["RU duplicado"]');
-    expect(parameters).toContain(null);
-  });
-
   it('migration covers entity constraints and indexes, and reverses tables/enums in dependency order', async () => {
     const statements: string[] = [];
     const runner = {

@@ -115,6 +115,9 @@ export class ActivitiesService {
       );
     }
 
+    if (detail.isActive === false)
+      throw new BadRequestException('El criterio está archivado y no admite nuevas actividades');
+
     const activity = this.activityRepository.create({
       gradeSchemeDetail: detail,
       name: dto.name,
@@ -186,6 +189,8 @@ export class ActivitiesService {
 
   async update(idActivity: number, idUser: number, dto: ActivityUpdateDto): Promise<Activity> {
     const activity = await this.getActivityForAssistant(idActivity, idUser);
+    if (activity.gradeSchemeDetail.isActive === false)
+      throw new BadRequestException('El criterio está archivado y sus actividades son históricas');
 
     if (dto.name !== undefined) {
       activity.name = dto.name;
@@ -255,6 +260,9 @@ export class ActivitiesService {
     if (!assistantEnrollment.isActive) {
       throw new ForbiddenException('La matrícula del auxiliar no está activa');
     }
+
+    if (activity.gradeSchemeDetail.isActive === false)
+      throw new BadRequestException('El criterio está archivado y no admite reactivar actividades');
 
     activity.isActive = true;
     activity.deletedBy = 0;

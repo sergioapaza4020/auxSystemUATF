@@ -91,8 +91,16 @@ describe('Activity name validation', () => {
         },
       ],
     }).compile();
-    return { service: module.get(ActivitiesService), query, save, course, transaction };
+    return { service: module.get(ActivitiesService), query, save, course, transaction, detail };
   }
+  it('rejects creation for an archived criterion without saving', async () => {
+    const ctx = await setup();
+    Object.assign(ctx.detail, { isActive: false });
+    await expect(
+      ctx.service.create(5, 1, { name: 'Nueva', gradeSchemeDetailId: 4, dueDate: '2026-10-20' }),
+    ).rejects.toThrow('archivado');
+    expect(ctx.save).not.toHaveBeenCalled();
+  });
   it('stores a trimmed name and checks uniqueness while locking the course', async () => {
     const ctx = await setup();
     const result = await ctx.service.create(5, 1, {

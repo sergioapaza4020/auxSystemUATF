@@ -15,6 +15,11 @@ describe('AuthService', () => {
   const getForAuthentication = jest.fn();
 
   beforeEach(async () => {
+    jest.replaceProperty(process, 'env', {
+      ...process.env,
+      JWT_ACCESS_SECRET_EXPIRES_IN: '15m',
+      JWT_ACCESS_REFRESH_EXPIRES_IN: '7d',
+    });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -26,6 +31,8 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
   });
+
+  afterEach(() => jest.restoreAllMocks());
 
   it('should be defined', () => {
     expect(service).toBeDefined();
@@ -40,7 +47,9 @@ describe('AuthService', () => {
     });
     const sessions = jest
       .spyOn(mockSessionService, 'createSession')
-      .mockResolvedValue({ idSession: 1 });
+      .mockImplementation((params: Parameters<SessionsService['createSession']>[0]) =>
+        Promise.resolve({ ...params.issueTokens(1), userSession: { idSession: 1 } }),
+      );
     const response = await service.login({ username: 'test', password: 'secret' }, {
       headers: {},
       socket: {},

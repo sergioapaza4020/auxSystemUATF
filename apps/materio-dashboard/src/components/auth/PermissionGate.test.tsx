@@ -45,7 +45,7 @@ beforeEach(() => vi.clearAllMocks());
 
 describe.each([
   { permission: 'role.get-all', Page: RolesPage },
-  { permission: 'session.get-all', Page: SessionsPage },
+  { permission: 'sessions.get-all', Page: SessionsPage },
   { permission: 'grade-scheme.get-all', Page: GradeSchemesPage },
 ])('Direct route access: $permission', ({ permission, Page }) => {
   it('does not mount the section without its listing permission', () => {

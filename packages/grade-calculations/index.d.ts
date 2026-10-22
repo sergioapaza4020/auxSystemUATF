@@ -1,4 +1,7 @@
 export function isAttendanceCriterion(name: string): boolean;
+export function activeCriteria<T extends { isActive?: boolean }>(
+  details: readonly T[],
+): T[];
 export function attendancePercentage(present: number, total: number): number;
 export function averageScores(
   scores: readonly (number | string | null | undefined)[],

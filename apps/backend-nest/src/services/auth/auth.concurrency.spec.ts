@@ -8,6 +8,7 @@ import { UsersService } from '../users/users.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { UserSession } from 'src/entities/user-sessions/user-sessions.entity';
 import { User } from 'src/entities/users/users.entity';
+import { withSessionTransaction } from '@common/test-mocks/session-transaction.mock';
 
 describe('Concurrent logins with multiple sessions', () => {
   it('creates independent tokens and resolves each refresh token to its own session', async () => {
@@ -27,12 +28,14 @@ describe('Concurrent logins with multiple sessions', () => {
       save: jest.fn((session: UserSession) => {
         if (!session.idSession) {
           session.idSession = stored.length + 1;
-          session.isActive = true;
           stored.push(session);
         }
         return Promise.resolve(session);
       }),
       find: jest.fn(() => Promise.resolve(stored.filter((session) => session.isActive))),
+      findOne: jest.fn(({ where }: { where: { idSession: number } }) =>
+        Promise.resolve(stored.find((session) => session.idSession === where.idSession) ?? null),
+      ),
     };
     const hash = await bcrypt.hash('secret', 4);
     const users = {
@@ -56,7 +59,10 @@ describe('Concurrent logins with multiple sessions', () => {
           SessionsService,
           { provide: JwtService, useValue: jwtService },
           { provide: UsersService, useValue: users },
-          { provide: getRepositoryToken(UserSession), useValue: repository },
+          {
+            provide: getRepositoryToken(UserSession),
+            useValue: withSessionTransaction(repository),
+          },
         ],
       }).compile();
       const auth = module.get(AuthService);
@@ -73,10 +79,13 @@ describe('Concurrent logins with multiple sessions', () => {
       expect(stored).toHaveLength(2);
       expect(first.userSession.idSession).not.toBe(second.userSession.idSession);
       for (const result of [first, second]) {
-        const refreshPayload = jwtService.verify<{ idUser: number; jti: string }>(
-          result.refreshToken,
-        );
+        const refreshPayload = jwtService.verify<{
+          idUser: number;
+          jti: string;
+          idSession: number;
+        }>(result.refreshToken);
         expect(refreshPayload.idUser).toBe(1);
+        expect(refreshPayload.idSession).toBe(result.userSession.idSession);
         expect(refreshPayload.jti).toMatch(/^[0-9a-f-]{36}$/);
         expect(jwtService.verify<{ idSession: number }>(result.accessToken).idSession).toBe(
           result.userSession.idSession,

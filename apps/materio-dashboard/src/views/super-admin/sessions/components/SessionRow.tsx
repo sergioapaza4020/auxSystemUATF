@@ -4,16 +4,18 @@ import { StatusChip } from '@/components/table/components/StatusChip';
 import { TableActions } from '@/components/table/components/TableActions';
 import { useAuth } from '@/hooks/useAuth';
 import type { ISession } from '@/interfaces/sessions/session.interface';
+import { hasPermission } from '@/utils/hasPermission';
 
 import { getSessionActivity } from '../utils/getSessionActivity';
 
 interface SessionRowProps {
   session: ISession;
   onDelete: (idSession: number) => void;
+  processing?: boolean;
 }
 
 export function SessionRow(props: SessionRowProps) {
-  const { session, onDelete } = props;
+  const { session, onDelete, processing } = props;
 
   const { user } = useAuth();
 
@@ -40,7 +42,12 @@ export function SessionRow(props: SessionRowProps) {
       </TableCell>
       <TableCell align='center'>{getSessionActivity(session.lastUsedAt, session.isActive)}</TableCell>
       <TableCell align='center'>
-        <TableActions active={!isDeleteDisabled} onDelete={() => onDelete(session.idSession)} />
+        <TableActions
+          active={!isDeleteDisabled}
+          disabled={processing}
+          deleteLabel='Cerrar sesión'
+          onDelete={hasPermission(user, 'sessions.revoke-one') ? () => onDelete(session.idSession) : undefined}
+        />
       </TableCell>
     </TableRow>
   );

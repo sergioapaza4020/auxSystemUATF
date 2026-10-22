@@ -26,6 +26,7 @@ import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNav
 // Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles';
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles';
+import { getMenuSectionAccess } from './menuSectionAccess';
 
 type RenderExpandIconProps = {
   open?: boolean;
@@ -47,10 +48,11 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
   const theme = useTheme();
   const { user, loading } = useAuth();
   const can = (permission: string) => !loading && hasPermission(user, permission);
+  const sectionAccess = getMenuSectionAccess(loading ? null : user);
 
   const visible = {
     permissions: can('permission.get-all'),
-    sessions: can('session.get-all'),
+    sessions: can('sessions.get-all'),
     roles: can('role.get-all'),
     faculties: can('faculty.get-all'),
     careers: can('career.get-all'),
@@ -63,15 +65,18 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
   };
 
   const showSuperAdministration =
-    visible.permissions ||
-    visible.sessions ||
-    visible.roles ||
-    visible.faculties ||
-    visible.careers ||
-    visible.courses ||
-    visible.semesters;
+    sectionAccess.superAdministration && (visible.permissions || visible.sessions || visible.roles);
 
-  const showAdministration = visible.users || visible.gradeItems || visible.gradeSchemes || visible.enrollments;
+  const showAdministration =
+    sectionAccess.administration &&
+    (visible.users ||
+      visible.gradeItems ||
+      visible.gradeSchemes ||
+      visible.enrollments ||
+      visible.faculties ||
+      visible.careers ||
+      visible.courses ||
+      visible.semesters);
 
   const { isBreakpointReached, transitionDuration } = useVerticalNav();
 
@@ -119,7 +124,7 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
 
           {/* SUPER ADMIN */}
           {showSuperAdministration && (
-            <MenuSection label='Super Admininistración'>
+            <MenuSection label='Superadministración'>
               {visible.permissions && (
                 <MenuItem href='/dashboard/super-admin/permissions' icon={<i className='ri-key-2-line' />}>
                   Permisos
@@ -136,6 +141,12 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
                   Roles
                 </MenuItem>
               )}
+            </MenuSection>
+          )}
+
+          {/* ADMINISTRACIÓN */}
+          {showAdministration && (
+            <MenuSection label='Administración'>
               {visible.faculties && (
                 <MenuItem href='/dashboard/admin/faculties' icon={<i className='ri-community-line' />}>
                   Facultades
@@ -156,12 +167,6 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
                   Semestres
                 </MenuItem>
               )}
-            </MenuSection>
-          )}
-
-          {/* ADMINISTRACIÓN */}
-          {showAdministration && (
-            <MenuSection label='Administración'>
               {visible.users && (
                 <MenuItem href='/dashboard/super-admin/users' icon={<i className='ri-user-line' />}>
                   Usuarios

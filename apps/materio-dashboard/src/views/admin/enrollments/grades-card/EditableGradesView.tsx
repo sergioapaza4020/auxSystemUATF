@@ -1,4 +1,5 @@
 'use client';
+import { activeCriteria } from '@repo/grade-calculations';
 
 import { Box, Card, CardContent, CircularProgress, Stack, Typography } from '@mui/material';
 
@@ -49,7 +50,7 @@ export function EditableGradesView({
   onDelete,
   isInvalidScore,
 }: EditableGradesViewProps) {
-  const details = [...scheme.details].sort((a, b) => a.order - b.order);
+  const details = activeCriteria(scheme.details).sort((a, b) => a.order - b.order);
 
   return (
     <Card>

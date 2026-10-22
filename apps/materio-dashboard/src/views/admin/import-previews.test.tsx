@@ -1,7 +1,7 @@
 import type * as React from 'react';
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { Alert, Button, TablePagination, TextField } from '@mui/material';
+import { Alert, Button, Chip, Typography, TablePagination, TextField } from '@mui/material';
 
 import { hookHarness, elements } from '@/test-utils/hook-harness';
 import { EnrollmentImportPage } from './enrollments/import/EnrollmentImportPage';
@@ -238,4 +238,86 @@ describe.each(['enrollment', 'career'] as const)('%s confirmation', (kind) => {
       expect(importCareerStudents).toHaveBeenCalledOnce();
     }
   });
+});
+
+it('shows each enrollment action while retaining the paginated review', () => {
+  const preview: IEnrollmentImportPreview = {
+    ...initial,
+    total: 3,
+    valid: 3,
+    newAccounts: 1,
+    existingAccounts: 1,
+    skipped: 1,
+    data: (['CREATE_ACCOUNT', 'ENROLL', 'SKIP'] as const).map((action, index) => ({
+      ...initial.data[0],
+      row: index + 2,
+      action,
+    })),
+    meta: { page: 1, limit: 25, total: 3, totalPages: 1 },
+  };
+
+  const h = mount(() => EnrollmentImportReviewTable({ preview, busy: false }));
+  const chips = elements<React.ComponentProps<typeof Chip>>(h.render(), Chip).map((chip) => chip.props.label);
+
+  expect(chips).toEqual([
+    'Crear cuenta y matricular',
+    'Usar cuenta existente y matricular',
+    'Ya matriculado: se omitirá',
+  ]);
+  expect(find<React.ComponentProps<typeof TablePagination>>(h.render(), TablePagination).count).toBe(3);
+});
+
+it('shows mixed-account counters and submits only the reviewed operation ID', async () => {
+  vi.mocked(previewEnrollmentImport).mockResolvedValue({
+    ...initial,
+    total: 3,
+    valid: 3,
+    newAccounts: 1,
+    existingAccounts: 1,
+    skipped: 1,
+  });
+  vi.mocked(importEnrollments).mockResolvedValue({
+    imported: 2,
+    total: 3,
+    courseId: 10,
+    semesterId: 20,
+    accountsCreated: 1,
+    accountsReused: 1,
+    skipped: 1,
+    errors: 0,
+  });
+  const h = mount(() => EnrollmentImportPage({ idEnrollment: 8 }));
+
+  const input = elements<{ type?: string; onChange: (event: { target: { files: File[]; value: string } }) => void }>(
+    h.render(),
+    'input',
+  ).find((item) => item.props.type === 'file')!;
+
+  input.props.onChange({ target: { files: [new File(['test'], 'students.xlsx')], value: 'file' } });
+
+  const button = (label: string) =>
+    elements<React.ComponentProps<typeof Button>>(h.render(), Button).find((item) => item.props.children === label)!
+      .props;
+
+  button('Revisar archivo').onClick?.({} as React.MouseEvent<HTMLButtonElement>);
+  await vi.runAllTimersAsync();
+
+  const labels = elements<React.ComponentProps<typeof Typography>>(h.render(), Typography).map(
+    (item) => item.props.children,
+  );
+
+  expect(labels).toContain('Cuentas nuevas');
+  expect(labels).toContain('Cuentas existentes');
+  expect(labels).toContain('Ya matriculados');
+  button('Confirmar importación').onClick?.({} as React.MouseEvent<HTMLButtonElement>);
+  button('Confirmar matriculación').onClick?.({} as React.MouseEvent<HTMLButtonElement>);
+  await vi.runAllTimersAsync();
+  expect(importEnrollments).toHaveBeenCalledExactlyOnceWith('operation-id');
+
+  const resultText = JSON.stringify(
+    elements<React.ComponentProps<typeof Typography>>(h.render(), Typography).map((item) => item.props.children),
+  );
+
+  expect(resultText).toContain('cuentas creadas');
+  expect(resultText).toContain('matrículas ya existentes omitidas');
 });

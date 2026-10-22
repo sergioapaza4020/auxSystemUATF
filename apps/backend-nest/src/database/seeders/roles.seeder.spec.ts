@@ -1,3 +1,4 @@
+import { rolesData } from '../data/roles.data';
 import type { Repository } from 'typeorm';
 
 import { Permission } from 'src/entities/permissions/permissions.entity';
@@ -51,5 +52,29 @@ describe('RoleSeeder', () => {
     expect(existingRole.permissions).toEqual([existingPermission, missingPermission]);
     expect(existingRole.description).toBe('Customized description');
     expect(roleRepository.save).toHaveBeenCalledWith(existingRole);
+  });
+});
+
+// The real persona seed must upgrade existing assignments without removing custom ones.
+describe.each(['STUDENT', 'ASSISTANT'])('%s personal listing seed', (name) => {
+  it('adds the listing permission to an existing role and is idempotent', async () => {
+    const data = rolesData.find((role) => role.name === name)!;
+    const custom = { name: 'custom.keep' } as Permission;
+    const existing = { name, permissions: [custom] } as Role;
+    const permissions = data.permissions.map((permission) => ({ name: permission }) as Permission);
+    const repository = { findOne: jest.fn().mockResolvedValue(existing), save: jest.fn() };
+    const seeder = new RoleSeeder(
+      repository as unknown as Repository<Role>,
+      {
+        find: jest.fn().mockResolvedValue(permissions),
+      } as unknown as Repository<Permission>,
+    );
+    await seeder.create(data);
+    await seeder.create(data);
+    expect(existing.permissions).toContain(custom);
+    expect(
+      existing.permissions.filter((p) => p.name === 'enrollment.get-my-enrollments'),
+    ).toHaveLength(1);
+    expect(repository.save).toHaveBeenCalledTimes(1);
   });
 });

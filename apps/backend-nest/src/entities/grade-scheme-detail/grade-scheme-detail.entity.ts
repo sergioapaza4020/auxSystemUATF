@@ -15,6 +15,12 @@ import { Activity } from '../activities/activity.entity';
 @Entity('grade_scheme_details')
 @Check('CHK_attendance_permission_weight', '"permission_weight" >= 0 AND "permission_weight" <= 1')
 export class GradeSchemeDetail extends BaseEntity {
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
+  @Column({ name: 'archived_at', type: 'timestamp', nullable: true })
+  archivedAt: Date | null;
+
   @PrimaryGeneratedColumn({ name: 'id_grade_scheme_detail' })
   idGradeSchemeDetail: number;
 

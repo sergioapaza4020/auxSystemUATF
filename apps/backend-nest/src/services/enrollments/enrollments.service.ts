@@ -1,3 +1,4 @@
+import { activeCriteria } from '@repo/grade-calculations';
 import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
 import { getStudentRosterPage } from '@common/utils/student-roster';
 import {
@@ -460,7 +461,7 @@ export class EnrollmentsService {
           assistantContribution: null,
         })),
       };
-    const details = [...scheme.details].sort(
+    const details = activeCriteria(scheme.details).sort(
       (a, b) => a.order - b.order || a.idGradeSchemeDetail - b.idGradeSchemeDetail,
     );
     const multiplier = Number(scheme.assistantPercentage ?? 100) / 100;

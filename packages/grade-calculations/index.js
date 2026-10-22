@@ -32,6 +32,8 @@ function totalScore(details) {
   );
 }
 module.exports = {
+  activeCriteria: (details) =>
+    details.filter((detail) => detail.isActive !== false),
   isAttendanceCriterion,
   attendancePercentage,
   averageScores,

@@ -1,5 +1,5 @@
 'use client';
-import { isAttendanceCriterion } from '@repo/grade-calculations';
+import { activeCriteria, isAttendanceCriterion } from '@repo/grade-calculations';
 import { Alert, Box, Button, Card, CardContent, Chip, Divider, LinearProgress, Stack, Typography } from '@mui/material';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
@@ -39,7 +39,7 @@ export function AcademicCriteria({
   attendanceHref,
   mode,
 }: AcademicCriteriaProps) {
-  const details = [...scheme.details].sort((a, b) => a.order - b.order);
+  const details = activeCriteria(scheme.details).sort((a, b) => a.order - b.order);
 
   return (
     <Box

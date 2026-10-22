@@ -48,7 +48,10 @@ function fixture(names: string[], offset = 701) {
     ),
   };
   const enrollment = { find: jest.fn().mockResolvedValue([{ idEnrollment: 81 }]) };
-  const records = { countBy: jest.fn().mockResolvedValue(0) };
+  const records = {
+    countBy: jest.fn().mockResolvedValue(0),
+    count: jest.fn().mockResolvedValue(0),
+  };
   const manager = {
     getRepository: (entity: unknown) => {
       if (entity === GradeScheme) return schemes;
@@ -57,9 +60,11 @@ function fixture(names: string[], offset = 701) {
       return records;
     },
   } as unknown as EntityManager;
-  const dataSource = {
-    transaction: (work: (manager: EntityManager) => Promise<unknown>) => work(manager),
-  } as DataSource;
+  const transaction = jest.fn((work: (manager: EntityManager) => Promise<unknown>) =>
+    work(manager),
+  );
+  const dataSource = { transaction } as unknown as DataSource;
+  Object.assign(schemes, { manager });
   const args = [
     schemes as unknown as Repository<GradeScheme>,
     details as unknown as Repository<GradeSchemeDetail>,
@@ -72,7 +77,19 @@ function fixture(names: string[], offset = 701) {
     schemes.findOne.mockResolvedValueOnce(null);
     return assistant.create(11, 12, dto);
   };
-  return { items, dto, schemes, details, catalog, existing, records, assistant, general, create };
+  return {
+    items,
+    dto,
+    schemes,
+    details,
+    catalog,
+    existing,
+    records,
+    assistant,
+    general,
+    create,
+    transaction,
+  };
 }
 
 describe('AssistantGradeScheme criteria', () => {
@@ -165,6 +182,118 @@ describe('AssistantGradeScheme criteria', () => {
       expect.objectContaining({ idGradeSchemeDetail: 300, percentage: 70 }),
       expect.objectContaining({ idGradeSchemeDetail: 301, percentage: 30, permissionWeight: 0.5 }),
     ]);
+  });
+
+  it('returns active criteria separately from archived history with deletion impact', async () => {
+    const f = fixture(['Prácticas']);
+    f.schemes.findOne.mockResolvedValue({
+      idGradeScheme: 93,
+      assistantEnrollment: { idEnrollment: 81 },
+      details: [
+        { idGradeSchemeDetail: 300, isActive: true, gradeItem: f.items[0], activities: [] },
+        {
+          idGradeSchemeDetail: 301,
+          isActive: false,
+          gradeItem: { name: 'Laboratorio' },
+          activities: [],
+        },
+      ],
+    });
+    f.records.count.mockResolvedValue(1);
+    const response = await f.assistant.getMyScheme(11, 12);
+    expect(response?.details).toEqual([
+      expect.objectContaining({ idGradeSchemeDetail: 300, hasAcademicData: true }),
+    ]);
+    expect(response?.archivedDetails).toEqual([
+      expect.objectContaining({ idGradeSchemeDetail: 301 }),
+    ]);
+    expect(f.records.count).toHaveBeenCalledWith(expect.objectContaining({ withDeleted: true }));
+  });
+
+  it('propagates a failed write through the single transaction instead of committing partially', async () => {
+    const f = fixture(['Prácticas']);
+    f.existing.push({
+      idGradeSchemeDetail: 300,
+      gradeItem: { idGradeItem: 919, name: 'Laboratorio' } as GradeItem,
+    });
+    f.details.save.mockRejectedValueOnce(new Error('write failed'));
+    await expect(
+      f.assistant.update(11, 93, { ...f.dto, deactivateDetailIds: [300] }),
+    ).rejects.toThrow('write failed');
+    expect(f.transaction).toHaveBeenCalledTimes(1);
+    expect(f.details.delete).not.toHaveBeenCalled();
+  });
+
+  it('deletes an unused criterion after explicit redistribution', async () => {
+    const f = fixture(['Prácticas']);
+    f.existing.push({
+      idGradeSchemeDetail: 300,
+      gradeItem: { idGradeItem: 919, name: 'Laboratorio' } as GradeItem,
+    });
+    await f.assistant.update(11, 93, f.dto);
+    expect(f.details.delete).toHaveBeenCalledWith(300);
+  });
+
+  it.each(['grades', 'activities', 'attendance'])(
+    'archives %s history only with explicit authorization',
+    async (kind) => {
+      const f = fixture(['Prácticas']);
+      f.existing.push({
+        idGradeSchemeDetail: 300,
+        percentage: 30,
+        gradeItem: {
+          idGradeItem: 919,
+          name: kind === 'attendance' ? 'Asistencias' : 'Laboratorio',
+        } as GradeItem,
+      });
+      if (kind === 'activities') f.records.count.mockResolvedValue(1);
+      else f.records.countBy.mockResolvedValue(1);
+      await expect(f.assistant.update(11, 93, f.dto)).rejects.toThrow(ConflictException);
+      await f.assistant.update(11, 93, { ...f.dto, deactivateDetailIds: [300] });
+      expect(f.details.delete).not.toHaveBeenCalled();
+      expect(f.details.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          idGradeSchemeDetail: 300,
+          percentage: 30,
+          isActive: false,
+        }),
+      );
+      expect(f.existing[0].archivedAt).toBeInstanceOf(Date);
+      expect(f.schemes.save).toHaveBeenCalledWith(expect.objectContaining({ updatedBy: 11 }));
+    },
+  );
+
+  it('rejects fractional redistribution that the integer storage cannot represent', async () => {
+    const f = fixture(['Prácticas', 'Laboratorio']);
+    f.dto.details[0].percentage = 70.5;
+    f.dto.details[1].percentage = 29.5;
+    await expect(f.assistant.update(11, 93, f.dto)).rejects.toThrow('deben ser enteros');
+    expect(f.schemes.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid redistribution before any writes', async () => {
+    const f = fixture(['Prácticas']);
+    f.dto.details[0].percentage = 70;
+    await expect(
+      f.assistant.update(11, 93, { ...f.dto, deactivateDetailIds: [300] }),
+    ).rejects.toThrow(BadRequestException);
+    expect(f.details.save).not.toHaveBeenCalled();
+    expect(f.details.delete).not.toHaveBeenCalled();
+    expect(f.schemes.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects foreign criteria and implicit reactivation', async () => {
+    const f = fixture(['Prácticas']);
+    await expect(
+      f.assistant.update(11, 93, { ...f.dto, deactivateDetailIds: [999] }),
+    ).rejects.toThrow(BadRequestException);
+    f.existing.push({
+      idGradeSchemeDetail: 300,
+      isActive: false,
+      gradeItem: f.items[0] as GradeItem,
+    });
+    await expect(f.assistant.update(11, 93, f.dto)).rejects.toThrow('no puede reactivarse');
+    expect(f.details.save).not.toHaveBeenCalled();
   });
 
   it('keeps the protection against removing criteria with grades or activities', async () => {

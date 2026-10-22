@@ -1,4 +1,5 @@
 'use client';
+import { activeCriteria } from '@repo/grade-calculations';
 
 import { Box, Button, Card, CardContent, LinearProgress, Skeleton, Stack, Typography } from '@mui/material';
 
@@ -120,7 +121,7 @@ export function AssistantGradeSchemeCard({
     );
   }
 
-  const details = [...scheme.details].sort((a, b) => a.order - b.order);
+  const details = activeCriteria(scheme.details).sort((a, b) => a.order - b.order);
 
   const isAttendance = (name: string) => name.trim().toLocaleLowerCase().includes('asistencia');
 
@@ -405,6 +406,16 @@ export function AssistantGradeSchemeCard({
             </Typography>
           </Stack>
         </Box>
+        {!!scheme.archivedDetails?.length && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant='subtitle2'>Criterios inactivos — historial conservado</Typography>
+            {scheme.archivedDetails.map((detail) => (
+              <Typography key={detail.idGradeSchemeDetail} variant='body2' color='text.secondary'>
+                {detail.gradeItem.name} · {detail.percentage}% anterior · No aporta al cálculo vigente
+              </Typography>
+            ))}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

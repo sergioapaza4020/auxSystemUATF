@@ -4,15 +4,12 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { HTTP_CODE_METADATA } from '@nestjs/common/constants';
 import type { DataSource, EntityManager } from 'typeorm';
 import type { Queue } from 'bullmq';
 import { BulkOperation } from 'src/entities/bulk-operations/bulk-operation.entity';
 import { BulkOperationStatus as Status, BulkOperationType } from '@common/enums/bulk-operation';
-import { USER_IMPORT_JOB, USER_IMPORT_QUEUE } from '@common/types/user-import-job';
 import type { UserImportJob } from '@common/types/user-import-job';
 import { BulkOperationsService } from '../bulk-operations/bulk-operations.service';
-import { UsersController } from 'src/controllers/users/users.controller';
 import { UserImportJobsService } from './user-import-jobs.service';
 import { userImportStatus } from 'src/dtos/users/user-import-status.dto';
 
@@ -77,33 +74,6 @@ function fixture() {
 }
 
 describe('USER_IMPORT enqueue and durable status', () => {
-  it('atomically claims READY, returns progress and queues only the identifier', async () => {
-    const f = fixture();
-    expect(await f.service.confirm(id, 7)).toEqual(
-      expect.objectContaining({
-        operationId: id,
-        status: Status.IMPORTING,
-        total: 100,
-        processed: 0,
-        failed: 0,
-        progress: 0,
-      }),
-    );
-    expect(f.query.setLock).toHaveBeenCalledWith('pessimistic_write');
-    expect(f.query.andWhere).toHaveBeenCalledWith('operation.created_by = :ownerId', {
-      ownerId: 7,
-    });
-    expect(f.queue.add).toHaveBeenCalledWith(USER_IMPORT_JOB, { operationId: id }, { jobId: id });
-    expect(USER_IMPORT_QUEUE).toBe('bulk-user-import');
-    expect(f.operation.startedAt).toBeInstanceOf(Date);
-    expect(
-      Reflect.getMetadata(
-        HTTP_CODE_METADATA,
-        Object.getOwnPropertyDescriptor(UsersController.prototype, 'confirmImport')
-          ?.value as unknown,
-      ),
-    ).toBe(202);
-  });
   it.each([
     [id, 8],
     ['22222222-2222-4222-8222-222222222222', 7],

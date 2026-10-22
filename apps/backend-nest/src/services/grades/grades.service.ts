@@ -1,3 +1,4 @@
+import { activeCriteria } from '@repo/grade-calculations';
 import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
 import { getStudentRosterPage } from '@common/utils/student-roster';
 import {
@@ -238,6 +239,9 @@ export class GradesService {
   async update(idUser: number, idGrade: number, dto: UpdateGradeDto) {
     const grade = await this.getOne(idUser, idGrade);
 
+    if (grade.gradeSchemeDetail.isActive === false)
+      throw new BadRequestException('El criterio está archivado y sus notas son históricas');
+
     if (dto.score !== undefined) {
       assertGradeScore(dto.score);
       grade.score = dto.score;
@@ -297,7 +301,7 @@ export class GradesService {
       : undefined;
     if (roster) matrix.meta = roster.meta;
     if (!scheme) return matrix;
-    const details = [...scheme.details]
+    const details = activeCriteria(scheme.details)
       .filter((detail) => !isAttendanceCriterion(detail.gradeItem.name))
       .sort((a, b) => a.order - b.order || a.idGradeSchemeDetail - b.idGradeSchemeDetail);
     const counts = await manager
@@ -461,7 +465,7 @@ export class GradesService {
       const activityMap = new Map(activities.map((activity) => [activity.idActivity, activity]));
       const studentMap = new Map(students.map((student) => [student.idEnrollment, student]));
       const detailMap = new Map(
-        scheme.details.map((detail) => [detail.idGradeSchemeDetail, detail]),
+        activeCriteria(scheme.details).map((detail) => [detail.idGradeSchemeDetail, detail]),
       );
       const values = dto.grades.map((input) => {
         const student = studentMap.get(input.enrollmentId);

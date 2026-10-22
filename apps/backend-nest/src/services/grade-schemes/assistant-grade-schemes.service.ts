@@ -1,3 +1,5 @@
+import { activeCriteria } from '@repo/grade-calculations';
+import { AttendanceSession } from 'src/entities/attendance/attendance-session.entity';
 import { Grade } from 'src/entities/grades/grades.entity';
 import { Activity } from 'src/entities/activities/activity.entity';
 import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
@@ -13,7 +15,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 
 import { CourseRelations } from '@common/enums/courseRelations';
 
@@ -54,6 +56,7 @@ export class AssistantGradeSchemesService {
         ...statusFilter(status),
       },
       relations: {
+        assistantEnrollment: true,
         details: {
           gradeItem: true,
           activities: true,
@@ -61,7 +64,7 @@ export class AssistantGradeSchemesService {
       },
     });
 
-    return withActiveActivities(scheme);
+    return this.withHistory(this.gradeSchemeRepository.manager, scheme);
   }
 
   async create(
@@ -87,6 +90,7 @@ export class AssistantGradeSchemesService {
     this.validatePercentages(dto);
 
     return this.dataSource.transaction(async (manager) => {
+      this.validatePercentages(dto);
       await validateAssistantGradeItems(manager, dto.details);
       const gradeSchemeRepository = manager.getRepository(GradeScheme);
       const detailRepository = manager.getRepository(GradeSchemeDetail);
@@ -114,12 +118,14 @@ export class AssistantGradeSchemesService {
 
       await detailRepository.save(details);
 
-      return withActiveActivities(
+      return this.withHistory(
+        manager,
         await gradeSchemeRepository.findOne({
           where: {
             idGradeScheme: scheme.idGradeScheme,
           },
           relations: {
+            assistantEnrollment: true,
             details: {
               gradeItem: true,
               activities: true,
@@ -159,6 +165,7 @@ export class AssistantGradeSchemesService {
     }
 
     return this.dataSource.transaction(async (manager) => {
+      this.validatePercentages(dto);
       await validateAssistantGradeItems(manager, dto.details);
       const gradeSchemeRepository = manager.getRepository(GradeScheme);
       const detailRepository = manager.getRepository(GradeSchemeDetail);
@@ -182,15 +189,46 @@ export class AssistantGradeSchemesService {
         );
       }
       const kept = new Set(dto.details.map((detail) => detail.gradeItem.idGradeItem));
-      const removed = existing.filter((detail) => !kept.has(detail.gradeItem.idGradeItem));
+      const deactivations = new Set(dto.deactivateDetailIds ?? []);
+      if (
+        [...deactivations].some(
+          (id) =>
+            !existing.some(
+              (detail) =>
+                detail.idGradeSchemeDetail === id &&
+                detail.isActive !== false &&
+                !kept.has(detail.gradeItem.idGradeItem),
+            ),
+        )
+      ) {
+        throw new BadRequestException(
+          'La desactivación debe corresponder a un criterio activo retirado de esta configuración',
+        );
+      }
+      if (
+        existing.some(
+          (detail) => detail.isActive === false && kept.has(detail.gradeItem.idGradeItem),
+        )
+      ) {
+        throw new BadRequestException(
+          'Un criterio archivado no puede reactivarse desde este formulario',
+        );
+      }
+      const removed = activeCriteria(existing).filter(
+        (detail) => !kept.has(detail.gradeItem.idGradeItem),
+      );
       for (const detail of removed) {
-        const where = { gradeSchemeDetail: { idGradeSchemeDetail: detail.idGradeSchemeDetail } };
-        const activityCount = await manager.getRepository(Activity).countBy(where);
-        const gradeCount = await manager.getRepository(Grade).countBy(where);
-        if (activityCount || gradeCount) {
-          throw new ConflictException(
-            `No se puede quitar �${detail.gradeItem.name}�: tiene actividades o notas. Cons�rvalo en el esquema.`,
-          );
+        const impact = await this.getImpact(
+          manager,
+          detail,
+          scheme.assistantEnrollment!.idEnrollment,
+        );
+        if (impact.hasAcademicData && !deactivations.has(detail.idGradeSchemeDetail)) {
+          throw new ConflictException({
+            message: `El criterio «${detail.gradeItem.name}» no puede eliminarse porque tiene datos registrados. Desactívalo y redistribuye su porcentaje.`,
+            detailId: detail.idGradeSchemeDetail,
+            ...impact,
+          });
         }
       }
       const details: GradeSchemeDetail[] = [];
@@ -213,16 +251,27 @@ export class AssistantGradeSchemesService {
       locked.name = dto.name ?? locked.name;
       locked.description = dto.description ?? locked.description;
       locked.assistantPercentage = dto.assistantPercentage;
+      locked.updatedBy = idAssistant;
       await gradeSchemeRepository.save(locked);
-      for (const detail of removed) await detailRepository.delete(detail.idGradeSchemeDetail);
+      for (const detail of removed) {
+        if (deactivations.has(detail.idGradeSchemeDetail)) {
+          detail.isActive = false;
+          detail.archivedAt = new Date();
+          await detailRepository.save(detail);
+        } else {
+          await detailRepository.delete(detail.idGradeSchemeDetail);
+        }
+      }
       await detailRepository.save(details);
 
-      return withActiveActivities(
+      return this.withHistory(
+        manager,
         await gradeSchemeRepository.findOne({
           where: {
             idGradeScheme: scheme.idGradeScheme,
           },
           relations: {
+            assistantEnrollment: true,
             details: {
               gradeItem: true,
               activities: true,
@@ -231,6 +280,39 @@ export class AssistantGradeSchemesService {
         }),
       );
     });
+  }
+
+  private async getImpact(manager: EntityManager, detail: GradeSchemeDetail, enrollmentId: number) {
+    const where = { gradeSchemeDetail: { idGradeSchemeDetail: detail.idGradeSchemeDetail } };
+    const activityCount = await manager.getRepository(Activity).count({ where, withDeleted: true });
+    const gradeCount = await manager.getRepository(Grade).countBy(where);
+    const attendanceSessionCount = detail.gradeItem.name
+      .trim()
+      .toLocaleLowerCase()
+      .includes('asistencia')
+      ? await manager
+          .getRepository(AttendanceSession)
+          .countBy({ assistantEnrollment: { idEnrollment: enrollmentId } })
+      : 0;
+    return {
+      activityCount,
+      gradeCount,
+      attendanceSessionCount,
+      hasAcademicData: activityCount + gradeCount + attendanceSessionCount > 0,
+    };
+  }
+
+  private async withHistory(manager: EntityManager, scheme: GradeScheme | null) {
+    if (!scheme) return null;
+    withActiveActivities(scheme);
+    const archivedDetails = (scheme.details ?? []).filter((detail) => detail.isActive === false);
+    const details = await Promise.all(
+      activeCriteria(scheme.details ?? []).map(async (detail) => ({
+        ...detail,
+        ...(await this.getImpact(manager, detail, scheme.assistantEnrollment?.idEnrollment ?? 0)),
+      })),
+    );
+    return { ...scheme, details, archivedDetails };
   }
 
   private async getAssistantEnrollment(
@@ -259,6 +341,16 @@ export class AssistantGradeSchemesService {
       new Set(dto.details.map((detail) => detail.gradeItem.idGradeItem)).size !== dto.details.length
     ) {
       throw new BadRequestException('No se puede repetir un �tem en el esquema');
+    }
+    if (
+      dto.details.some(
+        (detail) =>
+          !Number.isInteger(detail.percentage) || detail.percentage < 0 || detail.percentage > 100,
+      )
+    ) {
+      throw new BadRequestException(
+        'Los porcentajes de los criterios deben ser enteros entre 0 y 100',
+      );
     }
     const totalPercentage = dto.details.reduce((sum, detail) => sum + detail.percentage, 0);
 

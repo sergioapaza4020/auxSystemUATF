@@ -1,7 +1,6 @@
 import { GradeSchemeQueryDto } from 'src/dtos/grade-schemes/grade-scheme-query.dto';
 import { statusFilter } from '@common/utils/status-filter';
 import { CourseRelations } from '@common/enums/courseRelations';
-import { validateAssistantGradeItems } from '@common/utils/assistant-grade-items';
 import {
   BadRequestException,
   ConflictException,
@@ -228,7 +227,9 @@ export class GradeSchemesService {
         throw new BadRequestException('Details from grade scheme not found');
 
       if (gradeScheme.assistantEnrollment) {
-        await validateAssistantGradeItems(manager, gradeSchemeUpdateDto.details);
+        throw new BadRequestException(
+          'Edita esta configuración desde el formulario del auxiliar para preservar su historial',
+        );
       }
 
       const totalPercentage = gradeSchemeUpdateDto.details.reduce(

@@ -204,6 +204,15 @@ function fixture(studentCount = 2) {
 }
 
 describe('Activity grade matrix', () => {
+  it('excludes archived criteria from the matrix and rejects their grade writes', async () => {
+    const f = fixture();
+    f.details[0].isActive = false;
+    const matrix = await f.service.getMatrix(user.idUser, 1);
+    expect(matrix.criteria.some((detail) => detail.idGradeSchemeDetail === 10)).toBe(false);
+    await expect(
+      f.service.saveBulk(user, 1, { grades: [{ enrollmentId: 100, activityId: 20, score: 75 }] }),
+    ).rejects.toThrow();
+  });
   it('loads dynamic criteria, excludes attendance and returns the matrix with existing grades', async () => {
     const f = fixture();
     const matrix = await f.service.getMatrix(4, 1);

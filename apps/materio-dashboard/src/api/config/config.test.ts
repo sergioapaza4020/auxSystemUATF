@@ -49,7 +49,7 @@ describe('Axios response cancellation', () => {
 
     const error: unknown = await pending.catch((reason) => reason);
 
-    expect(log).toHaveBeenCalledWith('Response error:', error);
+    expect(log).toHaveBeenCalledWith('Response error:', 403);
     expect(getApiErrorMessage(error)).toBe('La matrícula no pertenece a esta materia.');
   });
   it('preserves useful local confirmation errors instead of hiding them behind a generic message', () => {

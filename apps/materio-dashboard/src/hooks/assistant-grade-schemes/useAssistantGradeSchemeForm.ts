@@ -45,17 +45,23 @@ export function useAssistantGradeSchemeForm(options: UseAssistantGradeSchemeForm
           return current;
         }
 
+        const original = options.initialValue?.details.find(
+          (detail) => detail.gradeItem.idGradeItem === gradeItem.idGradeItem,
+        );
+
         const newDetail: IAssistantGradeSchemeDetailCreate = {
           gradeItem: {
             idGradeItem: gradeItem.idGradeItem,
           },
-          percentage: 0,
+          ...original,
+          percentage: original?.percentage ?? 0,
           order: current.details.length + 1,
         };
 
         return {
           ...current,
           details: [...current.details, newDetail],
+          deactivateDetailIds: current.deactivateDetailIds?.filter((id) => id !== original?.idGradeSchemeDetail),
         };
       }
 
@@ -66,9 +72,15 @@ export function useAssistantGradeSchemeForm(options: UseAssistantGradeSchemeForm
           order: index + 1,
         }));
 
+      const removed = current.details.find((detail) => detail.gradeItem.idGradeItem === gradeItem.idGradeItem);
+
       return {
         ...current,
         details,
+        deactivateDetailIds:
+          removed?.hasAcademicData && removed.idGradeSchemeDetail
+            ? [...new Set([...(current.deactivateDetailIds ?? []), removed.idGradeSchemeDetail])]
+            : current.deactivateDetailIds,
       };
     });
   };
@@ -108,6 +120,9 @@ export function useAssistantGradeSchemeForm(options: UseAssistantGradeSchemeForm
     totalPercentage === 100 &&
     form.details.every(
       (detail) =>
+        Number.isInteger(detail.percentage) &&
+        detail.percentage >= 0 &&
+        detail.percentage <= 100 &&
         Number.isFinite(detail.permissionWeight ?? 1) &&
         (detail.permissionWeight ?? 1) >= 0 &&
         (detail.permissionWeight ?? 1) <= 1,

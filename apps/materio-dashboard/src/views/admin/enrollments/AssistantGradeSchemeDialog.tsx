@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+
 import { assistantGradeItemLabel, isAssistantGradeItem } from '@repo/grade-calculations/assistant-grade-items';
 
 import {
+  Alert,
   Box,
   Button,
   Dialog,
@@ -15,10 +18,15 @@ import {
   Typography,
 } from '@mui/material';
 
+import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
+
 import Form from '@components/Form';
 
 import type { IGradeItem } from '@/interfaces/grade-items/grade-item.interface';
-import type { IAssistantGradeSchemeCreate } from '@/interfaces/grade-schemes/assistant-grade-scheme.interface';
+import type {
+  IAssistantGradeSchemeDetail,
+  IAssistantGradeSchemeCreate,
+} from '@/interfaces/grade-schemes/assistant-grade-scheme.interface';
 
 import { useAssistantGradeSchemeForm } from '@/hooks/assistant-grade-schemes/useAssistantGradeSchemeForm';
 
@@ -31,6 +39,7 @@ interface AssistantGradeSchemeDialogProps {
   gradeItems: IGradeItem[];
   loadingGradeItems: boolean;
   initialValue?: IAssistantGradeSchemeCreate;
+  archivedDetails?: IAssistantGradeSchemeDetail[];
   onClose: () => void;
   onSubmit: (data: IAssistantGradeSchemeCreate) => Promise<void>;
 }
@@ -41,6 +50,7 @@ export function AssistantGradeSchemeDialog({
   gradeItems,
   loadingGradeItems,
   initialValue,
+  archivedDetails = [],
   onClose,
   onSubmit,
 }: AssistantGradeSchemeDialogProps) {
@@ -56,6 +66,18 @@ export function AssistantGradeSchemeDialog({
     initialValue,
   });
 
+  const [pendingRemoval, setPendingRemoval] = useState<IGradeItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const removedDetail = form.details.find((detail) => detail.gradeItem.idGradeItem === pendingRemoval?.idGradeItem);
+
+  const hasData = !!removedDetail?.hasAcademicData;
+
+  const changeGradeItem = (item: IGradeItem, checked: boolean) => {
+    if (!checked) setPendingRemoval(item);
+    else handleGradeItemChange(item, true);
+  };
+
   const formId = 'assistant-grade-scheme-form';
   const isEditing = !!initialValue;
 
@@ -64,7 +86,13 @@ export function AssistantGradeSchemeDialog({
 
     if (!isValid) return;
 
-    await onSubmit(form);
+    setError(null);
+
+    try {
+      await onSubmit(form);
+    } catch (cause: unknown) {
+      setError(getApiErrorMessage(cause));
+    }
   };
 
   return (
@@ -100,6 +128,17 @@ export function AssistantGradeSchemeDialog({
           pb: 4,
         }}
       >
+        {error && (
+          <Alert severity='error' sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        {!!form.deactivateDetailIds?.length && (
+          <Alert severity='warning' sx={{ mb: 3 }}>
+            Los criterios retirados se archivarán sin borrar datos. Redistribuye manualmente sus porcentajes hasta sumar
+            100%. La configuración activa recalcula la nota vigente de todos los estudiantes.
+          </Alert>
+        )}
         <Form onSubmit={handleSubmit} id={formId}>
           <Grid container spacing={4}>
             <Grid item xs={12}>
@@ -170,12 +209,16 @@ export function AssistantGradeSchemeDialog({
 
             <Grid item xs={12}>
               <GradeSchemeItemsEditor
-                gradeItems={gradeItems.filter(isAssistantGradeItem)}
+                gradeItems={gradeItems.filter(
+                  (item) =>
+                    isAssistantGradeItem(item) &&
+                    !archivedDetails.some((detail) => detail.gradeItem.idGradeItem === item.idGradeItem),
+                )}
                 getGradeItemLabel={assistantGradeItemLabel}
                 details={form.details}
                 loading={loadingGradeItems}
                 totalPercentage={totalPercentage}
-                onGradeItemChange={handleGradeItemChange}
+                onGradeItemChange={changeGradeItem}
                 onPercentageChange={handlePercentageChange}
                 onPermissionWeightChange={handlePermissionWeightChange}
               />
@@ -202,6 +245,29 @@ export function AssistantGradeSchemeDialog({
         </Button>
       </DialogActions>
 
+      <Dialog open={!!pendingRemoval} onClose={() => setPendingRemoval(null)} maxWidth='sm' fullWidth>
+        <DialogTitle>{hasData ? 'Desactivar y redistribuir' : 'Eliminar criterio'}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {pendingRemoval && assistantGradeItemLabel(pendingRemoval.name)}: {removedDetail?.percentage ?? 0}%.
+            {hasData
+              ? ' Este criterio tiene datos registrados y no puede eliminarse. Se conservarán actividades, notas y asistencia como historial. Dejará de aportar al cálculo vigente.'
+              : ' Se retirará este criterio de la configuración. Los criterios sin datos pueden eliminarse.'}{' '}
+            Para guardar, redistribuye manualmente su porcentaje entre los criterios restantes hasta sumar 100%.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingRemoval(null)}>Cancelar</Button>
+          <Button
+            onClick={() => {
+              if (pendingRemoval) handleGradeItemChange(pendingRemoval, false);
+              setPendingRemoval(null);
+            }}
+          >
+            {hasData ? 'Desactivar y redistribuir' : 'Eliminar y redistribuir'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <LoadingOverlay open={loading} />
     </Dialog>
   );

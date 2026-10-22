@@ -1,6 +1,6 @@
 import { clearTokens, getRefreshToken } from '@/utils/authCookies';
 import { instance } from './config/config';
-import type { PaginatedApiResponse } from '@/interfaces/apiResponse';
+import type { ApiResponse, PaginatedApiResponse } from '@/interfaces/apiResponse';
 import type { ISession } from '@/interfaces/sessions/session.interface';
 
 export interface SessionPageQuery {
@@ -26,7 +26,7 @@ export const getAllSessions = async (
 };
 
 export const revokeSessionById = async (idSession: number): Promise<ISession> => {
-  const response = await instance.patch(`/sessions/revoke/${idSession}`);
+  const response = await instance.patch<ApiResponse<ISession>>(`/sessions/revoke/${idSession}`);
 
   return response.data.data;
 };

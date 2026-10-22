@@ -10,6 +10,7 @@ import { SessionsService } from '../sessions/sessions.service';
 import { Request } from 'express';
 import { UAParser } from 'ua-parser-js';
 import { randomUUID } from 'node:crypto';
+import { jwtDurationSeconds } from '@common/utils/jwt-duration';
 
 @Injectable()
 export class AuthService {
@@ -35,15 +36,6 @@ export class AuthService {
   async login(loginDto: LoginDto, request: Request) {
     const user = await this.validateUser(loginDto);
 
-    const refreshToken = this.jwtService.sign(
-      // Put session entropy first: bcrypt only compares the first 72 bytes of a token.
-      { jti: randomUUID(), idUser: user.idUser },
-      {
-        secret: process.env.JWT_ACCESS_REFRESH,
-        expiresIn: process.env.JWT_ACCESS_REFRESH_EXPIRES_IN as number | undefined,
-      },
-    );
-
     const ipAddress = request.ip || request.socket.remoteAddress;
     const userAgent = request.headers['user-agent'];
 
@@ -54,9 +46,29 @@ export class AuthService {
 
     const lastUsedAt = new Date();
 
-    const userSession = await this.sessionService.createSession({
+    return this.sessionService.createSession({
       user,
-      refreshToken,
+      issueTokens: (idSession) => {
+        const refreshToken = this.jwtService.sign(
+          // Keep session entropy first: bcrypt compares only the first 72 bytes.
+          { jti: randomUUID(), idUser: user.idUser, idSession },
+          {
+            secret: process.env.JWT_ACCESS_REFRESH,
+            expiresIn: jwtDurationSeconds(
+              process.env.JWT_ACCESS_REFRESH_EXPIRES_IN,
+              'JWT_ACCESS_REFRESH_EXPIRES_IN',
+            ),
+          },
+        );
+        const accessToken = this.jwtService.sign(this.buildSessionPayload(user, idSession), {
+          secret: process.env.JWT_ACCESS_SECRET,
+          expiresIn: jwtDurationSeconds(
+            process.env.JWT_ACCESS_SECRET_EXPIRES_IN,
+            'JWT_ACCESS_SECRET_EXPIRES_IN',
+          ),
+        });
+        return { accessToken, refreshToken };
+      },
       ipAddress,
       userAgent,
       browser,
@@ -64,19 +76,6 @@ export class AuthService {
       device,
       lastUsedAt,
     });
-
-    const session = this.buildSessionPayload(user, userSession.idSession);
-
-    const accessToken = this.jwtService.sign(session, {
-      secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as number | undefined,
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-      userSession,
-    };
   }
 
   decodeToken(token: string): JwtPayload | null {
@@ -110,30 +109,62 @@ export class AuthService {
   }
 
   async refreshToken(token: string) {
+    const refreshSecret = process.env.JWT_ACCESS_REFRESH;
+    if (!refreshSecret) throw new Error('JWT_ACCESS_REFRESH is required');
+
+    let payload: unknown;
     try {
-      const payload = this.jwtService.verify<JwtPayload>(token, {
-        secret: process.env.JWT_ACCESS_REFRESH,
+      payload = this.jwtService.verify<object>(token, {
+        secret: refreshSecret,
       });
-
-      const session = await this.sessionService.validateRefreshToken(token);
-
-      if (session.user.idUser !== payload.idUser)
-        throw new UnauthorizedException('Invalid session');
-
-      await this.sessionService.updateLastSessionUsed(session);
-
-      const newPayload = await this.getSession(payload.idUser, session.idSession);
-
-      const newAccessToken = this.jwtService.sign(newPayload, {
-        secret: process.env.JWT_ACCESS_SECRET,
-        expiresIn: process.env.JWT_ACCESS_SECRET_EXPIRES_IN as number | undefined,
-      });
-
-      await this.sessionService.updateLastSessionUsed(session);
-
-      return { accessToken: newAccessToken };
     } catch (error) {
-      throw new Error(`Invalid token refresh: ${(error as Error).message}`);
+      if (
+        error instanceof Error &&
+        ['JsonWebTokenError', 'TokenExpiredError', 'NotBeforeError'].includes(error.name)
+      ) {
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+      throw error;
     }
+
+    if (
+      typeof payload !== 'object' ||
+      payload === null ||
+      !('idUser' in payload) ||
+      typeof payload.idUser !== 'number' ||
+      !Number.isSafeInteger(payload.idUser) ||
+      payload.idUser <= 0
+    ) {
+      throw new UnauthorizedException('Invalid refresh token payload');
+    }
+
+    const idSession = 'idSession' in payload ? payload.idSession : undefined;
+    if (
+      idSession !== undefined &&
+      (typeof idSession !== 'number' || !Number.isSafeInteger(idSession) || idSession <= 0)
+    ) {
+      throw new UnauthorizedException('Invalid refresh session identifier');
+    }
+    const session = await this.sessionService.validateRefreshToken(
+      token,
+      payload.idUser,
+      idSession,
+    );
+
+    if (session.user.idUser !== payload.idUser) throw new UnauthorizedException('Invalid session');
+
+    const newPayload = await this.getSession(payload.idUser, session.idSession);
+
+    const newAccessToken = this.jwtService.sign(newPayload, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: jwtDurationSeconds(
+        process.env.JWT_ACCESS_SECRET_EXPIRES_IN,
+        'JWT_ACCESS_SECRET_EXPIRES_IN',
+      ),
+    });
+
+    await this.sessionService.updateLastSessionUsed(session);
+
+    return { accessToken: newAccessToken };
   }
 }

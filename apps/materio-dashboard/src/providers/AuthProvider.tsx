@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -12,6 +12,7 @@ import { clearTokens } from '@/utils/authCookies';
 import { PUBLIC_ROUTES } from '@/configs/publicRoutes';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
+import { SESSION_EXPIRED_EVENT } from '@/utils/authEvents';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
@@ -19,21 +20,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [user, setUser] = useState<ICurrentUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const authEpoch = useRef(0);
 
-  const snackbar = useSnackbar();
+  const { error: showError } = useSnackbar();
 
   const refreshUser = useCallback(async () => {
+    const epoch = authEpoch.current;
+
     try {
       const currentUser = await getCurrentUser();
 
-      setUser(currentUser);
+      if (epoch === authEpoch.current) setUser(currentUser);
     } catch (error) {
-      setUser(null);
-      snackbar.error(getApiErrorMessage(error));
+      if (epoch === authEpoch.current) {
+        setUser(null);
+        showError(getApiErrorMessage(error));
+      }
     } finally {
-      setLoading(false);
+      if (epoch === authEpoch.current) setLoading(false);
     }
-  }, [snackbar]);
+  }, [showError]);
 
   const logout = async () => {
     await apiLogout();
@@ -41,6 +47,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     clearTokens();
     router.push('/login');
   };
+
+  useEffect(() => {
+    const expired = () => {
+      authEpoch.current += 1;
+      setUser(null);
+      setLoading(false);
+    };
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, expired);
+
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expired);
+  }, []);
 
   useEffect(() => {
     const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { LinearProgress, Paper, Table, TableBody, TableContainer, TableHead, TableRow, TableCell } from '@mui/material';
 
@@ -17,10 +17,15 @@ import { useDialog } from '@/hooks/useDialog';
 
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { useSessions } from '@/hooks/sessions';
+import type { ISession } from '@/interfaces/sessions/session.interface';
+import { hasPermission } from '@/utils/hasPermission';
+import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 
 export const SessionsTable = () => {
   const { user } = useAuth();
   const dialog = useDialog();
+  const revoking = useRef(false);
+  const [processing, setProcessing] = useState(false);
 
   const { sessions, loading, load, meta, error, changeQuery } = useSessions();
   const snackbar = useSnackbar();
@@ -33,24 +38,36 @@ export const SessionsTable = () => {
 
   if (loading && !sessions.length) return <LoadingTable />;
 
-  const handleOpenDeleteButton = async (idSession: number) => {
-    const confirmed = await dialog.confirm({
-      title: `Revocando la sesión de ${user?.username}`,
-      text: '¿Estás seguro? Esta acción no se puede deshacer',
-    });
+  const handleOpenDeleteButton = async (session: ISession) => {
+    if (
+      revoking.current ||
+      !hasPermission(user, 'sessions.revoke-one') ||
+      !session.isActive ||
+      session.idSession === user?.idSession
+    )
+      return;
 
-    if (!confirmed) return;
+    revoking.current = true;
+    setProcessing(true);
 
     try {
-      await revokeSessionById(idSession);
+      const confirmed = await dialog.confirm({
+        title: `¿Cerrar la sesión de ${session.user.username}?`,
+        text: 'El usuario perderá acceso en su próxima solicitud y tendrá que iniciar sesión nuevamente.',
+        confirmButtonText: 'Cerrar sesión',
+      });
+
+      if (!confirmed) return;
+
+      await revokeSessionById(session.idSession);
 
       load();
-
-      await dialog.success('Sesión revocada con éxito');
+      snackbar.success('Sesión revocada con éxito');
     } catch (error) {
-      await dialog.error('No se pudo revocar la sesión');
-
-      throw error;
+      snackbar.error(getApiErrorMessage(error));
+    } finally {
+      revoking.current = false;
+      setProcessing(false);
     }
   };
 
@@ -85,7 +102,10 @@ export const SessionsTable = () => {
               <SessionRow
                 key={session.idSession}
                 session={session}
-                onDelete={() => handleOpenDeleteButton(session.idSession)}
+                processing={processing || loading}
+                onDelete={() => {
+                  void handleOpenDeleteButton(session);
+                }}
               />
             ))}
           </TableBody>
