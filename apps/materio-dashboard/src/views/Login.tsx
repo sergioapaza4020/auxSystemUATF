@@ -425,7 +425,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                   <Typography color='text.secondary'>¿Estás registrado?</Typography>
 
                   <Link
-                    href='/register'
+                    href='/verify-account'
                     style={{
                       textDecoration: 'none',
                     }}
@@ -441,7 +441,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                           },
                         }}
                       >
-                        Verifica aquí
+                        Verificar mi registro
                       </Typography>
 
                       <ArrowForwardRoundedIcon

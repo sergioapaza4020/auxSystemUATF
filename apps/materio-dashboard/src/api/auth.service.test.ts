@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getCurrentUser, login, refreshAccessToken } from './auth.service';
+import { checkRegistration, getCurrentUser, login, refreshAccessToken } from './auth.service';
 import { instance } from './config/config';
 import { refreshInstance } from './config/refreshInstance';
 import { logout, revokeSessionById } from './sessions.service';
@@ -58,6 +58,31 @@ afterEach(() => {
 });
 
 describe('Real auth service, cookie helpers and Axios interceptors', () => {
+  it('posts trimmed RU and returns only registration fields from the envelope', async () => {
+    cookies.values.clear();
+
+    const adapter = vi.fn<AxiosAdapter>(async (config) =>
+      reply(config, {
+        status: true,
+        statusCode: 200,
+        data: { registered: true, status: 'ACTIVE', email: 'private' },
+      }),
+    );
+
+    instance.defaults.adapter = adapter;
+    expect(await checkRegistration(' 001aB ')).toEqual({ registered: true, status: 'ACTIVE' });
+    expect(adapter.mock.calls[0][0].url).toBe('/auth/check-registration');
+    expect(adapter.mock.calls[0][0].method).toBe('post');
+    expect(JSON.parse(adapter.mock.calls[0][0].data as string)).toEqual({ ru: '001aB' });
+    expect(adapter.mock.calls[0][0].headers.Authorization).toBeUndefined();
+    expect(cookies.set).not.toHaveBeenCalled();
+  });
+
+  it('rejects unexpected registration contracts', async () => {
+    instance.defaults.adapter = async (config) => reply(config, { data: { registered: false, status: 'ACTIVE' } });
+    await expect(checkRegistration('123')).rejects.toThrow('Invalid registration response');
+  });
+
   it('uses the existing PATCH revocation endpoint and unwraps its envelope', async () => {
     const session = { idSession: 7, isActive: false };
     const adapter = vi.fn<AxiosAdapter>(async (config) => reply(config, { data: session }));
@@ -148,6 +173,8 @@ describe('Real auth service, cookie helpers and Axios interceptors', () => {
     '/auth/login?next=dashboard',
     'https://api.example/api/auth/login/',
     '/auth/refresh-access-token',
+    '/auth/check-registration',
+    'https://api.example/api/auth/check-registration/',
   ])('does not renew a 401 from public auth URL %s', async (url) => {
     const renewal = vi.fn<AxiosAdapter>();
 

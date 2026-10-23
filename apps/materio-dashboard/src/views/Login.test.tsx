@@ -157,6 +157,14 @@ describe('Login submit concurrency', () => {
 });
 
 describe('Login credential autocomplete', () => {
+  it('links registration verification to the public account check', () => {
+    const html = renderToStaticMarkup(<Login mode='light' />);
+
+    expect(html).toContain('href="/verify-account"');
+    expect(html).toContain('Verificar mi registro');
+    expect(html).not.toContain('href="/register"');
+  });
+
   it('renders standard autocomplete attributes on the native form and inputs', () => {
     const html = renderToStaticMarkup(<Login mode='light' />);
     const form = html.match(/<form\b[^>]*>/)?.[0];

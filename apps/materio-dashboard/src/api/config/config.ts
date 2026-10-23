@@ -32,7 +32,9 @@ function refreshOnce(): Promise<string> {
 function isPublicAuthRequest(config: InternalAxiosRequestConfig): boolean {
   const path = new URL(config.url ?? '', 'http://axios.local').pathname.replace(/\/+$/, '');
 
-  return [AUTH_ROUTES.login, AUTH_ROUTES.refresh].some((route) => path === route || path === `/api${route}`);
+  return [AUTH_ROUTES.login, AUTH_ROUTES.refresh, AUTH_ROUTES.checkRegistration].some(
+    (route) => path === route || path === `/api${route}`,
+  );
 }
 
 export const instance = axios.create({

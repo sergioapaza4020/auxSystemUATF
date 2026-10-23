@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import { CheckRegistrationDto } from 'src/dtos/auth/check-registration.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { Public } from '@core/decorators/public/public.decorator';
@@ -12,6 +13,16 @@ import type { JwtPayload } from '@common/types/jwt-payload.type';
 @ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Public()
+  @Post('check-registration')
+  @HttpCode(HttpStatus.OK)
+  async checkRegistration(@Body() dto: CheckRegistrationDto) {
+    return {
+      message: 'Registration checked successfully',
+      data: await this.authService.checkRegistration(dto),
+    };
+  }
 
   @Public()
   @Post('login')

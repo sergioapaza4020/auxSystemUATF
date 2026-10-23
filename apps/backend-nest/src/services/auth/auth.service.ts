@@ -11,6 +11,8 @@ import { Request } from 'express';
 import { UAParser } from 'ua-parser-js';
 import { randomUUID } from 'node:crypto';
 import { jwtDurationSeconds } from '@common/utils/jwt-duration';
+import { CheckRegistrationDto } from 'src/dtos/auth/check-registration.dto';
+import type { RegistrationCheck } from '@common/types/registration-check.type';
 
 @Injectable()
 export class AuthService {
@@ -31,6 +33,12 @@ export class AuthService {
 
     Reflect.deleteProperty(user, 'password');
     return user;
+  }
+
+  async checkRegistration(dto: CheckRegistrationDto): Promise<RegistrationCheck> {
+    const user = await this.userService.getRegistrationByRu(dto.ru);
+    if (!user) return { registered: false, status: 'NOT_FOUND' };
+    return { registered: true, status: user.isActive ? 'ACTIVE' : 'INACTIVE' };
   }
 
   async login(loginDto: LoginDto, request: Request) {

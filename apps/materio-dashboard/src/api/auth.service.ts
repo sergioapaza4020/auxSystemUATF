@@ -5,8 +5,27 @@ import { instance } from '@/api/config/config';
 import { getRefreshToken, saveTokens, setAccessToken } from '@/utils/authCookies';
 import type { ApiResponse } from '@/interfaces/apiResponse';
 import type { ICurrentUser } from '@/interfaces/auth/current-user.interface';
+import type { RegistrationCheck } from '@/interfaces/auth/registration-check.interface';
 import { refreshInstance } from './config/refreshInstance';
 import { AUTH_ROUTES } from './config/auth-routes';
+
+export const checkRegistration = async (ru: string): Promise<RegistrationCheck> => {
+  const response = await instance.post<ApiResponse<RegistrationCheck>>(AUTH_ROUTES.checkRegistration, {
+    ru: ru.trim(),
+  });
+
+  const data = response.data.data;
+
+  if (data?.registered === true && (data.status === 'ACTIVE' || data.status === 'INACTIVE')) {
+    return { registered: true, status: data.status };
+  }
+
+  if (data?.registered === false && data.status === 'NOT_FOUND') {
+    return { registered: false, status: 'NOT_FOUND' };
+  }
+
+  throw new Error('Invalid registration response');
+};
 
 export const login = async ({ username, password }: ILogin): Promise<void> => {
   const response = await instance.post<ApiResponse<LoginResponse>>(AUTH_ROUTES.login, { username, password });

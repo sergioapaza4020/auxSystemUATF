@@ -1,1 +1,1 @@
-export const PUBLIC_ROUTES = ['/login'];
+export const PUBLIC_ROUTES = ['/login', '/verify-account'];

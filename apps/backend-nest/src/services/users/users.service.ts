@@ -36,6 +36,15 @@ export class UsersService {
 
   private readonly logger = new Logger(UsersService.name);
 
+  async getRegistrationByRu(ru: string): Promise<Pick<User, 'isActive'> | null> {
+    // TypeORM excludes soft-deleted accounts by default. Keep inactive accounts visible.
+    return this.userRepository.findOne({
+      where: { ru: ru.trim() },
+      select: { isActive: true },
+      loadEagerRelations: false,
+    });
+  }
+
   async getAll(query: UserQueryDto) {
     const { careerId, search, role, page = 1, limit = 20 } = query;
     const qb = this.userRepository
