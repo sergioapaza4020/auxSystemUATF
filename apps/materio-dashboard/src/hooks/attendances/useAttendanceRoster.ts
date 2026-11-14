@@ -21,6 +21,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
   const [meta, setMeta] = useState<PaginationMeta>({ page: 1, limit: 25, total: 0, totalPages: 0 });
   const [session, setSession] = useState<AttendanceSessionPage | null>(null);
   const [originals, setOriginals] = useState<Record<number, Mark>>({});
+  const [geographicStudentIds, setGeographicStudentIds] = useState<number[]>([]);
   const [drafts, setDrafts] = useState<Record<number, Mark>>({});
   const [markAll, setMarkAll] = useState<AttendanceStatus | undefined>();
   const [loading, setLoading] = useState(true);
@@ -34,6 +35,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
 
   useEffect(() => {
     setOriginals({});
+    setGeographicStudentIds([]);
     setDrafts({});
     setMarkAll(undefined);
     setSession(null);
@@ -82,6 +84,19 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
           setSession(data.session);
 
           if (data.session) {
+            const geoIds = data.session.attendances
+              .filter((mark) => mark.registrationMethod === 'GEOLOCATION' || mark.registrationMethod === 'QR')
+              .map((mark) => mark.enrollment.idEnrollment);
+
+            setGeographicStudentIds((current) => [...new Set([...current, ...geoIds])]);
+
+            if (geoIds.length) {
+              setMarkAll(undefined);
+              setDrafts((current) =>
+                Object.fromEntries(Object.entries(current).filter(([id]) => !geoIds.includes(Number(id)))),
+              );
+            }
+
             const marks = new Map(data.session.attendances.map((mark) => [mark.enrollment.idEnrollment, mark]));
 
             setOriginals((current) => {
@@ -90,7 +105,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
               for (const student of data.students) {
                 const id = student.idEnrollment;
 
-                if (id in draftRef.current) continue;
+                if (id in draftRef.current && !geoIds.includes(id)) continue;
                 const mark = marks.get(id);
 
                 next[id] = {
@@ -169,6 +184,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
   }, [session, total, drafts, originals, markAll]);
 
   const edit = (id: number, status: AttendanceStatus, observation?: string | null) => {
+    if (geographicStudentIds.includes(id)) return;
     setDrafts((previous) => ({
       ...previous,
       [id]: {
@@ -196,11 +212,13 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
 
   const payload = (): { attendances: IAttendanceRecord[]; markAll?: AttendanceStatus } => ({
     markAll,
-    attendances: modifiedStudentIds.map((id) => ({
-      enrollmentId: id,
-      status: drafts[id].status,
-      observation: normalizeAttendanceObservation(drafts[id].status, drafts[id].observation),
-    })),
+    attendances: modifiedStudentIds
+      .filter((id) => !geographicStudentIds.includes(id))
+      .map((id) => ({
+        enrollmentId: id,
+        status: drafts[id].status,
+        observation: normalizeAttendanceObservation(drafts[id].status, drafts[id].observation),
+      })),
   });
 
   return {
@@ -212,6 +230,8 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
     error,
     attendance,
     observations,
+    geographicStudentIds,
+    protectedStudentIds: geographicStudentIds,
     modifiedStudentIds,
     total,
     counts,
@@ -221,8 +241,10 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
     edit,
     discard,
     confirmed,
+    refresh: () => setRevision((value) => value + 1),
     payload,
     markAllStudents: (status: AttendanceStatus) => {
+      if (geographicStudentIds.length) return;
       setMarkAll(status);
       setDrafts({});
     },

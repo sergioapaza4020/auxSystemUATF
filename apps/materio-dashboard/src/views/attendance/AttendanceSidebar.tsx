@@ -9,6 +9,7 @@ import type { IAttendanceSessionSummary } from '@/interfaces/attendances/attenda
 import { AttendanceStatus } from '@/enums/attendanceStatus';
 import { attendanceStatusColor } from '@/utils/attendance-status';
 import { permissionWeightToPercentage } from '@/utils/attendance-permission';
+import { AttendanceSessionBadge } from './AttendanceSessionBadge';
 
 interface Props {
   sessions: IAttendanceSessionSummary[];
@@ -32,7 +33,8 @@ interface Props {
 
 export function AttendanceSidebar(props: Props) {
   const summary = props.summary;
-  const percentage = summary?.percentage;
+  const pending = (summary?.mode === 'GEOLOCATION' || summary?.mode === 'QR') && summary.isComputable === false;
+  const percentage = pending ? null : summary?.percentage;
 
   const counts = [
     {
@@ -49,7 +51,7 @@ export function AttendanceSidebar(props: Props) {
     },
     {
       status: AttendanceStatus.ABSENT,
-      label: 'Ausentes',
+      label: pending ? 'Pendientes' : 'Ausentes',
       value: props.absent,
       icon: <CloseOutlinedIcon fontSize='small' />,
     },
@@ -108,7 +110,11 @@ export function AttendanceSidebar(props: Props) {
           </>
         )}
         <Alert severity='info' icon={false} sx={{ mt: 2 }}>
-          <Typography variant='caption'>Los estudiantes sin asistencia marcada se consideran ausentes.</Typography>
+          <Typography variant='caption'>
+            {pending
+              ? 'Las ausencias se consolidan al cerrar la sesión.'
+              : 'Los estudiantes sin asistencia marcada se consideran ausentes.'}
+          </Typography>
         </Alert>
       </Card>
       <Card sx={{ p: 3 }}>
@@ -148,8 +154,13 @@ export function AttendanceSidebar(props: Props) {
                   >
                     {item.date.slice(0, 10).split('-').reverse().join('/')}
                   </Button>
-                  <Typography variant='body2'>{item.percentage.toFixed(1)}%</Typography>
+                  <Typography variant='body2'>
+                    {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false
+                      ? 'Sin consolidar'
+                      : `${item.percentage.toFixed(1)}%`}
+                  </Typography>
                 </Stack>
+                <AttendanceSessionBadge session={item} />
                 <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
                   <Typography variant='caption' color={attendanceStatusColor(AttendanceStatus.PRESENT)}>
                     {item.presentCount} presentes
@@ -158,7 +169,9 @@ export function AttendanceSidebar(props: Props) {
                     {item.excusedCount} permisos
                   </Typography>
                   <Typography variant='caption' color={attendanceStatusColor(AttendanceStatus.ABSENT)}>
-                    {item.absentCount} ausentes
+                    {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false
+                      ? `${item.pendingCount ?? 0} pendientes`
+                      : `${item.absentCount} ausentes`}
                   </Typography>
                 </Stack>
               </Box>

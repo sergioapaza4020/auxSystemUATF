@@ -1,10 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { AttendanceSessionLifecycleResponseDto } from './attendance-session-lifecycle-response.dto';
 
-export class AttendanceSessionResponseDto {
+export class AttendanceSessionResponseDto extends AttendanceSessionLifecycleResponseDto {
   @ApiProperty()
-  idAttendanceSession: number;
-  @ApiProperty()
-  date: Date;
+  pendingCount: number;
   @ApiProperty()
   presentCount: number;
   @ApiProperty()

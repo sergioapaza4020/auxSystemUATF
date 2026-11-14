@@ -1,0 +1,29 @@
+caso,fecha,dispositivo,navegador,esperado,observado,evidencia,estado
+"Autenticado, QR nuevo",,,Chrome Android,Contexto y confirmación explícita; un PRESENT,,,NO PROBADO
+Sin sesión,,,Chrome Android,"Login habitual, retorno fijo a QR",,,NO PROBADO
+Token vence durante login,,,Chrome Android,Reescaneo; ninguna ampliación,,,NO PROBADO
+QR cerca de rotación,,,Chrome Android,Vigencia decidida por backend; no éxito falso,,,NO PROBADO
+QR vencido,,,Chrome Android,Error claro; no reenvío automático,,,NO PROBADO
+QR compartido vigente fuera del aula,,,Chrome Android,Puede aceptar alumno elegible: limitación documentada,,,NO PROBADO
+Otra materia o semestre,,,Chrome Android,Rechazo sin información ajena,,,NO PROBADO
+Sesión cerrada,,,Chrome Android,Sin check-in; lectura propia autorizada,,,NO PROBADO
+Respuesta del POST perdida,,,Chrome Android,Lectura propia; no segundo POST automático,,,NO PROBADO
+Wi-Fi a datos móviles,,,Chrome Android,Resultado reconciliado; sin duplicados,,,NO PROBADO
+Dos dispositivos del mismo usuario,,,Chrome Android,Una marca; duplicado controlado,,,NO PROBADO
+30 estudiantes misma Wi-Fi,,,Chrome Android,Permisos/matrículas individuales; sin bloqueo global por IP,,,NO PROBADO
+"Tema oscuro, vertical, pantalla pequeña",,,Chrome Android,"Legible, foco visible, sin scroll horizontal",,,NO PROBADO
+Código desde última fila,,,Chrome Android,QR completo y lectura por cámara nativa,,,NO PROBADO
+"Autenticado, QR nuevo",,,Safari iOS,Contexto y confirmación explícita; un PRESENT,,,NO PROBADO
+Sin sesión,,,Safari iOS,"Login habitual, retorno fijo a QR",,,NO PROBADO
+Token vence durante login,,,Safari iOS,Reescaneo; ninguna ampliación,,,NO PROBADO
+QR cerca de rotación,,,Safari iOS,Vigencia decidida por backend; no éxito falso,,,NO PROBADO
+QR vencido,,,Safari iOS,Error claro; no reenvío automático,,,NO PROBADO
+QR compartido vigente fuera del aula,,,Safari iOS,Puede aceptar alumno elegible: limitación documentada,,,NO PROBADO
+Otra materia o semestre,,,Safari iOS,Rechazo sin información ajena,,,NO PROBADO
+Sesión cerrada,,,Safari iOS,Sin check-in; lectura propia autorizada,,,NO PROBADO
+Respuesta del POST perdida,,,Safari iOS,Lectura propia; no segundo POST automático,,,NO PROBADO
+Wi-Fi a datos móviles,,,Safari iOS,Resultado reconciliado; sin duplicados,,,NO PROBADO
+Dos dispositivos del mismo usuario,,,Safari iOS,Una marca; duplicado controlado,,,NO PROBADO
+30 estudiantes misma Wi-Fi,,,Safari iOS,Permisos/matrículas individuales; sin bloqueo global por IP,,,NO PROBADO
+"Tema oscuro, vertical, pantalla pequeña",,,Safari iOS,"Legible, foco visible, sin scroll horizontal",,,NO PROBADO
+Código desde última fila,,,Safari iOS,QR completo y lectura por cámara nativa,,,NO PROBADO

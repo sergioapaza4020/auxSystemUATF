@@ -1,5 +1,10 @@
 import axios, { AxiosError, CanceledError } from 'axios';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { savePendingQr, qrLoginDestination } from '@/utils/student-qr-flow';
+import { memorySessionStorage, qrToken } from '@/test-utils/qr-fixtures';
+import { SESSION_EXPIRED_EVENT } from '@/utils/authEvents';
 
 import { instance } from './config';
 import { refreshAccessToken } from '../auth.service';
@@ -58,4 +63,41 @@ describe('Axios response cancellation', () => {
     ).toContain('incompleta');
     expect(getApiErrorMessage({})).toBe('Ha ocurrido un error inesperado');
   });
+});
+
+it('preserves QR transfer synchronously before failed refresh navigates to ordinary login', async () => {
+  const browser = Object.assign(new EventTarget(), {
+    location: { href: '/attendance/qr' },
+    sessionStorage: memorySessionStorage(),
+  });
+
+  vi.stubGlobal('window', browser);
+  browser.addEventListener(SESSION_EXPIRED_EVENT, () => {
+    savePendingQr(qrToken());
+  });
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  vi.mocked(refreshAccessToken).mockRejectedValueOnce(new Error('expired refresh'));
+  await expect(
+    instance.post(
+      '/attendances/sessions/7/qr-context',
+      { token: qrToken() },
+      {
+        adapter: (config) =>
+          Promise.reject(
+            new AxiosError('Unauthorized', '', config, undefined, {
+              data: {},
+              status: 401,
+              statusText: 'Unauthorized',
+              headers: {},
+              config,
+            }),
+          ),
+      },
+    ),
+  ).rejects.toThrow('expired refresh');
+  expect(browser.location.href).toBe('/login');
+  expect(qrLoginDestination()).toBe('/attendance/qr');
+  expect(JSON.stringify(log.mock.calls)).not.toContain(qrToken());
+  vi.unstubAllGlobals();
 });

@@ -2,6 +2,9 @@ import type * as React from 'react';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { savePendingQr, QR_PENDING_KEY } from '@/utils/student-qr-flow';
+import { memorySessionStorage, qrToken } from '@/test-utils/qr-fixtures';
+
 import { getCurrentUser } from '@/api/auth.service';
 import { deferred, hookHarness } from '@/test-utils/hook-harness';
 import { AuthProvider } from './AuthProvider';
@@ -100,6 +103,27 @@ describe('AuthProvider lifecycle', () => {
     h.render();
     expect(getCurrentUser).toHaveBeenCalledTimes(1);
     await Promise.resolve();
+    h.unmount();
+  });
+});
+
+describe('QR authentication integration', () => {
+  it('does not query academic or auth endpoints merely by opening public QR', () => {
+    mocks.pathname = '/attendance/qr';
+    const h = hookHarness(() => AuthProvider({ children: null }));
+
+    h.render();
+    expect(getCurrentUser).not.toHaveBeenCalled();
+    h.unmount();
+  });
+  it('clears QR login transfer on ordinary logout', async () => {
+    vi.stubGlobal('window', Object.assign(new EventTarget(), { sessionStorage: memorySessionStorage() }));
+    const h = hookHarness(() => AuthProvider({ children: null }));
+
+    h.render();
+    savePendingQr(qrToken());
+    await h.render().props.value.logout();
+    expect(window.sessionStorage.getItem(QR_PENDING_KEY)).toBeNull();
     h.unmount();
   });
 });

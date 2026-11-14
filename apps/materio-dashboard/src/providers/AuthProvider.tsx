@@ -9,9 +9,10 @@ import { getCurrentUser } from '@/api/auth.service';
 import type { ICurrentUser } from '@/interfaces/auth/current-user.interface';
 import { logout as apiLogout } from '@/api/sessions.service';
 import { clearTokens } from '@/utils/authCookies';
-import { PUBLIC_ROUTES } from '@/configs/publicRoutes';
+import { isPublicRoute } from '@/configs/publicRoutes';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
+import { clearPendingQr } from '@/utils/student-qr-flow';
 import { SESSION_EXPIRED_EVENT } from '@/utils/authEvents';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -42,7 +43,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [showError]);
 
   const logout = async () => {
+    clearPendingQr();
     await apiLogout();
+    authEpoch.current += 1;
     setUser(null);
     clearTokens();
     router.push('/login');
@@ -61,9 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
-
-    if (!isPublicRoute) void refreshUser();
+    if (!isPublicRoute(pathname)) void refreshUser();
   }, [refreshUser, pathname]);
 
   return (

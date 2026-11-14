@@ -9,6 +9,9 @@ import { AttendanceSheet } from './AttendanceSheet';
 import { AttendanceHistory } from './AttendanceHistory';
 import { AttendanceSessionToolbar } from './AttendanceSessionToolbar';
 import { AttendanceSidebar } from './AttendanceSidebar';
+import { AttendanceCreateDialog } from './AttendanceCreateDialog';
+import { AttendanceQrConfigDialog } from './AttendanceQrConfigDialog';
+import { AttendanceGeolocationDialog } from './AttendanceGeolocationDialog';
 import { hookHarness, elements } from '@/test-utils/hook-harness';
 import { getAttendanceSessionPage } from '@/api/attendances.service';
 import { getEnrollmentStudentsPage } from '@/api/enrollments.service';
@@ -67,6 +70,11 @@ vi.mock('@/api/attendances.service', () => ({
   getAttendanceSessionPage: vi.fn(),
   deleteAttendanceSession: mocks.remove,
   updateAttendanceSession: mocks.updateDate,
+  configureGeolocation: vi.fn(),
+  activateSession: vi.fn(),
+  openSessionNow: vi.fn(),
+  closeSession: vi.fn(),
+  cancelSession: vi.fn(),
 }));
 vi.mock('@/api/enrollments.service', () => ({ getEnrollmentStudentsPage: vi.fn() }));
 vi.mock('@/api/assistant-grade-schemes.service', () => ({ getMyAssistantGradeScheme: vi.fn(async () => null) }));
@@ -128,6 +136,112 @@ async function open() {
 }
 
 describe('attendance paginated page integration', () => {
+  it.each(['update', 'delete'] as const)('preserves the manual %s action', async (kind) => {
+    const h = await open();
+    const history = find<History>(h.render(), AttendanceHistory);
+
+    if (kind === 'update') history.onEditDate?.(1, '2026-10-28');
+    else history.onDeleteSession?.(1);
+
+    const confirm = elements<React.ComponentProps<typeof Button>>(h.render(), Button).find(
+      (item) => item.props.children === (kind === 'update' ? 'Guardar fecha' : 'Eliminar sesión'),
+    );
+
+    confirm?.props.onClick?.({} as React.MouseEvent<HTMLButtonElement>);
+    await vi.runAllTimersAsync();
+    if (kind === 'update') expect(mocks.updateDate).toHaveBeenCalledWith(1, '2026-10-28');
+    else expect(mocks.remove).toHaveBeenCalledWith(1);
+  });
+  it.each(['GEOLOCATION', 'QR'] as const)('protects visible %s marks and mark-all', async (mode) => {
+    const geoData = {
+      ...data,
+      mode,
+      state: 'OPEN' as const,
+      isComputable: false,
+      attendances: [{ idAttendance: 5, status: S.PRESENT, registrationMethod: mode, enrollment: student }],
+    };
+
+    mocks.load.mockResolvedValue(geoData);
+    vi.mocked(getAttendanceSessionPage).mockResolvedValue({ status: true, statusCode: 200, data: geoData, meta });
+    const h = await open();
+    const sheet = find<Sheet>(h.render(), AttendanceSheet);
+
+    expect(sheet.lockedStudentIds).toEqual([10]);
+    expect(sheet.markAllDisabled).toBe(true);
+    sheet.onMarkAllAbsent();
+    sheet.onChangeAttendance(10, S.ABSENT);
+    expect(find<Sheet>(h.render(), AttendanceSheet).hasChanges).toBe(false);
+  });
+  it.each(
+    (['GEOLOCATION', 'QR'] as const).flatMap((mode) =>
+      (['DRAFT', 'SCHEDULED', 'OPEN', 'CLOSED', 'CANCELLED'] as const).map((state) => [mode, state] as const),
+    ),
+  )('%s %s keeps the sheet available with correct editing policy', async (mode, state) => {
+    const geoData = { ...data, mode, state, isComputable: state === 'CLOSED' };
+
+    mocks.load.mockResolvedValue(geoData);
+    vi.mocked(getAttendanceSessionPage).mockResolvedValue({ status: true, statusCode: 200, data: geoData, meta });
+    const h = await open();
+    const tree = h.render();
+    const sheet = find<Sheet>(tree, AttendanceSheet);
+
+    expect(sheet.readOnly).toBe(state !== 'OPEN' && state !== 'CLOSED');
+    expect(sheet.pending).toBe(state !== 'CLOSED');
+    expect(
+      find<{ session: { state: string } }>(tree, mode === 'QR' ? AttendanceQrConfigDialog : AttendanceGeolocationDialog)
+        .session.state,
+    ).toBe(state);
+  });
+  it('selects GEO explicitly, creates a draft, and opens configuration', async () => {
+    const h = await open();
+    const geo = { ...data, idAttendanceSession: 2, mode: 'GEOLOCATION' as const, state: 'DRAFT' as const };
+
+    mocks.create.mockResolvedValue(geo);
+    mocks.load.mockResolvedValue(geo);
+    vi.mocked(getAttendanceSessionPage).mockResolvedValue({ status: true, statusCode: 200, data: geo, meta });
+    find<React.ComponentProps<typeof AttendanceSessionToolbar>>(h.render(), AttendanceSessionToolbar).onCreateSession();
+    find<React.ComponentProps<typeof AttendanceCreateDialog>>(h.render(), AttendanceCreateDialog).onCreate(
+      'GEOLOCATION',
+    );
+    await vi.runAllTimersAsync();
+    h.render();
+    await vi.runAllTimersAsync();
+    expect(mocks.create).toHaveBeenCalledWith(expect.any(String), 'GEOLOCATION');
+    expect(
+      find<React.ComponentProps<typeof AttendanceGeolocationDialog>>(h.render(), AttendanceGeolocationDialog).session
+        .state,
+    ).toBe('DRAFT');
+  });
+  it('creates a QR draft and opens configuration without activation', async () => {
+    const h = await open();
+    const qr = { ...data, idAttendanceSession: 2, mode: 'QR' as const, state: 'DRAFT' as const };
+
+    mocks.create.mockResolvedValue(qr);
+    mocks.load.mockResolvedValue(qr);
+    vi.mocked(getAttendanceSessionPage).mockResolvedValue({ status: true, statusCode: 200, data: qr, meta });
+    find<React.ComponentProps<typeof AttendanceSessionToolbar>>(h.render(), AttendanceSessionToolbar).onCreateSession();
+    const dialog = find<React.ComponentProps<typeof AttendanceCreateDialog>>(h.render(), AttendanceCreateDialog);
+
+    dialog.onCreate('QR');
+    dialog.onCreate('QR');
+    await vi.runAllTimersAsync();
+    h.render();
+    await vi.runAllTimersAsync();
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.create).toHaveBeenCalledWith(expect.any(String), 'QR');
+    expect(
+      find<React.ComponentProps<typeof AttendanceQrConfigDialog>>(h.render(), AttendanceQrConfigDialog).session.state,
+    ).toBe('DRAFT');
+  });
+  it('keeps manual creation using the original hook contract', async () => {
+    const h = await open();
+
+    mocks.create.mockResolvedValue(data);
+    find<React.ComponentProps<typeof AttendanceSessionToolbar>>(h.render(), AttendanceSessionToolbar).onCreateSession();
+    find<React.ComponentProps<typeof AttendanceCreateDialog>>(h.render(), AttendanceCreateDialog).onCreate('MANUAL');
+    await vi.runAllTimersAsync();
+    expect(mocks.create).toHaveBeenCalledWith(expect.any(String));
+  });
   it('renders remote total, global sidebar and implicit ABSENT; tabs preserve edits', async () => {
     const h = await open();
     let tree = h.render();

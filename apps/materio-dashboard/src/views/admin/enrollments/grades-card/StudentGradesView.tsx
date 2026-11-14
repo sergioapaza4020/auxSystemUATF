@@ -31,6 +31,7 @@ interface StudentGradesViewProps {
   attendance?: IStudentAttendance | null;
   attendanceLoading?: boolean;
   studentEnrollmentId?: number;
+  attendanceRevision?: number;
   schemeOverview?: ReactNode;
 }
 
@@ -43,6 +44,7 @@ export function StudentGradesView({
   attendance,
   attendanceLoading = false,
   studentEnrollmentId,
+  attendanceRevision = 0,
   schemeOverview,
 }: StudentGradesViewProps) {
   const [mode, setMode] = useState<GradeDisplayMode>(DEFAULT_GRADE_DISPLAY_MODE);
@@ -78,7 +80,7 @@ export function StudentGradesView({
     return () => {
       active = false;
     };
-  }, [studentEnrollmentId, hasAttendance]);
+  }, [studentEnrollmentId, hasAttendance, attendanceRevision]);
   const attendanceSummary = studentEnrollmentId ? ownAttendance : attendance;
   const details = activeCriteria(scheme.details).sort((a, b) => a.order - b.order);
 

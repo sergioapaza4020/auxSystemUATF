@@ -1,3 +1,4 @@
+import { academicAttendanceCounts } from '@common/utils/attendance-academic-counts';
 import { activeCriteria } from '@repo/grade-calculations';
 import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
 import { getStudentRosterPage } from '@common/utils/student-roster';
@@ -9,7 +10,6 @@ import {
   weightedScore,
 } from '@repo/grade-calculations';
 import { attendanceSummary } from '@common/utils/attendance-summary';
-import { AttendanceStatus } from '@common/enums/attendanceStatus';
 import type {
   IndividualStudentGradeSummaryDto,
   StudentGradeSummaryDto,
@@ -140,45 +140,59 @@ export class EnrollmentsService {
   }
 
   async update(idEnrollment: number, dto: EnrollmentUpdateDto) {
-    const enrollment = await this.getOneById(idEnrollment);
-    const data = await this.resolveEnrollment({
-      username: dto.username ?? enrollment.user.username,
-      semester:
-        dto.semester ??
-        `${enrollment.semester.period === SemesterNumber.I ? 'I' : 'II'}-${enrollment.semester.year}`,
-      courseCode: dto.courseCode ?? enrollment.course.code,
-      role: dto.role ?? enrollment.role,
-    });
-    const duplicate = await this.enrollmentRepository.findOne({
-      where: {
-        user: { idUser: data.user.idUser },
-        semester: { idSemester: data.semester.idSemester },
-        course: { idCourse: data.course.idCourse },
-      },
-    });
-    if (duplicate && duplicate.idEnrollment !== idEnrollment)
-      throw new ConflictException('La matrícula ya existe');
-    const changesIdentity =
-      enrollment.user.idUser !== data.user.idUser ||
-      enrollment.course.idCourse !== data.course.idCourse ||
-      enrollment.semester.idSemester !== data.semester.idSemester ||
-      enrollment.role !== data.role;
-    if (changesIdentity) {
-      const manager = this.enrollmentRepository.manager;
-      const records = await Promise.all([
-        manager.getRepository(Grade).countBy({ enrollment: { idEnrollment } }),
-        manager.getRepository(Attendance).countBy({ enrollment: { idEnrollment } }),
-        manager.getRepository(AttendanceSession).countBy({ assistantEnrollment: { idEnrollment } }),
-        manager.getRepository(GradeScheme).countBy({ assistantEnrollment: { idEnrollment } }),
-      ]);
-      if (records.some((count) => count > 0)) {
-        throw new ConflictException(
-          'No se puede reasignar una matrícula con notas, asistencias o configuraciones registradas',
-        );
+    return this.enrollmentRepository.manager.transaction(async (manager) => {
+      const repository = manager.getRepository(Enrollment);
+      const locked = await repository.findOne({
+        where: { idEnrollment, isActive: true },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked) throw new NotFoundException('Matr�cula no encontrada');
+      const enrollment = await repository.findOneOrFail({
+        where: { idEnrollment },
+        relations: { user: true, course: true, semester: true },
+      });
+      const data = await this.resolveEnrollment({
+        username: dto.username ?? enrollment.user.username,
+        semester:
+          dto.semester ??
+          `${enrollment.semester.period === SemesterNumber.I ? 'I' : 'II'}-${enrollment.semester.year}`,
+        courseCode: dto.courseCode ?? enrollment.course.code,
+        role: dto.role ?? enrollment.role,
+      });
+      const duplicate = await repository.findOne({
+        where: {
+          user: { idUser: data.user.idUser },
+          semester: { idSemester: data.semester.idSemester },
+          course: { idCourse: data.course.idCourse },
+        },
+      });
+      if (duplicate && duplicate.idEnrollment !== idEnrollment)
+        throw new ConflictException('La matrícula ya existe');
+      const changesIdentity =
+        enrollment.user.idUser !== data.user.idUser ||
+        enrollment.course.idCourse !== data.course.idCourse ||
+        enrollment.semester.idSemester !== data.semester.idSemester ||
+        enrollment.role !== data.role;
+      if (changesIdentity) {
+        const records = [
+          await manager.getRepository(Grade).countBy({ enrollment: { idEnrollment } }),
+          await manager.getRepository(Attendance).countBy({ enrollment: { idEnrollment } }),
+          await manager
+            .getRepository(AttendanceSession)
+            .countBy({ assistantEnrollment: { idEnrollment } }),
+          await manager
+            .getRepository(GradeScheme)
+            .countBy({ assistantEnrollment: { idEnrollment } }),
+        ];
+        if (records.some((count) => count > 0)) {
+          throw new ConflictException(
+            'No se puede reasignar una matrícula con notas, asistencias o configuraciones registradas',
+          );
+        }
       }
-    }
-    this.enrollmentRepository.merge(enrollment, data);
-    return this.enrollmentRepository.save(enrollment);
+      repository.merge(enrollment, data);
+      return repository.save(enrollment);
+    });
   }
 
   async delete(idEnrollment: number) {
@@ -489,7 +503,8 @@ export class EnrollmentsService {
     }
     const studentIds = students.map((student) => student.idEnrollment);
     // Fixed number of grouped queries; no activity payloads or per-student SQL.
-    const [activityCounts, gradeScores, sessions, presences] = await Promise.all([
+    const now = new Date();
+    const [activityCounts, gradeScores, academic] = await Promise.all([
       manager
         .getRepository(Activity)
         .createQueryBuilder('activity')
@@ -522,26 +537,15 @@ export class EnrollmentsService {
           activityTotal: string | null;
           directScore: string | null;
         }>(),
-      manager.getRepository(AttendanceSession).countBy({ assistantEnrollment: { idEnrollment } }),
-      manager
-        .getRepository(Attendance)
-        .createQueryBuilder('attendance')
-        .select('attendance.id_enrollment', 'enrollmentId')
-        .addSelect('COUNT(*) FILTER (WHERE attendance.status = :present)', 'count')
-        .addSelect('COUNT(*) FILTER (WHERE attendance.status = :excused)', 'excused')
-        .setParameters({ present: AttendanceStatus.PRESENT, excused: AttendanceStatus.EXCUSED })
-        .innerJoin('attendance.attendanceSession', 'session')
-        .where('session.id_assistant_enrollment = :idEnrollment', { idEnrollment })
-        .andWhere('attendance.id_enrollment IN (:...studentIds)', { studentIds })
-        .groupBy('attendance.id_enrollment')
-        .getRawMany<{ enrollmentId: number; count: string; excused: string }>(),
+      academicAttendanceCounts(manager.getRepository(Attendance), idEnrollment, studentIds, now),
     ]);
     const counts = new Map(activityCounts.map((row) => [Number(row.detailId), Number(row.count)]));
     const scores = new Map(gradeScores.map((row) => [`${row.enrollmentId}:${row.detailId}`, row]));
+    const sessions = academic[0]?.total ?? 0;
     const presentCounts = new Map(
-      presences.map((row) => [
+      academic.map((row) => [
         Number(row.enrollmentId),
-        { present: Number(row.count), excused: Number(row.excused ?? 0) },
+        { present: Number(row.present), excused: Number(row.excused ?? 0) },
       ]),
     );
     result.students = students.map((student) => {

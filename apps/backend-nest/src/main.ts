@@ -1,3 +1,4 @@
+import { httpCorsOptions } from '@core/config/http-cors.config';
 import { NestFactory } from '@nestjs/core';
 import { createValidationPipe } from '@core/pipes/validation.pipe';
 import { AppModule } from './app.module';
@@ -34,19 +35,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  app.enableCors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-      'x-custom-header',
-    ],
-  });
+  app.enableCors(httpCorsOptions(process.env.FRONTEND_URL));
   app.setGlobalPrefix('api');
 
   await app.listen(process.env.PORT ?? 3001);

@@ -1,0 +1,9 @@
+{
+  "date": "2026-11-12",
+  "scope": "Next.js production build on loopback, unauthenticated GET only; not public TLS",
+  "entryStatus": 200,
+  "cacheControl": "no-store",
+  "referrerPolicy": "no-referrer",
+  "adjacentRouteStatus": 307,
+  "adjacentRouteRedirectPath": "/login"
+}

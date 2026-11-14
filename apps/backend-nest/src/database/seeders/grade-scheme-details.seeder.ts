@@ -4,7 +4,7 @@ import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
 import { Repository } from 'typeorm';
 import { gradeSchemeDetailsData } from '../data/grade-scheme-details.data';
 import { GradeSchemeDetailSeed } from '../interfaces/grade-scheme-details.interface';
-import { NotFoundException } from '@nestjs/common';
+import { findSeedRecord, requireSeedReference, SeedDataError } from '../utils/seed-integrity';
 
 export class GradeSchemeDetailSeeder {
   constructor(
@@ -14,27 +14,32 @@ export class GradeSchemeDetailSeeder {
   ) {}
 
   async run() {
-    for (const item of gradeSchemeDetailsData) {
-      await this.create(item);
+    const names = [...new Set(gradeSchemeDetailsData.map((item) => item.gradeScheme))];
+    for (const name of names) {
+      const scheme = await findSeedRecord(this.gradeSchemeRepository, { name }, 'Esquema general');
+      if (!scheme) throw new SeedDataError('Esquema general: falta el registro padre.');
+      if (!scheme.isActive || scheme.deletedAt) continue;
+      // Existing distributions may have been edited by users. Never refill omitted
+      // criteria. A new distribution is written atomically by the runner's unit.
+      if (await this.repository.countBy({ gradeScheme: { idGradeScheme: scheme.idGradeScheme } }))
+        continue;
+      for (const item of gradeSchemeDetailsData.filter((detail) => detail.gradeScheme === name)) {
+        await this.create(item);
+      }
     }
   }
 
   async create(data: GradeSchemeDetailSeed) {
-    const gradeScheme = await this.gradeSchemeRepository.findOne({
-      where: {
-        name: data.gradeScheme,
-      },
-    });
-
-    if (!gradeScheme) throw new NotFoundException(`Grade scheme ${data.gradeScheme} not found`);
-
-    const gradeItem = await this.gradeItemRepository.findOne({
-      where: {
-        name: data.gradeItem,
-      },
-    });
-
-    if (!gradeItem) throw new NotFoundException(`Grade item ${data.gradeItem} not found`);
+    const gradeScheme = await requireSeedReference(
+      this.gradeSchemeRepository,
+      { name: data.gradeScheme },
+      'Esquema general',
+    );
+    const gradeItem = await requireSeedReference(
+      this.gradeItemRepository,
+      { name: data.gradeItem },
+      'Criterio',
+    );
 
     const exists = await this.repository.findOne({
       where: {

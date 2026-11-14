@@ -29,8 +29,11 @@ import { AttendanceStatus } from '@/enums/attendanceStatus';
 
 import { PaginationTable } from '@/components/table';
 import type { PaginationMeta } from '@/interfaces/apiResponse';
+import type { IAttendanceLifecycle } from '@/interfaces/attendances/attendance.interface';
+import { canDeleteAttendanceSession } from '@/utils/attendance-geolocation';
+import { AttendanceSessionBadge } from './AttendanceSessionBadge';
 
-interface AttendanceSession {
+interface AttendanceSession extends IAttendanceLifecycle {
   idAttendanceSession: number;
   date: string;
   presentCount: number;
@@ -70,6 +73,7 @@ export function AttendanceHistory({
   onDeleteSession,
 }: AttendanceHistoryProps) {
   const [menu, setMenu] = useState<{ anchor: HTMLElement; sessionId: number; date: string } | null>(null);
+  const menuSession = sessions.find((item) => item.idAttendanceSession === menu?.sessionId);
 
   const formatDate = (date: string) => {
     const [year, month, day] = date.slice(0, 10).split('-');
@@ -137,6 +141,7 @@ export function AttendanceHistory({
                           {formatDate(item.date)}
                         </Typography>
                         {selected && <Chip size='small' variant='outlined' label='En edición' sx={{ mt: 0.5 }} />}
+                        <AttendanceSessionBadge session={item} />
                       </TableCell>
 
                       <TableCell>
@@ -153,7 +158,14 @@ export function AttendanceHistory({
                         />
                       </TableCell>
                       <TableCell>
-                        <StatusCount value={item.absentCount} color={attendanceStatusColor(AttendanceStatus.ABSENT)} />
+                        {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false ? (
+                          <Typography variant='body2'>{item.pendingCount ?? 0} pendientes</Typography>
+                        ) : (
+                          <StatusCount
+                            value={item.absentCount}
+                            color={attendanceStatusColor(AttendanceStatus.ABSENT)}
+                          />
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -169,7 +181,9 @@ export function AttendanceHistory({
                           />
 
                           <Typography variant='body2' sx={{ minWidth: 50 }}>
-                            {percentage.toFixed(1)}%
+                            {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false
+                              ? 'Sin consolidar'
+                              : `${percentage.toFixed(1)}%`}
                           </Typography>
                         </Stack>
                       </TableCell>
@@ -237,7 +251,7 @@ export function AttendanceHistory({
           <VisibilityOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
           Abrir para editar
         </MenuItem>
-        {onEditDate && (
+        {onEditDate && menuSession?.mode !== 'GEOLOCATION' && menuSession?.mode !== 'QR' && (
           <MenuItem
             disabled={disabled}
             onClick={() => {
@@ -248,7 +262,7 @@ export function AttendanceHistory({
             Editar fecha
           </MenuItem>
         )}
-        {onDeleteSession && (
+        {onDeleteSession && menuSession && canDeleteAttendanceSession(menuSession) && (
           <MenuItem
             disabled={disabled}
             sx={{ color: 'error.main' }}

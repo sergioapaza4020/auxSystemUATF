@@ -81,6 +81,7 @@ const assistantPermissions: string[] = [
   'assistant-grade-scheme.update',
 
   'attendance.session.create',
+  'attendance.qr.get',
   'attendance.session.get-by-enrollment',
   'attendance.session.get-one',
   'attendance.save',
@@ -116,7 +117,8 @@ export const rolesData: RoleSeed[] = [
   {
     name: 'STUDENT',
     description: 'Student role',
-    permissions: studentPermissions,
+    // Keep check-in on STUDENT, rather than in the base inherited by ASSISTANT.
+    permissions: [...studentPermissions, 'attendance.check-in', 'attendance.qr.check-in'],
   },
   {
     name: 'ASSISTANT',

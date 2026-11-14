@@ -8,6 +8,8 @@ export class HttpExceptionFilter<T> implements ExceptionFilter {
 
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    const qrRequest = /\/attendances\/sessions\/[^/]+\/qr(?:[/?-]|$)/.test(request.url);
+    if (qrRequest) response.setHeader('Cache-Control', 'no-store');
 
     const status =
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
@@ -19,12 +21,20 @@ export class HttpExceptionFilter<T> implements ExceptionFilter {
       typeof exceptionResponse == 'object'
         ? (exceptionResponse as { message?: string | string[] }).message
         : exceptionResponse;
+    const code =
+      typeof exceptionResponse === 'object' &&
+      exceptionResponse !== null &&
+      'code' in exceptionResponse &&
+      typeof exceptionResponse.code === 'string'
+        ? exceptionResponse.code
+        : undefined;
 
     response.status(status).json({
       status: false,
       statusCode: status,
       message,
-      path: request.url,
+      ...(code !== undefined ? { code } : {}),
+      path: qrRequest ? request.url.split('?')[0] : request.url,
       timestamp: new Date().toISOString(),
     });
   }

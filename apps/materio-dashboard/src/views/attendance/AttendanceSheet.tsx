@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import type { ReactNode } from 'react';
 
 import {
@@ -23,24 +24,37 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
+
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
+
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 
 import type { PaginationMeta } from '@/interfaces/apiResponse';
+
 import type { StudentRosterQuery } from '@/api/enrollments.service';
 
 import { attendanceStatusColor } from '@/utils/attendance-status';
+
 import { permissionWeightToPercentage } from '@/utils/attendance-permission';
 
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
+
 import { AttendanceStatus } from '@/enums/attendanceStatus';
+
 import { useDataTable } from '@/hooks/table/useDataTable';
+
 import { PaginationTable, type HeadCell } from '@/components/table';
+
 import { AttendanceStudentRow } from './AttendanceStudentRow';
 
 const columns = [
@@ -49,67 +63,137 @@ const columns = [
 
 interface AttendanceSheetProps {
   students: IEnrollmentStudent[];
+
   pagination?: {
     meta: PaginationMeta;
+
     query: StudentRosterQuery;
+
     changeQuery: (patch: Partial<StudentRosterQuery>) => void;
   };
+
   totalStudents: number;
+
   attendance: Record<number, AttendanceStatus>;
+
   observations?: Record<number, string | null>;
+
   onChangeObservation?: (id: number, value: string) => void;
+
   loading: boolean;
+
   saving: boolean;
+
   readOnly?: boolean;
+
   saveDisabled?: boolean;
+
+  lockedStudentIds?: number[];
+
+  markAllDisabled?: boolean;
+
+  pending?: boolean;
+
+  pendingStudentIds?: number[];
+
   search: string;
+
   presentCount: number;
+
   excusedCount: number;
+
   absentCount: number;
+
   hasChanges: boolean;
+
   modifiedStudentIds: number[];
+
   markAllActive?: boolean;
+
   permissionWeight: number | null;
+
   permissionWeightLoading: boolean;
+
   permissionWeightError: boolean;
+
   onSearchChange: (value: string) => void;
+
   onChangeAttendance: (idEnrollment: number, status: AttendanceStatus) => void;
+
   onMarkAllPresent: () => void;
+
   onMarkAllAbsent: () => void;
+
   onCancelChanges: () => void;
+
   onSave: () => void;
 }
 
 export function AttendanceSheet({
   students,
+
   pagination,
+
   totalStudents,
+
   attendance,
+
   observations = {},
+
   onChangeObservation,
+
   loading,
+
   saving,
+
   readOnly = false,
+
   saveDisabled = false,
+
+  lockedStudentIds = [],
+
+  markAllDisabled = false,
+
+  pending = false,
+
+  pendingStudentIds = [],
+
   search,
+
   presentCount,
+
   excusedCount,
+
   absentCount,
+
   hasChanges,
+
   modifiedStudentIds,
+
   markAllActive = false,
+
   permissionWeight,
+
   permissionWeightLoading,
+
   permissionWeightError,
+
   onSearchChange,
+
   onChangeAttendance,
+
   onMarkAllPresent,
+
   onMarkAllAbsent,
+
   onCancelChanges,
+
   onSave,
 }: AttendanceSheetProps) {
   const [observationStudent, setObservationStudent] = useState<IEnrollmentStudent | null>(null);
+
   const table = useDataTable<IEnrollmentStudent, typeof columns>(students, 'idEnrollment', 25, { preserveOrder: true });
+
   const disabled = loading || saving || readOnly || totalStudents === 0;
 
   const permissionLabel = permissionWeightLoading
@@ -128,10 +212,12 @@ export function AttendanceSheet({
             <Typography variant='h6' fontWeight={700}>
               Planilla de estudiantes
             </Typography>
+
             <Typography variant='body2' color='text.secondary'>
               Marca todos presentes y ajusta las excepciones antes de guardar.
             </Typography>
           </Box>
+
           <Tooltip title='El valor del permiso se configura en el esquema académico de la materia.'>
             <Stack
               direction='row'
@@ -141,10 +227,12 @@ export function AttendanceSheet({
               sx={{ color: 'text.secondary', alignSelf: 'flex-start' }}
             >
               <InfoOutlinedIcon fontSize='small' />
+
               <Typography variant='caption'>{permissionLabel}</Typography>
             </Stack>
           </Tooltip>
         </Stack>
+
         <Stack direction={{ xs: 'column', lg: 'row' }} justifyContent='space-between' spacing={2}>
           <Stack
             direction='row'
@@ -155,53 +243,60 @@ export function AttendanceSheet({
             aria-live='polite'
           >
             <CountIndicator value={totalStudents} label='Estudiantes' icon={<GroupsOutlinedIcon fontSize='small' />} />
+
             <CountIndicator
               value={presentCount}
               label='Presentes'
               color={attendanceStatusColor(AttendanceStatus.PRESENT)}
               icon={<CheckOutlinedIcon fontSize='small' />}
             />
+
             <CountIndicator
               value={excusedCount}
               label={excusedCount === 1 ? 'Permiso' : 'Permisos'}
               color={attendanceStatusColor(AttendanceStatus.EXCUSED)}
               icon={<ScheduleOutlinedIcon fontSize='small' />}
             />
+
             <CountIndicator
               value={absentCount}
-              label='Ausentes'
+              label={pending ? 'Pendientes' : 'Ausentes'}
               color={attendanceStatusColor(AttendanceStatus.ABSENT)}
               icon={<CloseOutlinedIcon fontSize='small' />}
             />
           </Stack>
+
           <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
             <Button
               size='small'
               variant='outlined'
               color='success'
               startIcon={<CheckOutlinedIcon />}
-              disabled={disabled}
+              disabled={disabled || markAllDisabled}
               onClick={onMarkAllPresent}
             >
               Marcar todos presentes
             </Button>
+
             <Button
               size='small'
               variant='text'
               color='error'
               startIcon={<CloseOutlinedIcon />}
-              disabled={disabled}
+              disabled={disabled || markAllDisabled}
               onClick={onMarkAllAbsent}
             >
               Marcar todos ausentes
             </Button>
           </Stack>
         </Stack>
+
         <TextField
           size='small'
           value={search}
           onChange={(event) => {
             onSearchChange(event.target.value);
+
             table.handleChangePage(null, 0);
           }}
           placeholder='Buscar estudiante por nombre, CI o RU…'
@@ -214,10 +309,20 @@ export function AttendanceSheet({
             ),
           }}
         />
+
         <Typography variant='caption' color='text.secondary'>
-          Los estudiantes sin una marca explícita se consideran ausentes.
+          {pending
+            ? 'Los estudiantes sin marca permanecen pendientes hasta el cierre de la sesión.'
+            : 'Los estudiantes sin una marca explícita se consideran ausentes.'}
         </Typography>
+
+        {markAllDisabled && (
+          <Typography variant='caption' color='text.secondary'>
+            No se puede usar Marcar todos porque existen registros protegidos por geolocalización o QR.
+          </Typography>
+        )}
       </Stack>
+
       {loading ? (
         <Box sx={{ height: 200, display: 'grid', placeItems: 'center' }}>
           <CircularProgress size={28} aria-label='Cargando planilla' />
@@ -240,11 +345,15 @@ export function AttendanceSheet({
                   <TableCell align='center' sx={{ width: 64 }}>
                     N°
                   </TableCell>
+
                   <TableCell>Estudiante</TableCell>
+
                   <TableCell sx={{ width: 180 }}>CI / RU</TableCell>
+
                   <TableCell sx={{ width: 390 }}>Asistencia</TableCell>
                 </TableRow>
               </TableHead>
+
               <TableBody>
                 {students.length === 0 ? (
                   <TableRow>
@@ -268,7 +377,8 @@ export function AttendanceSheet({
                       modified={markAllActive || modifiedStudentIds.includes(student.idEnrollment)}
                       observation={observations[student.idEnrollment]}
                       onEditObservation={onChangeObservation ? () => setObservationStudent(student) : undefined}
-                      disabled={saving || readOnly}
+                      disabled={saving || readOnly || lockedStudentIds.includes(student.idEnrollment)}
+                      pending={pending && pendingStudentIds.includes(student.idEnrollment)}
                       onChange={(status) => onChangeAttendance(student.idEnrollment, status)}
                     />
                   ))
@@ -276,6 +386,7 @@ export function AttendanceSheet({
               </TableBody>
             </Table>
           </TableContainer>
+
           {students.length > 0 && (
             <PaginationTable
               count={pagination?.meta.total ?? students.length}
@@ -293,21 +404,32 @@ export function AttendanceSheet({
           )}
         </>
       )}
+
       <Paper
         variant='outlined'
         role='region'
         aria-label='Guardar asistencia'
         sx={{
           position: 'sticky',
+
           bottom: 12,
+
           zIndex: 5,
+
           mx: { xs: 1, sm: 2 },
+
           mb: 2,
+
           px: 2,
+
           py: 1.25,
+
           borderRadius: 2,
+
           borderColor: hasChanges ? 'primary.main' : 'divider',
+
           bgcolor: 'background.paper',
+
           boxShadow: hasChanges ? 2 : 0,
         }}
       >
@@ -323,12 +445,14 @@ export function AttendanceSheet({
             ) : (
               <CheckOutlinedIcon fontSize='small' color='disabled' />
             )}
+
             <Typography variant='body2' color='text.secondary'>
               {hasChanges
                 ? `${markAllActive ? totalStudents : modifiedStudentIds.length} ${(markAllActive ? totalStudents : modifiedStudentIds.length) === 1 ? 'estudiante modificado' : 'estudiantes modificados'}`
                 : 'Sin cambios pendientes'}
             </Typography>
           </Stack>
+
           <Stack direction='row' spacing={1} justifyContent='flex-end'>
             <Button
               size='small'
@@ -339,6 +463,7 @@ export function AttendanceSheet({
             >
               Cancelar cambios
             </Button>
+
             <Button
               size='small'
               variant='contained'
@@ -352,6 +477,7 @@ export function AttendanceSheet({
           </Stack>
         </Stack>
       </Paper>
+
       <Dialog
         open={!!observationStudent && attendance[observationStudent.idEnrollment] === AttendanceStatus.EXCUSED}
         onClose={() => setObservationStudent(null)}
@@ -360,10 +486,12 @@ export function AttendanceSheet({
         aria-labelledby='attendance-observation-title'
       >
         <DialogTitle id='attendance-observation-title'>Observación opcional</DialogTitle>
+
         <DialogContent>
           <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
             {observationStudent?.user.name} {observationStudent?.user.lastname}
           </Typography>
+
           <TextField
             autoFocus
             fullWidth
@@ -380,6 +508,7 @@ export function AttendanceSheet({
             }}
           />
         </DialogContent>
+
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setObservationStudent(null)}>Listo</Button>
         </DialogActions>
@@ -390,13 +519,19 @@ export function AttendanceSheet({
 
 function CountIndicator({
   value,
+
   label,
+
   color = 'text.secondary',
+
   icon,
 }: {
   value: number;
+
   label: string;
+
   color?: string;
+
   icon: ReactNode;
 }) {
   return (
@@ -407,6 +542,7 @@ function CountIndicator({
       sx={{ px: 1.25, py: 0.75, border: 1, borderColor: 'divider', borderRadius: 1.5 }}
     >
       <Box sx={{ color, display: 'flex' }}>{icon}</Box>
+
       <Typography variant='body2' color={color}>
         <Box component='span' fontWeight={700}>
           {value}

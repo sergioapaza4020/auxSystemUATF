@@ -2,6 +2,8 @@ import { Permission } from 'src/entities/permissions/permissions.entity';
 import { DeepPartial } from 'typeorm';
 
 export const permissionsData: DeepPartial<Permission>[] = [
+  { name: 'attendance.qr.get', description: 'Get QR code for own open attendance session' },
+  { name: 'attendance.qr.check-in', description: 'Register and consult own QR attendance' },
   {
     name: 'user.get-all',
     description: 'Get all users',
@@ -382,6 +384,10 @@ export const permissionsData: DeepPartial<Permission>[] = [
   {
     name: 'attendance.session.get-one',
     description: 'Get an attendance session',
+  },
+  {
+    name: 'attendance.check-in',
+    description: 'Register own attendance in an open geolocation session',
   },
   {
     name: 'attendance.save',

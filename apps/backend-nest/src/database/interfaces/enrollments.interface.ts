@@ -4,5 +4,6 @@ export interface EnrollmentSeed {
   user: string;
   semester: string;
   courseCode: string;
+  courseGroup: number;
   role: CourseRelations;
 }

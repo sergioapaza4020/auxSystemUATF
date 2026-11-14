@@ -11,6 +11,7 @@ export abstract class BaseSeeder<T extends object> {
     for (const item of this.data()) {
       const exists = await this.repository.findOne({
         where: this.where(item),
+        withDeleted: true,
       });
 
       if (!exists) {

@@ -43,9 +43,16 @@ import { AttendanceSessionToolbar } from '@/views/attendance/AttendanceSessionTo
 import { AttendanceSheet } from '@/views/attendance/AttendanceSheet';
 import { AttendanceHistory } from '@/views/attendance/AttendanceHistory';
 import { DateField } from '@/components/DateField';
+import { AttendanceCreateDialog } from '@/views/attendance/AttendanceCreateDialog';
+import { AttendanceQrConfigDialog } from '@/views/attendance/AttendanceQrConfigDialog';
+import { attendanceQrError } from '@/utils/attendance-qr';
+import { AttendanceGeolocationDialog } from '@/views/attendance/AttendanceGeolocationDialog';
+import { AttendanceSessionBadge } from '@/views/attendance/AttendanceSessionBadge';
+import type { AttendanceSessionMode } from '@/interfaces/attendances/attendance.interface';
+import { canEditAttendance, getAttendanceGeoErrorMessage } from '@/utils/attendance-geolocation';
 
 type PendingAttendanceAction =
-  | { kind: 'create' }
+  | { kind: 'create'; mode?: AttendanceSessionMode; date?: string }
   | { kind: 'open'; idSession: number }
   | { kind: 'back' }
   | { kind: 'delete'; idSession: number }
@@ -114,6 +121,81 @@ export default function AttendancePage() {
   }, [roster.error]);
   const [pendingAction, setPendingAction] = useState<PendingAttendanceAction | null>(null);
   const [openingSession, setOpeningSession] = useState(false);
+  const [creatingSession, setCreatingSession] = useState(false);
+  const [geoDialog, setGeoDialog] = useState(false);
+  const [qrDialog, setQrDialog] = useState(false);
+  const [qrPresent, setQrPresent] = useState(false);
+  const actionLock = useRef(false);
+
+  const selected =
+    session?.idAttendanceSession === selectedSessionId
+      ? session
+      : roster.session?.idAttendanceSession === selectedSessionId
+        ? roster.session
+        : null;
+
+  const geo = selected?.mode === 'GEOLOCATION';
+  const qr = selected?.mode === 'QR';
+  const selfRegistration = geo || qr;
+  const refreshQrLifecycle = useRef(loadSession);
+
+  refreshQrLifecycle.current = loadSession;
+  useEffect(() => {
+    if (!qr || !selected || (selected.state !== 'SCHEDULED' && selected.state !== 'OPEN')) return;
+    const id = selected.idAttendanceSession;
+    const boundary = selected.state === 'SCHEDULED' ? selected.startsAt : selected.endsAt;
+    let active = true;
+    let pending = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const check = async () => {
+      if (!active || pending || document.visibilityState === 'hidden') return;
+      pending = true;
+
+      try {
+        await refreshQrLifecycle.current(id);
+      } catch {
+        /* Manual refresh remains available. */
+      } finally {
+        pending = false;
+      }
+    };
+
+    const schedule = () => {
+      const untilBoundary = Date.parse(boundary ?? '') - Date.now() + 100;
+      const delay = untilBoundary > 0 ? Math.min(60000, untilBoundary) : 30000;
+
+      timer = setTimeout(
+        async () => {
+          await check();
+          if (active && selected.state === 'SCHEDULED') schedule();
+        },
+        Number.isFinite(delay) ? delay : 60000,
+      );
+    };
+
+    const focus = () => {
+      if (!qrDialog) void check();
+    };
+
+    if (!qrDialog) schedule();
+    window.addEventListener('focus', focus);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      window.removeEventListener('focus', focus);
+    };
+  }, [qr, selected, qrDialog]);
+  const editable = canEditAttendance(selected);
+
+  const geoMarks = roster.geographicStudentIds;
+
+  const hasGeoMarks =
+    geoMarks.length > 0 ||
+    !!session?.attendances?.some(
+      (mark) => mark.registrationMethod === 'GEOLOCATION' || mark.registrationMethod === 'QR',
+    );
 
   const [permissionConfig, setPermissionConfig] = useState<{ weight: number | null; loading: boolean; error: boolean }>(
     { weight: null, loading: true, error: false },
@@ -183,6 +265,9 @@ export default function AttendancePage() {
     setTab(0);
     setSelectedSessionId(idSession);
     setSelectedDate(loaded.date.slice(0, 10));
+    setGeoDialog(loaded.mode === 'GEOLOCATION');
+    setQrPresent(false);
+    setQrDialog(loaded.mode === 'QR');
   };
 
   const performAction = async (action: PendingAttendanceAction) => {
@@ -192,6 +277,8 @@ export default function AttendancePage() {
       return;
     }
 
+    if (actionLock.current) return;
+    actionLock.current = true;
     setOpeningSession(true);
 
     try {
@@ -221,33 +308,71 @@ export default function AttendancePage() {
       } else if (action.kind === 'open') {
         await openSession(action.idSession);
       } else {
-        if (!selectedDate) {
+        const date = action.date ?? selectedDate;
+
+        if (!date) {
           snackbar.error('Selecciona una fecha.');
 
           return;
         }
 
-        const existing = await findSessionByDate(selectedDate);
-        const created = existing ?? (await createSession(selectedDate));
+        const existing = await findSessionByDate(date);
 
-        await openSession(created.idAttendanceSession);
-        snackbar.success(existing ? 'Se abrió la sesión de asistencia existente.' : 'Sesión de asistencia creada.');
+        if (existing && (action.mode === 'GEOLOCATION' || action.mode === 'QR')) {
+          snackbar.error('Ya existe una sesión para esta fecha. Ábrela desde el historial o elige otra fecha.');
+
+          return;
+        }
+
+        const created =
+          existing ??
+          (action.mode === 'GEOLOCATION' || action.mode === 'QR'
+            ? await createSession(date, action.mode)
+            : await createSession(date));
+
+        try {
+          await openSession(created.idAttendanceSession);
+        } catch (error) {
+          if (action.mode === 'QR') {
+            snackbar.warning('Borrador QR creado. No se pudo abrir su detalle; retómalo desde el historial.');
+
+            return;
+          }
+
+          throw error;
+        }
+
+        if (action.mode === 'GEOLOCATION') setGeoDialog(true);
+        if (action.mode === 'QR') setQrDialog(true);
+        snackbar.success(
+          action.mode === 'QR'
+            ? 'Sesión QR creada.'
+            : existing
+              ? 'Se abrió la sesión de asistencia existente.'
+              : 'Sesión de asistencia creada.',
+        );
       }
-    } catch {
+    } catch (error) {
       snackbar.error(
-        action.kind === 'delete'
-          ? 'No se pudo eliminar la sesión. Tus cambios actuales se conservan.'
-          : action.kind === 'update'
-            ? 'No se pudo actualizar la fecha de la sesión. Tus cambios actuales se conservan.'
-            : 'No se pudo abrir la sesión de asistencia. Tus marcas actuales se conservan.',
+        action.kind === 'create' && action.mode === 'QR'
+          ? attendanceQrError(error)
+          : action.kind === 'create' && action.mode === 'GEOLOCATION'
+            ? getAttendanceGeoErrorMessage(error)
+            : action.kind === 'delete'
+              ? 'No se pudo eliminar la sesión. Tus cambios actuales se conservan.'
+              : action.kind === 'update'
+                ? 'No se pudo actualizar la fecha de la sesión. Tus cambios actuales se conservan.'
+                : 'No se pudo abrir la sesión de asistencia. Tus marcas actuales se conservan.',
       );
     } finally {
+      actionLock.current = false;
       setOpeningSession(false);
     }
   };
 
   const requestAction = (action: PendingAttendanceAction) => {
     if (
+      actionLock.current ||
       saving ||
       openingSession ||
       (action.kind === 'create' && (!canCreate || !canOpen)) ||
@@ -265,14 +390,21 @@ export default function AttendancePage() {
     }
   };
 
-  const handleChangeAttendance = (id: number, status: AttendanceStatus) => roster.edit(id, status);
-  const handleMarkAll = (status: AttendanceStatus) => roster.markAllStudents(status);
+  const handleChangeAttendance = (id: number, status: AttendanceStatus) => {
+    if (editable && !geoMarks.includes(id)) roster.edit(id, status);
+  };
+
+  const handleMarkAll = (status: AttendanceStatus) => {
+    if (editable && !hasGeoMarks) roster.markAllStudents(status);
+  };
+
   const handleCancelChanges = () => roster.discard();
 
   const handleSave = async () => {
     if (
       !selectedSessionId ||
       !canSave ||
+      !editable ||
       !hasChanges ||
       Object.values(observations).some((value) => (value?.length ?? 0) > 500)
     ) {
@@ -283,7 +415,7 @@ export default function AttendancePage() {
       await saveSessionAttendances(selectedSessionId, roster.payload());
       roster.confirmed();
     } catch (error) {
-      snackbar.error(`No se pudo guardar la asistencia: ${getApiErrorMessage(error)}`);
+      snackbar.error(`No se pudo guardar la asistencia: ${getAttendanceGeoErrorMessage(error)}`);
 
       return;
     }
@@ -354,8 +486,69 @@ export default function AttendancePage() {
                 canCreate={canCreate && canOpen}
                 hasChanges={hasChanges}
                 onDateChange={setSelectedDate}
-                onCreateSession={() => requestAction({ kind: 'create' })}
+                onCreateSession={() => setCreatingSession(true)}
+                onConfigureQr={
+                  qr
+                    ? () => {
+                        setQrPresent(false);
+                        setQrDialog(true);
+                      }
+                    : undefined
+                }
+                onShowQr={
+                  qr && hasPermission(user, 'attendance.qr.get')
+                    ? () => {
+                        setQrPresent(true);
+                        setQrDialog(true);
+                      }
+                    : undefined
+                }
               />
+
+              {selfRegistration && selected && (
+                <Paper variant='outlined' sx={{ p: 2 }}>
+                  <Stack spacing={1}>
+                    <AttendanceSessionBadge session={selected} />
+                    <Typography variant='body2'>
+                      {selected.state === 'OPEN'
+                        ? 'En curso — todavía no afecta el cálculo final.'
+                        : selected.state === 'CLOSED'
+                          ? 'Finalizada — asistencia consolidada.'
+                          : selected.state === 'CANCELLED'
+                            ? 'Sesión cancelada.'
+                            : 'La sesión aún no está abierta.'}
+                    </Typography>
+                    <Button
+                      onClick={() => {
+                        if (qr) {
+                          setQrPresent(false);
+                          setQrDialog(true);
+                        } else setGeoDialog(true);
+                      }}
+                      disabled={saving || openingSession || hasChanges}
+                    >
+                      {qr
+                        ? 'Ver configuración QR'
+                        : selected.state === 'DRAFT'
+                          ? 'Configurar geolocalización'
+                          : 'Ver ubicación/configuración'}
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          await loadSession(selected.idAttendanceSession);
+                          roster.refresh?.();
+                        } catch (error) {
+                          snackbar.error(getAttendanceGeoErrorMessage(error));
+                        }
+                      }}
+                      disabled={saving || openingSession || hasChanges}
+                    >
+                      Actualizar estado y registros
+                    </Button>
+                  </Stack>
+                </Paper>
+              )}
 
               {selectedSessionId && (
                 <AttendanceSheet
@@ -364,10 +557,27 @@ export default function AttendancePage() {
                   totalStudents={roster.total}
                   attendance={attendance}
                   observations={observations}
-                  onChangeObservation={(id, value) => roster.edit(id, AttendanceStatus.EXCUSED, value)}
+                  onChangeObservation={(id, value) => {
+                    if (editable && !geoMarks.includes(id)) roster.edit(id, AttendanceStatus.EXCUSED, value);
+                  }}
                   loading={loadingStudents || openingSession || !session}
                   saving={saving}
-                  readOnly={!canSave}
+                  readOnly={!canSave || !editable}
+                  lockedStudentIds={geoMarks}
+                  markAllDisabled={hasGeoMarks}
+                  pending={selfRegistration && selected?.isComputable === false}
+                  pendingStudentIds={
+                    roster.markAllActive
+                      ? []
+                      : students
+                          .filter(
+                            (student) =>
+                              !roster.session?.attendances.some(
+                                (mark) => mark.enrollment.idEnrollment === student.idEnrollment,
+                              ) && !modifiedStudentIds.includes(student.idEnrollment),
+                          )
+                          .map((student) => student.idEnrollment)
+                  }
                   saveDisabled={Object.values(observations).some((value) => (value?.length ?? 0) > 500)}
                   search={search}
                   presentCount={presentCount}
@@ -405,7 +615,7 @@ export default function AttendancePage() {
           <Grid item xs={12} lg={3}>
             <AttendanceSidebar
               sessions={recentSessions}
-              summary={roster.session?.idAttendanceSession === selectedSessionId ? roster.session : null}
+              summary={selected}
               selectedSessionId={selectedSessionId}
               present={presentCount}
               excused={excusedCount}
@@ -447,10 +657,59 @@ export default function AttendancePage() {
           loading={loadingSessions}
           selectedSessionId={selectedSessionId}
           onSelectSession={(idSession) => requestAction({ kind: 'open', idSession })}
-          onCreateSession={canCreate ? () => requestAction({ kind: 'create' }) : undefined}
+          onCreateSession={canCreate ? () => setCreatingSession(true) : undefined}
           disabled={saving || openingSession || !canOpen}
         />
       </Box>
+      {creatingSession && (
+        <AttendanceCreateDialog
+          initialDate={selectedDate}
+          onClose={() => setCreatingSession(false)}
+          onCreate={(mode, date) => {
+            setCreatingSession(false);
+            requestAction({ kind: 'create', mode, date });
+          }}
+        />
+      )}
+      {geoDialog && selected && geo && (
+        <AttendanceGeolocationDialog
+          key={selected.idAttendanceSession}
+          session={selected}
+          canUpdate={hasPermission(user, 'attendance.session.update')}
+          onClose={() => setGeoDialog(false)}
+          onRefresh={async () => {
+            await loadSession(selected.idAttendanceSession);
+            roster.refresh?.();
+            await loadSessions();
+          }}
+        />
+      )}
+      {qrDialog && selected && qr && (
+        <AttendanceQrConfigDialog
+          key={selected.idAttendanceSession}
+          session={selected}
+          course={`${enrollment.course.name}${enrollment.course.group != null ? ` · Grupo ${enrollment.course.group}` : ''}`}
+          initialPresentation={qrPresent}
+          canUpdate={hasPermission(user, 'attendance.session.update')}
+          canGetQr={hasPermission(user, 'attendance.qr.get')}
+          canDelete={hasPermission(user, 'attendance.session.delete')}
+          onClose={() => {
+            setQrDialog(false);
+            setQrPresent(false);
+          }}
+          onRefresh={async () => {
+            await loadSession(selected.idAttendanceSession);
+            roster.refresh?.();
+            await loadSessions();
+          }}
+          onDelete={async () => {
+            await deleteAttendanceSession(selected.idAttendanceSession);
+            setSelectedSessionId(null);
+            roster.discard();
+            await loadSessions();
+          }}
+        />
+      )}
       {editingConfig && canEditConfig && permissionConfig.weight !== null && (
         <AttendancePermissionDialog
           idCourse={enrollment.course.idCourse}

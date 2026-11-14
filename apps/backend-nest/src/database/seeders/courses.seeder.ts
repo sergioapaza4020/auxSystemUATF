@@ -4,6 +4,7 @@ import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
 import { Repository } from 'typeorm';
 import { CourseSeed } from '../interfaces/courses.interface';
 import { coursesData } from '../data/courses.data';
+import { findSeedRecord, requireSeedReference } from '../utils/seed-integrity';
 
 export class CourseSeeder {
   constructor(
@@ -19,32 +20,22 @@ export class CourseSeeder {
   }
 
   async create(data: CourseSeed) {
-    const career = await this.careerRepository.findOne({
-      where: {
-        name: data.career,
-      },
-    });
-
-    if (!career) throw new Error(`Career ${data.career} not found`);
-
-    const gradeScheme = await this.gradeSchemeRepository.findOne({
-      where: {
-        name: data.gradeScheme,
-      },
-    });
-
-    if (!gradeScheme) throw new Error(`Grade scheme ${data.gradeScheme} not found`);
-
-    const exists = await this.repository.findOne({
-      where: {
-        code: data.code,
-      },
-    });
-
-    if (exists) {
-      console.log(`Course ${data.name} already exists`);
-      return;
-    }
+    const exists = await findSeedRecord(
+      this.repository,
+      { code: data.code, group: data.group },
+      'Materia/grupo',
+    );
+    if (exists) return exists;
+    const career = await requireSeedReference(
+      this.careerRepository,
+      { name: data.career },
+      'Carrera',
+    );
+    const gradeScheme = await requireSeedReference(
+      this.gradeSchemeRepository,
+      { name: data.gradeScheme },
+      'Esquema general',
+    );
 
     const course = this.repository.create({
       code: data.code,

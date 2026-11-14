@@ -5,16 +5,19 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
 import { DateField } from '@/components/DateField';
+import type { IAttendanceLifecycle } from '@/interfaces/attendances/attendance.interface';
 
 interface AttendanceSessionToolbarProps {
   selectedDate: string;
   selectedSessionId: number | null;
-  session: { date?: string } | null;
+  session: ({ date?: string } & IAttendanceLifecycle) | null;
   saving: boolean;
   canCreate?: boolean;
   hasChanges: boolean;
   onDateChange: (date: string) => void;
   onCreateSession: () => void;
+  onConfigureQr?: () => void;
+  onShowQr?: () => void;
 }
 
 export function AttendanceSessionToolbar({
@@ -26,6 +29,8 @@ export function AttendanceSessionToolbar({
   hasChanges,
   onDateChange,
   onCreateSession,
+  onConfigureQr,
+  onShowQr,
 }: AttendanceSessionToolbarProps) {
   const date = session?.date?.slice(0, 10).split('-');
   const sessionDate = date ? `${date[2]}/${date[1]}/${date[0]}` : '';
@@ -73,7 +78,7 @@ export function AttendanceSessionToolbar({
             label='Fecha'
             size='small'
             value={selectedDate}
-            disabled={saving}
+            disabled={saving || (!!selectedSessionId && (session?.mode === 'GEOLOCATION' || session?.mode === 'QR'))}
             onChange={onDateChange}
             sx={{ width: { xs: '100%', sm: 175 } }}
           />
@@ -99,6 +104,16 @@ export function AttendanceSessionToolbar({
                 {hasChanges ? 'Cambios sin guardar' : 'Sesión guardada'}
               </Typography>
             </Stack>
+          )}
+          {session?.mode === 'QR' && onConfigureQr && (
+            <Button onClick={onConfigureQr} disabled={saving || hasChanges}>
+              {session.state === 'DRAFT' ? 'Configurar QR' : 'Ver sesión QR'}
+            </Button>
+          )}
+          {session?.mode === 'QR' && session.state === 'OPEN' && onShowQr && (
+            <Button variant='contained' onClick={onShowQr} disabled={saving || hasChanges}>
+              Mostrar QR
+            </Button>
           )}
           <Button
             variant='outlined'

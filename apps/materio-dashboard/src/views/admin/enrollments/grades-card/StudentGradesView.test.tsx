@@ -15,6 +15,7 @@ import { UserRole } from '@/enums/userRole';
 import { GradeViewToggle } from '../GradeViewToggle';
 
 vi.mock('@/api/attendances.service', () => ({ getMyStudentAttendance: vi.fn() }));
+vi.mock('@/views/attendance/StudentAttendanceCheckIn', () => ({ StudentAttendanceCheckIn: () => null }));
 vi.mock('react', async () => {
   const actual = await vi.importActual<typeof ReactRuntime>('react');
 

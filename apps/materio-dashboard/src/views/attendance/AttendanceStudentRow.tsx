@@ -32,6 +32,7 @@ interface AttendanceStudentRowProps {
   onEditObservation?: () => void;
   modified?: boolean;
   disabled?: boolean;
+  pending?: boolean;
   onChange: (status: AttendanceStatus) => void;
 }
 
@@ -43,6 +44,7 @@ export function AttendanceStudentRow({
   onEditObservation,
   modified = false,
   disabled = false,
+  pending = false,
   onChange,
 }: AttendanceStudentRowProps) {
   const initials = `${student.user.name?.charAt(0) ?? ''}${student.user.lastname?.charAt(0) ?? ''}`.toUpperCase();
@@ -107,12 +109,17 @@ export function AttendanceStudentRow({
 
       <TableCell>
         <Stack direction='row' spacing={1} alignItems='center'>
+          {pending && (
+            <Typography variant='caption' color='text.secondary'>
+              Pendiente
+            </Typography>
+          )}
           <ToggleButtonGroup
             exclusive
             disabled={disabled}
             aria-label={`Asistencia de ${studentName}`}
             size='small'
-            value={status}
+            value={pending ? null : status}
             onChange={(_, value: AttendanceStatus | null) => {
               if (value) {
                 onChange(value);

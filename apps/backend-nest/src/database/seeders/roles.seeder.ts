@@ -3,6 +3,7 @@ import { Permission } from 'src/entities/permissions/permissions.entity';
 import { In, Repository } from 'typeorm';
 import { RoleSeed } from '../interfaces/roles.interface';
 import { rolesData } from '../data/roles.data';
+import { SeedDataError } from '../utils/seed-integrity';
 
 export class RoleSeeder {
   constructor(
@@ -24,10 +25,13 @@ export class RoleSeeder {
     });
 
     if (permissions.length !== data.permissions.length) {
-      throw new Error(`Some permissions not found for role ${data.name}`);
+      throw new SeedDataError(
+        'Rol: faltan permisos del catálogo; ejecutar primero el seeder de permisos y revisar sus nombres.',
+      );
     }
 
     const exists = await this.repository.findOne({
+      withDeleted: true,
       where: {
         name: data.name,
       },

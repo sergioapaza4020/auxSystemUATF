@@ -30,13 +30,12 @@ export class BulkOperation {
   })
   idBulkOperation: string;
 
-  @Column({ type: 'enum', enum: BulkOperationType, enumName: 'bulk_operations_type_enum' })
+  @Column({ type: 'enum', enum: BulkOperationType })
   type: BulkOperationType;
 
   @Column({
     type: 'enum',
     enum: BulkOperationStatus,
-    enumName: 'bulk_operations_status_enum',
     default: BulkOperationStatus.PENDING,
   })
   status: BulkOperationStatus;

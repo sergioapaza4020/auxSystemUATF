@@ -19,6 +19,7 @@ import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
 import { GradeSchemeDetail } from 'src/entities/grade-scheme-detail/grade-scheme-detail.entity';
 import { AttendanceSession } from 'src/entities/attendance/attendance-session.entity';
 import { Attendance } from 'src/entities/attendance/attendance.entity';
+import { Grade } from 'src/entities/grades/grades.entity';
 import { AttendanceSaveDto } from 'src/dtos/attendances/attendance-save.dto';
 import { SemesterCreateDto } from 'src/dtos/semesters/semesters.dto';
 import { UserUpdateDto } from 'src/dtos/users/users-update.dto';
@@ -32,6 +33,7 @@ import { RolesService } from './roles/roles.service';
 import { EnrollmentsService } from './enrollments/enrollments.service';
 import { AssistantGradeSchemesService } from './grade-schemes/assistant-grade-schemes.service';
 import { AttendancesService } from './attendances/attendances.service';
+import { AttendanceQrTokenService } from './attendances/attendance-qr-token.service';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
 import { BulkOperationsService } from './bulk-operations/bulk-operations.service';
 
@@ -39,6 +41,8 @@ function repositoryMock() {
   return {
     createQueryBuilder: jest.fn(),
     findOne: jest.fn(),
+    findOneOrFail: jest.fn(),
+    countBy: jest.fn().mockResolvedValue(0),
     find: jest.fn(),
     create: jest.fn((data: object) => ({ ...data })),
     merge: jest.fn((target: object, ...sources: object[]) => {
@@ -64,6 +68,7 @@ describe('CRUD service behavior', () => {
     GradeSchemeDetail,
     AttendanceSession,
     Attendance,
+    Grade,
   ];
   let repositories: Map<Type<unknown>, ReturnType<typeof repositoryMock>>;
   const repo = (entity: Type<unknown>) => repositories.get(entity)!;
@@ -80,6 +85,10 @@ describe('CRUD service behavior', () => {
 
   beforeEach(async () => {
     repositories = new Map(entities.map((entity) => [entity, repositoryMock()]));
+    repo(Enrollment).manager.transaction.mockImplementation(
+      (work: (manager: { getRepository: typeof repo }) => Promise<unknown>) =>
+        work({ getRepository: repo }),
+    );
     roles = { getOneByName: jest.fn() };
     const module = await Test.createTestingModule({
       providers: [
@@ -92,6 +101,7 @@ describe('CRUD service behavior', () => {
         EnrollmentsService,
         AssistantGradeSchemesService,
         AttendancesService,
+        AttendanceQrTokenService,
         { provide: RolesService, useValue: roles },
         { provide: BulkOperationsService, useValue: {} },
         { provide: DataSource, useValue: {} },
@@ -342,13 +352,15 @@ describe('CRUD service behavior', () => {
   });
 
   it('validates the requested role when editing an enrollment', async () => {
-    repo(Enrollment).findOne.mockResolvedValue({
+    const enrollment = {
       idEnrollment: 1,
       user: { username: 'alice' },
       semester: { period: SemesterNumber.I, year: 2026 },
       course: { code: 'MAT101' },
       role: CourseRelations.STUDENT,
-    });
+    };
+    repo(Enrollment).findOne.mockResolvedValue(enrollment);
+    repo(Enrollment).findOneOrFail.mockResolvedValue(enrollment);
     repo(User).findOne.mockResolvedValue({
       username: 'alice',
       roles: [{ name: CourseRelations.STUDENT }],
@@ -373,6 +385,13 @@ describe('CRUD service behavior', () => {
           role: CourseRelations.STUDENT,
         })
         .mockResolvedValueOnce(null);
+      repo(Enrollment).findOneOrFail.mockResolvedValue({
+        idEnrollment: 1,
+        user: { idUser: 1, username: 'alice' },
+        semester: { idSemester: 1, period: SemesterNumber.I, year: 2026 },
+        course: { idCourse: 1, code: 'MAT101' },
+        role: CourseRelations.STUDENT,
+      });
       repo(User).findOne.mockResolvedValue({
         idUser: 2,
         username: 'bob',
@@ -380,9 +399,8 @@ describe('CRUD service behavior', () => {
       });
       repo(Semester).findOne.mockResolvedValue({ idSemester: 1 });
       repo(Course).findOne.mockResolvedValue({ idCourse: 1 });
-      repo(Enrollment).manager.getRepository.mockReturnValue({
-        countBy: jest.fn().mockResolvedValue(count),
-      });
+      for (const entity of [GradeScheme, Attendance, AttendanceSession])
+        repo(entity).countBy.mockResolvedValue(count);
       if (count > 0) {
         await expect(enrollments.update(1, { username: 'bob' })).rejects.toThrow(ConflictException);
         expect(repo(Enrollment).save).not.toHaveBeenCalled();
@@ -461,6 +479,7 @@ describe('CRUD service behavior', () => {
     expect(repo(Attendance).delete).toHaveBeenCalledWith({
       attendanceSession: { idAttendanceSession: 1 },
       enrollment: { idEnrollment: 5 },
+      registrationMethod: 'MANUAL',
     });
   });
 

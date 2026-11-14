@@ -40,6 +40,20 @@ function html(extra: Partial<Parameters<typeof AttendanceSheet>[0]> = {}) {
 }
 
 describe('Attendance sheet UX', () => {
+  it('shows pending instead of implicit absence while GEO is not consolidated', () => {
+    const result = html({ pending: true, pendingStudentIds: [1], readOnly: true });
+
+    expect(result).toContain('Pendientes');
+    expect(result).toContain('Pendiente');
+    expect(result).not.toContain('se consideran ausentes');
+    expect(result).toMatch(/<button(?=[^>]*aria-label="Guardar asistencia")(?=[^>]*disabled)[^>]*>/);
+  });
+  it('protects GEO marks and disables mark-all with an explanation', () => {
+    const result = html({ markAllDisabled: true, lockedStudentIds: [1] });
+
+    expect(result).toContain('No se puede usar Marcar todos');
+    expect(result).toMatch(/<button(?=[^>]*aria-label="Marcar a Ana Pérez como presente")(?=[^>]*disabled)[^>]*>/);
+  });
   it.each(['light', 'dark'] as const)('renders the summary and read-only permission value in %s mode', (mode) => {
     const result = renderToStaticMarkup(
       <ThemeProvider theme={createTheme({ palette: { mode } })}>

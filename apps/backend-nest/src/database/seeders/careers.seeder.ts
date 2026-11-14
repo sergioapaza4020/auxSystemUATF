@@ -3,6 +3,7 @@ import { Faculty } from 'src/entities/faculties/faculties.entity';
 import { Repository } from 'typeorm';
 import { careersData } from '../data/careers.data';
 import { CareerSeed } from '../interfaces/careers.interface';
+import { requireSeedReference } from '../utils/seed-integrity';
 
 export class CareerSeeder {
   constructor(
@@ -16,24 +17,13 @@ export class CareerSeeder {
     }
   }
   async create(data: CareerSeed) {
-    const faculty = await this.facultyRepository.findOne({
-      where: {
-        name: data.faculty,
-      },
-    });
-
-    if (!faculty) throw new Error(`Faculty ${data.faculty} not found`);
-
-    const exists = await this.repository.findOne({
-      where: {
-        name: data.name,
-      },
-    });
-
-    if (exists) {
-      console.log(`Career ${data.name} already exists`);
-      return;
-    }
+    const exists = await this.repository.findOne({ where: { name: data.name }, withDeleted: true });
+    if (exists) return exists;
+    const faculty = await requireSeedReference(
+      this.facultyRepository,
+      { name: data.faculty },
+      'Facultad',
+    );
 
     const career = this.repository.create({
       name: data.name,

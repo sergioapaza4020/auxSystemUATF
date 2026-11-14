@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-12",
+  "timezone": "America/La_Paz",
+  "scope": "Local code, disposable PostgreSQL, synthetic HTTP and browser simulation; not deployed production",
+  "backendFull": {
+    "passedSuites": 103,
+    "passedTests": 1019,
+    "skippedSuites": 2,
+    "skippedTests": 9,
+    "scope": "Before the additional lost-response case"
+  },
+  "backendFinalPilot": {
+    "passedSuites": 1,
+    "passedTests": 7,
+    "scope": "Final pilot suite includes real socket loss after commit; not added to full-suite count"
+  },
+  "backendFinalContracts": {
+    "passedSuites": 2,
+    "passedTests": 50,
+    "scope": "QR HTTP/concurrency + CORS after strengthened close race assertion"
+  },
+  "frontendFull": {
+    "passedSuites": 93,
+    "passedTests": 760
+  },
+  "quality": {
+    "backendTypeScript": "PASS",
+    "backendLint": "PASS",
+    "backendBuild": "PASS",
+    "backendFormat": "PASS",
+    "frontendTypeScript": "PASS",
+    "frontendLint": "PASS",
+    "frontendBuild": "PASS",
+    "frontendFormat": "PASS",
+    "gitDiffCheck": "PASS"
+  },
+  "defectReproduction": {
+    "case": "Delayed context after token discard",
+    "before": "FAIL: READY instead of EXPIRED",
+    "after": "PASS"
+  },
+  "verdict": "NO LISTO",
+  "notExecuted": [
+    "public HTTPS deployment",
+    "physical Android/iOS cameras",
+    "classroom/projector distance",
+    "complete frontend+backend browser E2E",
+    "shared rate limiting",
+    "real multinode clock synchronization",
+    "production migration/seed"
+  ]
+}

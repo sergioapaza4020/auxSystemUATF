@@ -3,6 +3,9 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { memorySessionStorage, qrToken } from '@/test-utils/qr-fixtures';
+import { savePendingQr, QR_PENDING_KEY } from '@/utils/student-qr-flow';
+
 import { login } from '../api/auth.service';
 
 import Login from './Login';
@@ -183,5 +186,18 @@ describe('Login credential autocomplete', () => {
     expect(html).toContain('for="username"');
     expect(html).toContain('for="password"');
     expect(html).toContain('type="submit"');
+  });
+});
+
+describe('fixed QR login return', () => {
+  it('returns to QR without any challenge or external destination in the navigation URL', async () => {
+    vi.stubGlobal('window', { sessionStorage: memorySessionStorage() });
+    savePendingQr(qrToken());
+    vi.mocked(login).mockResolvedValueOnce(undefined);
+    const view = mountLogin();
+
+    await view.submit();
+    expect(replace).toHaveBeenCalledExactlyOnceWith('/attendance/qr');
+    expect(window.sessionStorage.getItem(QR_PENDING_KEY)).toContain(qrToken());
   });
 });

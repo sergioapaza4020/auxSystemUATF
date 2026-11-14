@@ -1,0 +1,3764 @@
+{
+  "columns": [
+    {
+      "table_name": "activities",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "activities",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "activities",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "activities",
+      "column_name": "id_activity",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('activities_id_activity_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "description",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "due_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 0
+    },
+    {
+      "table_name": "activities",
+      "column_name": "id_grade_scheme_detail",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "activities",
+      "column_name": "publication_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 0
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "id_attendance_session",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('attendance_sessions_id_attendance_session_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 0
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "id_assistant_enrollment",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "mode",
+      "data_type": "USER-DEFINED",
+      "udt_name": "attendance_sessions_mode_enum",
+      "is_nullable": "NO",
+      "column_default": "'MANUAL'::attendance_sessions_mode_enum",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "latitude",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 9,
+      "numeric_scale": 6,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "longitude",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 6,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "radius_meters",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "maximum_accepted_accuracy",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "starts_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "ends_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "opened_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "closed_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "attendance_sessions",
+      "column_name": "cancelled_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "id_attendance",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('attendances_id_attendance_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "attendances_status_enum",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "id_attendance_session",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "id_enrollment",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "observation",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 500,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "registration_method",
+      "data_type": "USER-DEFINED",
+      "udt_name": "attendances_registration_method_enum",
+      "is_nullable": "NO",
+      "column_default": "'MANUAL'::attendances_registration_method_enum",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "marked_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "id_marked_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "accuracy",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "attendances",
+      "column_name": "distance_meters",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "id_bulk_operation_row",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('bulk_operation_rows_id_bulk_operation_row_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "id_bulk_operation",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "row_number",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "data",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "valid",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "errors",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "bulk_operation_rows_status_enum",
+      "is_nullable": "NO",
+      "column_default": "'PENDING'::bulk_operation_rows_status_enum",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "id_bulk_operation",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "type",
+      "data_type": "USER-DEFINED",
+      "udt_name": "bulk_operations_type_enum",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "bulk_operations_status_enum",
+      "is_nullable": "NO",
+      "column_default": "'PENDING'::bulk_operations_status_enum",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "total_rows",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "valid_rows",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "invalid_rows",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "processed_rows",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "failed_rows",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "started_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "completed_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "bulk_operations",
+      "column_name": "expires_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "career_courses",
+      "column_name": "careersIdCareer",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "career_courses",
+      "column_name": "coursesIdCourse",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "careers",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "careers",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "careers",
+      "column_name": "id_career",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('careers_id_career_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "id_faculty",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "careers",
+      "column_name": "id_director",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "courses",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "courses",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "courses",
+      "column_name": "id_course",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('courses_id_course_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "code",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "group",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "courses",
+      "column_name": "id_grade_scheme",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "id_enrollment",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('enrollments_id_enrollment_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "role",
+      "data_type": "USER-DEFINED",
+      "udt_name": "enrollments_role_enum",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "id_semester",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "id_course",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "enrollments",
+      "column_name": "id_user",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "id_faculty",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('faculties_id_faculty_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "faculties",
+      "column_name": "id_user_director",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "id_grade_item",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('grade_items_id_grade_item_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_items",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "id_grade_scheme_detail",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('grade_scheme_details_id_grade_scheme_detail_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "percentage",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "order",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "id_grade_scheme",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "id_grade_item",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "permission_weight",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "NO",
+      "column_default": "1",
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "column_name": "archived_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "id_grade_scheme",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('grade_schemes_id_grade_scheme_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "description",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "assistant_percentage",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 5,
+      "numeric_scale": 2,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grade_schemes",
+      "column_name": "id_assistant_enrollment",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grades",
+      "column_name": "id_grade",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('grades_id_grade_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grades",
+      "column_name": "score",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 5,
+      "numeric_scale": 2,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grades",
+      "column_name": "id_enrollment",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grades",
+      "column_name": "id_grade_scheme_detail",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "grades",
+      "column_name": "id_activity",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "migrations",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('migrations_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "migrations",
+      "column_name": "timestamp",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "migrations",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "id_permission",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('permissions_id_permission_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "description",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "role_permission",
+      "column_name": "rolesIdRole",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "role_permission",
+      "column_name": "permissionsIdPermission",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "roles",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "roles",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "roles",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "roles",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "roles",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "roles",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "roles",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "roles",
+      "column_name": "id_role",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('roles_id_role_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "roles",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "roles",
+      "column_name": "description",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "id_semester",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('semesters_id_semester_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "year",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "semester_number",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "start_date",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "semesters",
+      "column_name": "end_date",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "id_user_courses",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('user_courses_id_user_courses_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "relationType",
+      "data_type": "USER-DEFINED",
+      "udt_name": "user_courses_relationtype_enum",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "id_user",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_courses",
+      "column_name": "id_course",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_role",
+      "column_name": "usersIdUser",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_role",
+      "column_name": "rolesIdRole",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "id_session",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('user_sessions_id_session_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "refresh_token",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "ip_address",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "user_agent",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "browser",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "os",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "device",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "expires_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "last_used_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "revoked_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "revoked_reason",
+      "data_type": "USER-DEFINED",
+      "udt_name": "user_sessions_revoked_reason_enum",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "id_user",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "user_sessions",
+      "column_name": "revoked_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "updated_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "deleted_by",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "users",
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "NO",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "users",
+      "column_name": "deleted_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": 6
+    },
+    {
+      "table_name": "users",
+      "column_name": "id_user",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('users_id_user_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "email",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "password",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "avatar",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "username",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "lastname",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "ci",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "ru",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "datetime_precision": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "careers",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "datetime_precision": null
+    }
+  ],
+  "constraints": [
+    {
+      "table_name": "activities",
+      "conname": "FK_727ff3b915f5b88d1d0cb15374a",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_grade_scheme_detail) REFERENCES grade_scheme_details(id_grade_scheme_detail) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "activities",
+      "conname": "PK_8bd879b3d37dfbed063cdda0a72",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_activity)"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_closed_cancelled",
+      "contype": "c",
+      "definition": "CHECK (((closed_at IS NULL) OR (cancelled_at IS NULL)))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_closed_end",
+      "contype": "c",
+      "definition": "CHECK (((closed_at IS NULL) OR (ends_at IS NULL) OR (closed_at < ends_at)))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_closed_opened",
+      "contype": "c",
+      "definition": "CHECK (((closed_at IS NULL) OR ((opened_at IS NOT NULL) AND (closed_at >= opened_at))))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_closed_start",
+      "contype": "c",
+      "definition": "CHECK (((closed_at IS NULL) OR (starts_at IS NULL) OR (closed_at >= starts_at)))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_geo_configuration",
+      "contype": "c",
+      "definition": "CHECK (((mode <> 'GEOLOCATION'::attendance_sessions_mode_enum) OR (opened_at IS NULL) OR ((latitude IS NOT NULL) AND (longitude IS NOT NULL) AND (radius_meters IS NOT NULL) AND (maximum_accepted_accuracy IS NOT NULL) AND (starts_at IS NOT NULL) AND (ends_at IS NOT NULL))))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_latitude",
+      "contype": "c",
+      "definition": "CHECK (((latitude IS NULL) OR ((latitude >= ('-90'::integer)::numeric) AND (latitude <= (90)::numeric))))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_longitude",
+      "contype": "c",
+      "definition": "CHECK (((longitude IS NULL) OR ((longitude >= ('-180'::integer)::numeric) AND (longitude <= (180)::numeric))))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_manual_fields",
+      "contype": "c",
+      "definition": "CHECK (((mode <> 'MANUAL'::attendance_sessions_mode_enum) OR ((latitude IS NULL) AND (longitude IS NULL) AND (radius_meters IS NULL) AND (maximum_accepted_accuracy IS NULL) AND (starts_at IS NULL) AND (ends_at IS NULL) AND (opened_at IS NULL) AND (closed_at IS NULL) AND (cancelled_at IS NULL))))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_maximum_accuracy",
+      "contype": "c",
+      "definition": "CHECK (((maximum_accepted_accuracy IS NULL) OR (maximum_accepted_accuracy > 0)))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_qr_fields",
+      "contype": "c",
+      "definition": "CHECK (((mode <> 'QR'::attendance_sessions_mode_enum) OR ((id_assistant_enrollment IS NOT NULL) AND (latitude IS NULL) AND (longitude IS NULL) AND (radius_meters IS NULL) AND (maximum_accepted_accuracy IS NULL))))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_qr_window",
+      "contype": "c",
+      "definition": "CHECK (((mode <> 'QR'::attendance_sessions_mode_enum) OR (isfinite(date) AND ((starts_at IS NULL) OR isfinite(starts_at)) AND ((ends_at IS NULL) OR isfinite(ends_at)) AND ((opened_at IS NULL) OR isfinite(opened_at)) AND ((closed_at IS NULL) OR isfinite(closed_at)) AND ((cancelled_at IS NULL) OR isfinite(cancelled_at)) AND ((opened_at IS NULL) OR ((starts_at IS NOT NULL) AND (ends_at IS NOT NULL) AND (starts_at < ends_at) AND (opened_at < ends_at) AND (date = ((starts_at AT TIME ZONE 'America/La_Paz'::text))::date) AND ((cancelled_at IS NULL) OR ((cancelled_at >= opened_at) AND (cancelled_at < starts_at))))))))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_radius",
+      "contype": "c",
+      "definition": "CHECK (((radius_meters IS NULL) OR (radius_meters > 0)))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "CHK_attendance_session_window",
+      "contype": "c",
+      "definition": "CHECK (((starts_at IS NULL) OR (ends_at IS NULL) OR (ends_at > starts_at)))"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "FK_8d240a659136363e9c77c4c8b5d",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_assistant_enrollment) REFERENCES enrollments(id_enrollment) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "PK_9b4baae1807f9e42bcdd2702694",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_attendance_session)"
+    },
+    {
+      "table_name": "attendance_sessions",
+      "conname": "UQ_8cd3866ee6beebfc50a0bab1962",
+      "contype": "u",
+      "definition": "UNIQUE (id_assistant_enrollment, date)"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "CHK_attendance_accuracy",
+      "contype": "c",
+      "definition": "CHECK (((accuracy IS NULL) OR ((accuracy >= (0)::numeric) AND (accuracy < 'Infinity'::numeric))))"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "CHK_attendance_distance",
+      "contype": "c",
+      "definition": "CHECK (((distance_meters IS NULL) OR ((distance_meters >= (0)::numeric) AND (distance_meters < 'Infinity'::numeric))))"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "CHK_attendance_geo_evidence",
+      "contype": "c",
+      "definition": "CHECK (((registration_method <> 'GEOLOCATION'::attendances_registration_method_enum) OR ((marked_at IS NOT NULL) AND (id_marked_by IS NOT NULL) AND (accuracy IS NOT NULL) AND (distance_meters IS NOT NULL))))"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "CHK_attendance_geo_status",
+      "contype": "c",
+      "definition": "CHECK (((registration_method <> 'GEOLOCATION'::attendances_registration_method_enum) OR (status = 'PRESENT'::attendances_status_enum)))"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "CHK_attendance_qr_evidence",
+      "contype": "c",
+      "definition": "CHECK (((registration_method <> 'QR'::attendances_registration_method_enum) OR ((status = 'PRESENT'::attendances_status_enum) AND (marked_at IS NOT NULL) AND isfinite(marked_at) AND (id_marked_by IS NOT NULL) AND (id_attendance_session IS NOT NULL) AND (id_enrollment IS NOT NULL) AND (accuracy IS NULL) AND (distance_meters IS NULL))))"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "FK_125f6bff41a7a139d29efe0f8d9",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_enrollment) REFERENCES enrollments(id_enrollment) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "FK_ae207cbed19a342c7f59944b176",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_attendance_session) REFERENCES attendance_sessions(id_attendance_session) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "FK_attendance_marked_by",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_marked_by) REFERENCES users(id_user) ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "PK_22f2182c3eeb66783acc78cdd83",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_attendance)"
+    },
+    {
+      "table_name": "attendances",
+      "conname": "UQ_7880aee9d2b1416261167c83e86",
+      "contype": "u",
+      "definition": "UNIQUE (id_attendance_session, id_enrollment)"
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "conname": "CHK_bulk_operation_rows_row_number",
+      "contype": "c",
+      "definition": "CHECK ((row_number > 0))"
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "conname": "FK_bulk_operation_rows_operation",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_bulk_operation) REFERENCES bulk_operations(id_bulk_operation) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "bulk_operation_rows",
+      "conname": "PK_bulk_operation_rows",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_bulk_operation_row)"
+    },
+    {
+      "table_name": "bulk_operations",
+      "conname": "CHK_bulk_operations_counts",
+      "contype": "c",
+      "definition": "CHECK (((total_rows >= 0) AND (valid_rows >= 0) AND (invalid_rows >= 0) AND (processed_rows >= 0) AND (failed_rows >= 0) AND ((valid_rows + invalid_rows) = total_rows) AND ((processed_rows + failed_rows) <= total_rows)))"
+    },
+    {
+      "table_name": "bulk_operations",
+      "conname": "FK_bulk_operations_created_by",
+      "contype": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES users(id_user) ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "bulk_operations",
+      "conname": "PK_bulk_operations",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_bulk_operation)"
+    },
+    {
+      "table_name": "career_courses",
+      "conname": "FK_ee584916d91dffd40f870238cb0",
+      "contype": "f",
+      "definition": "FOREIGN KEY (\"coursesIdCourse\") REFERENCES courses(id_course)"
+    },
+    {
+      "table_name": "career_courses",
+      "conname": "FK_ef6abd4c8cfc3140661c57120e7",
+      "contype": "f",
+      "definition": "FOREIGN KEY (\"careersIdCareer\") REFERENCES careers(id_career) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    {
+      "table_name": "career_courses",
+      "conname": "PK_4a98e463506a286807ca557168c",
+      "contype": "p",
+      "definition": "PRIMARY KEY (\"careersIdCareer\", \"coursesIdCourse\")"
+    },
+    {
+      "table_name": "careers",
+      "conname": "FK_9ba522b03b8b7384a07139d64cb",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_faculty) REFERENCES faculties(id_faculty)"
+    },
+    {
+      "table_name": "careers",
+      "conname": "FK_b6d4c082d46fa8fffa09a83cea5",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_director) REFERENCES users(id_user)"
+    },
+    {
+      "table_name": "careers",
+      "conname": "PK_b24fbc525cc5655658d3ec8771c",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_career)"
+    },
+    {
+      "table_name": "careers",
+      "conname": "REL_b6d4c082d46fa8fffa09a83cea",
+      "contype": "u",
+      "definition": "UNIQUE (id_director)"
+    },
+    {
+      "table_name": "careers",
+      "conname": "UQ_8bdde4a313c6092c9a499d034c0",
+      "contype": "u",
+      "definition": "UNIQUE (name)"
+    },
+    {
+      "table_name": "courses",
+      "conname": "FK_9b9a471054b292c1b6c0bd1e403",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_grade_scheme) REFERENCES grade_schemes(id_grade_scheme)"
+    },
+    {
+      "table_name": "courses",
+      "conname": "PK_d3fdb27e6f581edcc13ade7aaf3",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_course)"
+    },
+    {
+      "table_name": "enrollments",
+      "conname": "FK_2b1f84c8c2fb4a759c3af77b2d1",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_user) REFERENCES users(id_user) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "enrollments",
+      "conname": "FK_92aea15efb65846379efed3c6d1",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_semester) REFERENCES semesters(id_semester) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "enrollments",
+      "conname": "FK_fcd68d4dc649ba129667e20d081",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_course) REFERENCES courses(id_course) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "enrollments",
+      "conname": "PK_a23c202dc4b6864ff1fa99ab5a4",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_enrollment)"
+    },
+    {
+      "table_name": "enrollments",
+      "conname": "UQ_f0c733a26362d184c12a54f9249",
+      "contype": "u",
+      "definition": "UNIQUE (id_user, id_course, id_semester)"
+    },
+    {
+      "table_name": "faculties",
+      "conname": "FK_fcc626dfc269ce97b71b4f54303",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_user_director) REFERENCES users(id_user)"
+    },
+    {
+      "table_name": "faculties",
+      "conname": "PK_e62da079fff7c687f9596097f77",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_faculty)"
+    },
+    {
+      "table_name": "faculties",
+      "conname": "REL_fcc626dfc269ce97b71b4f5430",
+      "contype": "u",
+      "definition": "UNIQUE (id_user_director)"
+    },
+    {
+      "table_name": "faculties",
+      "conname": "UQ_39747c4153c669f1db683e8f231",
+      "contype": "u",
+      "definition": "UNIQUE (name)"
+    },
+    {
+      "table_name": "grade_items",
+      "conname": "PK_6fde8ae95f8831da61a2882a596",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_grade_item)"
+    },
+    {
+      "table_name": "grade_items",
+      "conname": "UQ_538ae37cd7bc77d092bea870084",
+      "contype": "u",
+      "definition": "UNIQUE (name)"
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "conname": "CHK_attendance_permission_weight",
+      "contype": "c",
+      "definition": "CHECK (((permission_weight >= (0)::double precision) AND (permission_weight <= (1)::double precision)))"
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "conname": "FK_148156bd773660818c07feea3e1",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_grade_scheme) REFERENCES grade_schemes(id_grade_scheme)"
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "conname": "FK_21f8fdab52e6b2ba7c0d74c1c51",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_grade_item) REFERENCES grade_items(id_grade_item)"
+    },
+    {
+      "table_name": "grade_scheme_details",
+      "conname": "PK_7aad0ab7a3844aa8d7830d5f5cc",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_grade_scheme_detail)"
+    },
+    {
+      "table_name": "grade_schemes",
+      "conname": "FK_6dccc4d4f0d1d8d5ba4e210f7da",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_assistant_enrollment) REFERENCES enrollments(id_enrollment) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "grade_schemes",
+      "conname": "PK_3ab27ed50a3b4a84c281ddadcad",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_grade_scheme)"
+    },
+    {
+      "table_name": "grade_schemes",
+      "conname": "UQ_6dccc4d4f0d1d8d5ba4e210f7da",
+      "contype": "u",
+      "definition": "UNIQUE (id_assistant_enrollment)"
+    },
+    {
+      "table_name": "grades",
+      "conname": "FK_3ee6200681c2e5b481291c1f50c",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_activity) REFERENCES activities(id_activity) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "grades",
+      "conname": "FK_421006c2a31cb43a9b1dc59c14f",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_enrollment) REFERENCES enrollments(id_enrollment) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "grades",
+      "conname": "FK_44f5853d3d2dfff14ba4baef979",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_grade_scheme_detail) REFERENCES grade_scheme_details(id_grade_scheme_detail) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "grades",
+      "conname": "PK_5bd2dbb0d11d80321f01c1e5327",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_grade)"
+    },
+    {
+      "table_name": "migrations",
+      "conname": "PK_8c82d7f526340ab734260ea46be",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "permissions",
+      "conname": "PK_b2d9f24eee3188e59bd9754951d",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_permission)"
+    },
+    {
+      "table_name": "permissions",
+      "conname": "UQ_48ce552495d14eae9b187bb6716",
+      "contype": "u",
+      "definition": "UNIQUE (name)"
+    },
+    {
+      "table_name": "role_permission",
+      "conname": "FK_4af7dc143bdebf60de76e0e6ca0",
+      "contype": "f",
+      "definition": "FOREIGN KEY (\"rolesIdRole\") REFERENCES roles(id_role) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    {
+      "table_name": "role_permission",
+      "conname": "FK_4fd3525447b76b02d05ee093f55",
+      "contype": "f",
+      "definition": "FOREIGN KEY (\"permissionsIdPermission\") REFERENCES permissions(id_permission)"
+    },
+    {
+      "table_name": "role_permission",
+      "conname": "PK_fe4c7fdc2c72d6a49f3138bf1ef",
+      "contype": "p",
+      "definition": "PRIMARY KEY (\"rolesIdRole\", \"permissionsIdPermission\")"
+    },
+    {
+      "table_name": "roles",
+      "conname": "PK_3ebdb96dd6787bda0e3c8f89d66",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_role)"
+    },
+    {
+      "table_name": "roles",
+      "conname": "UQ_648e3f5447f725579d7d4ffdfb7",
+      "contype": "u",
+      "definition": "UNIQUE (name)"
+    },
+    {
+      "table_name": "semesters",
+      "conname": "PK_baa377fe53b97d910029cd45775",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_semester)"
+    },
+    {
+      "table_name": "user_courses",
+      "conname": "FK_4a96135c012d307d3d361f73c7a",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_user) REFERENCES users(id_user) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "user_courses",
+      "conname": "FK_8ab96576d233311345b991e1d74",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_course) REFERENCES courses(id_course) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "user_courses",
+      "conname": "PK_1d4cec31bf251f8c4fdd268bf48",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_user_courses)"
+    },
+    {
+      "table_name": "user_role",
+      "conname": "FK_ea475ad8fbe80b72a241944e5de",
+      "contype": "f",
+      "definition": "FOREIGN KEY (\"rolesIdRole\") REFERENCES roles(id_role) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    {
+      "table_name": "user_role",
+      "conname": "FK_ef640ef7aff3f8906cf491d86bb",
+      "contype": "f",
+      "definition": "FOREIGN KEY (\"usersIdUser\") REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    {
+      "table_name": "user_role",
+      "conname": "PK_665cecf575bd0f93c35916d8180",
+      "contype": "p",
+      "definition": "PRIMARY KEY (\"usersIdUser\", \"rolesIdRole\")"
+    },
+    {
+      "table_name": "user_sessions",
+      "conname": "FK_18233b5b7696c22f6d716fd3b26",
+      "contype": "f",
+      "definition": "FOREIGN KEY (id_user) REFERENCES users(id_user)"
+    },
+    {
+      "table_name": "user_sessions",
+      "conname": "FK_dea1c3e861a8b7a8acba6e9c3c5",
+      "contype": "f",
+      "definition": "FOREIGN KEY (revoked_by) REFERENCES users(id_user)"
+    },
+    {
+      "table_name": "user_sessions",
+      "conname": "PK_f7f3780fd0c0e292f0edb89a8a7",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_session)"
+    },
+    {
+      "table_name": "users",
+      "conname": "FK_d3c62c2765bb2b2d276a74605a1",
+      "contype": "f",
+      "definition": "FOREIGN KEY (careers) REFERENCES careers(id_career)"
+    },
+    {
+      "table_name": "users",
+      "conname": "PK_fbb07fa6fbd1d74bee9782fb945",
+      "contype": "p",
+      "definition": "PRIMARY KEY (id_user)"
+    },
+    {
+      "table_name": "users",
+      "conname": "UQ_97672ac88f789774dd47f7c8be3",
+      "contype": "u",
+      "definition": "UNIQUE (email)"
+    },
+    {
+      "table_name": "users",
+      "conname": "UQ_e97d83395a8be9593e0da039d8c",
+      "contype": "u",
+      "definition": "UNIQUE (ru)"
+    },
+    {
+      "table_name": "users",
+      "conname": "UQ_eff3cf686729ac337fe991de64f",
+      "contype": "u",
+      "definition": "UNIQUE (ci)"
+    },
+    {
+      "table_name": "users",
+      "conname": "UQ_fe0bb3f6520ee0469504521e710",
+      "contype": "u",
+      "definition": "UNIQUE (username)"
+    }
+  ],
+  "indexes": [
+    {
+      "tablename": "activities",
+      "indexname": "PK_8bd879b3d37dfbed063cdda0a72",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_8bd879b3d37dfbed063cdda0a72\" ON public.activities USING btree (id_activity)"
+    },
+    {
+      "tablename": "attendance_sessions",
+      "indexname": "PK_9b4baae1807f9e42bcdd2702694",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_9b4baae1807f9e42bcdd2702694\" ON public.attendance_sessions USING btree (id_attendance_session)"
+    },
+    {
+      "tablename": "attendance_sessions",
+      "indexname": "UQ_8cd3866ee6beebfc50a0bab1962",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_8cd3866ee6beebfc50a0bab1962\" ON public.attendance_sessions USING btree (id_assistant_enrollment, date)"
+    },
+    {
+      "tablename": "attendances",
+      "indexname": "PK_22f2182c3eeb66783acc78cdd83",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_22f2182c3eeb66783acc78cdd83\" ON public.attendances USING btree (id_attendance)"
+    },
+    {
+      "tablename": "attendances",
+      "indexname": "UQ_7880aee9d2b1416261167c83e86",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_7880aee9d2b1416261167c83e86\" ON public.attendances USING btree (id_attendance_session, id_enrollment)"
+    },
+    {
+      "tablename": "bulk_operation_rows",
+      "indexname": "IDX_bulk_operation_rows_operation_status",
+      "indexdef": "CREATE INDEX \"IDX_bulk_operation_rows_operation_status\" ON public.bulk_operation_rows USING btree (id_bulk_operation, status)"
+    },
+    {
+      "tablename": "bulk_operation_rows",
+      "indexname": "IDX_bulk_operation_rows_operation_valid",
+      "indexdef": "CREATE INDEX \"IDX_bulk_operation_rows_operation_valid\" ON public.bulk_operation_rows USING btree (id_bulk_operation, valid)"
+    },
+    {
+      "tablename": "bulk_operation_rows",
+      "indexname": "PK_bulk_operation_rows",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_bulk_operation_rows\" ON public.bulk_operation_rows USING btree (id_bulk_operation_row)"
+    },
+    {
+      "tablename": "bulk_operation_rows",
+      "indexname": "UQ_bulk_operation_rows_operation_row",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_bulk_operation_rows_operation_row\" ON public.bulk_operation_rows USING btree (id_bulk_operation, row_number)"
+    },
+    {
+      "tablename": "bulk_operations",
+      "indexname": "IDX_bulk_operations_created_at",
+      "indexdef": "CREATE INDEX \"IDX_bulk_operations_created_at\" ON public.bulk_operations USING btree (created_at)"
+    },
+    {
+      "tablename": "bulk_operations",
+      "indexname": "IDX_bulk_operations_created_by",
+      "indexdef": "CREATE INDEX \"IDX_bulk_operations_created_by\" ON public.bulk_operations USING btree (created_by)"
+    },
+    {
+      "tablename": "bulk_operations",
+      "indexname": "IDX_bulk_operations_expires_at",
+      "indexdef": "CREATE INDEX \"IDX_bulk_operations_expires_at\" ON public.bulk_operations USING btree (expires_at)"
+    },
+    {
+      "tablename": "bulk_operations",
+      "indexname": "IDX_bulk_operations_status",
+      "indexdef": "CREATE INDEX \"IDX_bulk_operations_status\" ON public.bulk_operations USING btree (status)"
+    },
+    {
+      "tablename": "bulk_operations",
+      "indexname": "IDX_bulk_operations_type",
+      "indexdef": "CREATE INDEX \"IDX_bulk_operations_type\" ON public.bulk_operations USING btree (type)"
+    },
+    {
+      "tablename": "bulk_operations",
+      "indexname": "PK_bulk_operations",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_bulk_operations\" ON public.bulk_operations USING btree (id_bulk_operation)"
+    },
+    {
+      "tablename": "career_courses",
+      "indexname": "IDX_ee584916d91dffd40f870238cb",
+      "indexdef": "CREATE INDEX \"IDX_ee584916d91dffd40f870238cb\" ON public.career_courses USING btree (\"coursesIdCourse\")"
+    },
+    {
+      "tablename": "career_courses",
+      "indexname": "IDX_ef6abd4c8cfc3140661c57120e",
+      "indexdef": "CREATE INDEX \"IDX_ef6abd4c8cfc3140661c57120e\" ON public.career_courses USING btree (\"careersIdCareer\")"
+    },
+    {
+      "tablename": "career_courses",
+      "indexname": "PK_4a98e463506a286807ca557168c",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_4a98e463506a286807ca557168c\" ON public.career_courses USING btree (\"careersIdCareer\", \"coursesIdCourse\")"
+    },
+    {
+      "tablename": "careers",
+      "indexname": "PK_b24fbc525cc5655658d3ec8771c",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_b24fbc525cc5655658d3ec8771c\" ON public.careers USING btree (id_career)"
+    },
+    {
+      "tablename": "careers",
+      "indexname": "REL_b6d4c082d46fa8fffa09a83cea",
+      "indexdef": "CREATE UNIQUE INDEX \"REL_b6d4c082d46fa8fffa09a83cea\" ON public.careers USING btree (id_director)"
+    },
+    {
+      "tablename": "careers",
+      "indexname": "UQ_8bdde4a313c6092c9a499d034c0",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_8bdde4a313c6092c9a499d034c0\" ON public.careers USING btree (name)"
+    },
+    {
+      "tablename": "courses",
+      "indexname": "PK_d3fdb27e6f581edcc13ade7aaf3",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_d3fdb27e6f581edcc13ade7aaf3\" ON public.courses USING btree (id_course)"
+    },
+    {
+      "tablename": "enrollments",
+      "indexname": "PK_a23c202dc4b6864ff1fa99ab5a4",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_a23c202dc4b6864ff1fa99ab5a4\" ON public.enrollments USING btree (id_enrollment)"
+    },
+    {
+      "tablename": "enrollments",
+      "indexname": "UQ_f0c733a26362d184c12a54f9249",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_f0c733a26362d184c12a54f9249\" ON public.enrollments USING btree (id_user, id_course, id_semester)"
+    },
+    {
+      "tablename": "faculties",
+      "indexname": "PK_e62da079fff7c687f9596097f77",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_e62da079fff7c687f9596097f77\" ON public.faculties USING btree (id_faculty)"
+    },
+    {
+      "tablename": "faculties",
+      "indexname": "REL_fcc626dfc269ce97b71b4f5430",
+      "indexdef": "CREATE UNIQUE INDEX \"REL_fcc626dfc269ce97b71b4f5430\" ON public.faculties USING btree (id_user_director)"
+    },
+    {
+      "tablename": "faculties",
+      "indexname": "UQ_39747c4153c669f1db683e8f231",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_39747c4153c669f1db683e8f231\" ON public.faculties USING btree (name)"
+    },
+    {
+      "tablename": "grade_items",
+      "indexname": "PK_6fde8ae95f8831da61a2882a596",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_6fde8ae95f8831da61a2882a596\" ON public.grade_items USING btree (id_grade_item)"
+    },
+    {
+      "tablename": "grade_items",
+      "indexname": "UQ_538ae37cd7bc77d092bea870084",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_538ae37cd7bc77d092bea870084\" ON public.grade_items USING btree (name)"
+    },
+    {
+      "tablename": "grade_scheme_details",
+      "indexname": "PK_7aad0ab7a3844aa8d7830d5f5cc",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_7aad0ab7a3844aa8d7830d5f5cc\" ON public.grade_scheme_details USING btree (id_grade_scheme_detail)"
+    },
+    {
+      "tablename": "grade_schemes",
+      "indexname": "PK_3ab27ed50a3b4a84c281ddadcad",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_3ab27ed50a3b4a84c281ddadcad\" ON public.grade_schemes USING btree (id_grade_scheme)"
+    },
+    {
+      "tablename": "grade_schemes",
+      "indexname": "UQ_6dccc4d4f0d1d8d5ba4e210f7da",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_6dccc4d4f0d1d8d5ba4e210f7da\" ON public.grade_schemes USING btree (id_assistant_enrollment)"
+    },
+    {
+      "tablename": "grades",
+      "indexname": "PK_5bd2dbb0d11d80321f01c1e5327",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_5bd2dbb0d11d80321f01c1e5327\" ON public.grades USING btree (id_grade)"
+    },
+    {
+      "tablename": "grades",
+      "indexname": "UQ_grade_enrollment_activity",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_grade_enrollment_activity\" ON public.grades USING btree (id_enrollment, id_activity) WHERE (id_activity IS NOT NULL)"
+    },
+    {
+      "tablename": "migrations",
+      "indexname": "PK_8c82d7f526340ab734260ea46be",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_8c82d7f526340ab734260ea46be\" ON public.migrations USING btree (id)"
+    },
+    {
+      "tablename": "permissions",
+      "indexname": "PK_b2d9f24eee3188e59bd9754951d",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_b2d9f24eee3188e59bd9754951d\" ON public.permissions USING btree (id_permission)"
+    },
+    {
+      "tablename": "permissions",
+      "indexname": "UQ_48ce552495d14eae9b187bb6716",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_48ce552495d14eae9b187bb6716\" ON public.permissions USING btree (name)"
+    },
+    {
+      "tablename": "role_permission",
+      "indexname": "IDX_4af7dc143bdebf60de76e0e6ca",
+      "indexdef": "CREATE INDEX \"IDX_4af7dc143bdebf60de76e0e6ca\" ON public.role_permission USING btree (\"rolesIdRole\")"
+    },
+    {
+      "tablename": "role_permission",
+      "indexname": "IDX_4fd3525447b76b02d05ee093f5",
+      "indexdef": "CREATE INDEX \"IDX_4fd3525447b76b02d05ee093f5\" ON public.role_permission USING btree (\"permissionsIdPermission\")"
+    },
+    {
+      "tablename": "role_permission",
+      "indexname": "PK_fe4c7fdc2c72d6a49f3138bf1ef",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_fe4c7fdc2c72d6a49f3138bf1ef\" ON public.role_permission USING btree (\"rolesIdRole\", \"permissionsIdPermission\")"
+    },
+    {
+      "tablename": "roles",
+      "indexname": "PK_3ebdb96dd6787bda0e3c8f89d66",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_3ebdb96dd6787bda0e3c8f89d66\" ON public.roles USING btree (id_role)"
+    },
+    {
+      "tablename": "roles",
+      "indexname": "UQ_648e3f5447f725579d7d4ffdfb7",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_648e3f5447f725579d7d4ffdfb7\" ON public.roles USING btree (name)"
+    },
+    {
+      "tablename": "semesters",
+      "indexname": "PK_baa377fe53b97d910029cd45775",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_baa377fe53b97d910029cd45775\" ON public.semesters USING btree (id_semester)"
+    },
+    {
+      "tablename": "user_courses",
+      "indexname": "PK_1d4cec31bf251f8c4fdd268bf48",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_1d4cec31bf251f8c4fdd268bf48\" ON public.user_courses USING btree (id_user_courses)"
+    },
+    {
+      "tablename": "user_role",
+      "indexname": "IDX_ea475ad8fbe80b72a241944e5d",
+      "indexdef": "CREATE INDEX \"IDX_ea475ad8fbe80b72a241944e5d\" ON public.user_role USING btree (\"rolesIdRole\")"
+    },
+    {
+      "tablename": "user_role",
+      "indexname": "IDX_ef640ef7aff3f8906cf491d86b",
+      "indexdef": "CREATE INDEX \"IDX_ef640ef7aff3f8906cf491d86b\" ON public.user_role USING btree (\"usersIdUser\")"
+    },
+    {
+      "tablename": "user_role",
+      "indexname": "PK_665cecf575bd0f93c35916d8180",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_665cecf575bd0f93c35916d8180\" ON public.user_role USING btree (\"usersIdUser\", \"rolesIdRole\")"
+    },
+    {
+      "tablename": "user_sessions",
+      "indexname": "PK_f7f3780fd0c0e292f0edb89a8a7",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_f7f3780fd0c0e292f0edb89a8a7\" ON public.user_sessions USING btree (id_session)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "PK_fbb07fa6fbd1d74bee9782fb945",
+      "indexdef": "CREATE UNIQUE INDEX \"PK_fbb07fa6fbd1d74bee9782fb945\" ON public.users USING btree (id_user)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "UQ_97672ac88f789774dd47f7c8be3",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_97672ac88f789774dd47f7c8be3\" ON public.users USING btree (email)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "UQ_e97d83395a8be9593e0da039d8c",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_e97d83395a8be9593e0da039d8c\" ON public.users USING btree (ru)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "UQ_eff3cf686729ac337fe991de64f",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_eff3cf686729ac337fe991de64f\" ON public.users USING btree (ci)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "UQ_fe0bb3f6520ee0469504521e710",
+      "indexdef": "CREATE UNIQUE INDEX \"UQ_fe0bb3f6520ee0469504521e710\" ON public.users USING btree (username)"
+    }
+  ],
+  "enums": [
+    {
+      "typname": "attendance_sessions_mode_enum",
+      "enumlabel": "MANUAL",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "attendance_sessions_mode_enum",
+      "enumlabel": "GEOLOCATION",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "attendance_sessions_mode_enum",
+      "enumlabel": "QR",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "attendances_registration_method_enum",
+      "enumlabel": "MANUAL",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "attendances_registration_method_enum",
+      "enumlabel": "GEOLOCATION",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "attendances_registration_method_enum",
+      "enumlabel": "QR",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "attendances_status_enum",
+      "enumlabel": "PRESENT",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "attendances_status_enum",
+      "enumlabel": "ABSENT",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "attendances_status_enum",
+      "enumlabel": "EXCUSED",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "bulk_operation_rows_status_enum",
+      "enumlabel": "PENDING",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "bulk_operation_rows_status_enum",
+      "enumlabel": "PROCESSED",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "bulk_operation_rows_status_enum",
+      "enumlabel": "FAILED",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "PENDING",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "PROCESSING",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "READY",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "IMPORTING",
+      "enumsortorder": 4
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "COMPLETED",
+      "enumsortorder": 5
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "COMPLETED_WITH_ERRORS",
+      "enumsortorder": 6
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "FAILED",
+      "enumsortorder": 7
+    },
+    {
+      "typname": "bulk_operations_status_enum",
+      "enumlabel": "EXPIRED",
+      "enumsortorder": 8
+    },
+    {
+      "typname": "bulk_operations_type_enum",
+      "enumlabel": "USER_IMPORT",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "bulk_operations_type_enum",
+      "enumlabel": "ENROLLMENT_IMPORT",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "bulk_operations_type_enum",
+      "enumlabel": "CAREER_STUDENT_IMPORT",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "enrollments_role_enum",
+      "enumlabel": "STUDENT",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "enrollments_role_enum",
+      "enumlabel": "ASSISTANT",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "enrollments_role_enum",
+      "enumlabel": "TEACHER",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "enrollments_role_enum",
+      "enumlabel": "DIRECTOR",
+      "enumsortorder": 4
+    },
+    {
+      "typname": "enrollments_role_enum",
+      "enumlabel": "DEAN",
+      "enumsortorder": 5
+    },
+    {
+      "typname": "user_courses_relationtype_enum",
+      "enumlabel": "STUDENT",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "user_courses_relationtype_enum",
+      "enumlabel": "ASSISTANT",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "user_courses_relationtype_enum",
+      "enumlabel": "TEACHER",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "user_courses_relationtype_enum",
+      "enumlabel": "DIRECTOR",
+      "enumsortorder": 4
+    },
+    {
+      "typname": "user_courses_relationtype_enum",
+      "enumlabel": "DEAN",
+      "enumsortorder": 5
+    },
+    {
+      "typname": "user_sessions_revoked_reason_enum",
+      "enumlabel": "Session closed by user",
+      "enumsortorder": 1
+    },
+    {
+      "typname": "user_sessions_revoked_reason_enum",
+      "enumlabel": "Session closed on all devices",
+      "enumsortorder": 2
+    },
+    {
+      "typname": "user_sessions_revoked_reason_enum",
+      "enumlabel": "Password changed",
+      "enumsortorder": 3
+    },
+    {
+      "typname": "user_sessions_revoked_reason_enum",
+      "enumlabel": "Suspicious activity detected",
+      "enumsortorder": 4
+    },
+    {
+      "typname": "user_sessions_revoked_reason_enum",
+      "enumlabel": "Session revoked by an administrator",
+      "enumsortorder": 5
+    },
+    {
+      "typname": "user_sessions_revoked_reason_enum",
+      "enumlabel": "Session expired",
+      "enumsortorder": 6
+    }
+  ],
+  "migrations": [
+    {
+      "timestamp": "1784156907135",
+      "name": "MyFirstMigration1784156907135"
+    },
+    {
+      "timestamp": "1784158316546",
+      "name": "ChangeNameRelationGradeDetails1784158316546"
+    },
+    {
+      "timestamp": "1787831378220",
+      "name": "ModifyEnrollmentEntity1787831378220"
+    },
+    {
+      "timestamp": "1787831793215",
+      "name": "NullableRUInUser1787831793215"
+    },
+    {
+      "timestamp": "1787854574886",
+      "name": "ModifyCourseRelationsEnum1787854574886"
+    },
+    {
+      "timestamp": "1788178632710",
+      "name": "AddGrades1788178632710"
+    },
+    {
+      "timestamp": "1789015901575",
+      "name": "AddActivitiesEntity1789015901575"
+    },
+    {
+      "timestamp": "1789074562933",
+      "name": "RelationsBetweenActivitiesAndGraes1789074562933"
+    },
+    {
+      "timestamp": "1789079384425",
+      "name": "AddRelationsEnrollmentToGradeScheme1789079384425"
+    },
+    {
+      "timestamp": "1789148941792",
+      "name": "AddAttendance1789148941792"
+    },
+    {
+      "timestamp": "1790926042143",
+      "name": "AddBulkOperations1790926042143"
+    },
+    {
+      "timestamp": "1790973495493",
+      "name": "AddCompletedWithErrors1790973495493"
+    },
+    {
+      "timestamp": "1791223200000",
+      "name": "ActivityPublicationAndDeadline1791223200000"
+    },
+    {
+      "timestamp": "1791317489801",
+      "name": "EditActivityFields1791317489801"
+    },
+    {
+      "timestamp": "1791547200000",
+      "name": "UniqueActivityGrade1791547200000"
+    },
+    {
+      "timestamp": "1791655200000",
+      "name": "AttendanceExcusedWeight1791655200000"
+    },
+    {
+      "timestamp": "1791662400000",
+      "name": "AttendanceObservation1791662400000"
+    },
+    {
+      "timestamp": "1792526400000",
+      "name": "AddAcademicImportTypes1792526400000"
+    },
+    {
+      "timestamp": "1792620000000",
+      "name": "ArchiveAssistantCriteria1792620000000"
+    },
+    {
+      "timestamp": "1792886400000",
+      "name": "AttendanceGeolocationModel1792886400000"
+    },
+    {
+      "timestamp": "1794355200000",
+      "name": "AttendanceQrEnums1794355200000"
+    },
+    {
+      "timestamp": "1794355260000",
+      "name": "AttendanceQrChecks1794355260000"
+    }
+  ]
+}

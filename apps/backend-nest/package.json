@@ -27,8 +27,8 @@
     "seed:own-enrollments": "ts-node -r tsconfig-paths/register ./src/database/sync-own-enrollments.ts",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/datasource.ts",
     "migration:create": "typeorm-ts-node-commonjs migration:create",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/datasource.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/datasource.ts",
+    "migration:run": "ts-node -r tsconfig-paths/register src/database/run-migrations.ts",
+    "migration:revert": "ts-node -r tsconfig-paths/register src/database/revert.ts",
     "migration:show": "typeorm-ts-node-commonjs migration:show -d src/database/datasource.ts"
   },
   "dependencies": {

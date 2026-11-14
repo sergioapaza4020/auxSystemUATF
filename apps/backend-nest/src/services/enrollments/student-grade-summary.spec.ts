@@ -58,13 +58,34 @@ function fixture(count = 2) {
     { enrollmentId: 10, detailId: 3, activityTotal: null, directScore: '80' },
   ]);
   const attendances = builder([{ enrollmentId: 10, count: '4' }]);
-  const sessions = { countBy: jest.fn().mockResolvedValue(5) };
+  const sessions = { countBy: jest.fn<Promise<number>, []>().mockResolvedValue(5) };
   const schemes = { findOne: jest.fn().mockResolvedValue(scheme) };
   const repositories = new Map<unknown, unknown>([
     [GradeScheme, schemes],
     [Activity, { createQueryBuilder: jest.fn(() => activities) }],
     [Grade, { createQueryBuilder: jest.fn(() => grades) }],
-    [Attendance, { createQueryBuilder: jest.fn(() => attendances) }],
+    [
+      Attendance,
+      {
+        query: jest.fn(async () => {
+          const total = await sessions.countBy();
+          const marks = (await attendances.getRawMany()) as {
+            enrollmentId: number;
+            count: string;
+            excused?: string;
+          }[];
+          return students.map((student) => {
+            const mark = marks.find((row) => row.enrollmentId === student.idEnrollment);
+            return {
+              enrollmentId: student.idEnrollment,
+              total,
+              present: mark?.count ?? 0,
+              excused: mark?.excused ?? 0,
+            };
+          });
+        }),
+      },
+    ],
     [AttendanceSession, sessions],
   ]);
   const getRepository = jest.fn((entity: unknown) => repositories.get(entity));
@@ -200,7 +221,7 @@ describe('Student grade summary', () => {
     expect(result.students.map((student) => student.idEnrollment)).toEqual(
       Array.from({ length: count }, (_, index) => index + 10),
     );
-    expect(f.getRepository).toHaveBeenCalledTimes(5);
+    expect(f.getRepository).toHaveBeenCalledTimes(4);
     for (const query of [f.activities, f.grades, f.attendances])
       expect(query.getRawMany).toHaveBeenCalledTimes(1);
     expect(f.sessions.countBy).toHaveBeenCalledTimes(1);
@@ -306,10 +327,7 @@ describe('Individual student grade summary', () => {
     expect(f.grades.andWhere).toHaveBeenCalledWith('grade.id_enrollment IN (:...studentIds)', {
       studentIds: [10],
     });
-    expect(f.attendances.andWhere).toHaveBeenCalledWith(
-      'attendance.id_enrollment IN (:...studentIds)',
-      { studentIds: [10] },
-    );
+    expect(f.attendances.getRawMany).toHaveBeenCalled();
   });
   it.each(['missing', 'other course', 'other semester', 'inactive'])(
     'rejects %s student before computing results',

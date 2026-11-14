@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-12",
+  "scope": "Local files only; deployed state unknown; no values disclosed",
+  "backendEnvFilePresent": true,
+  "activeKidPresent": false,
+  "qrKeysPresent": false,
+  "frontendEnvFilePresent": true,
+  "publicQrOriginPresent": false,
+  "redisHostConfigured": true,
+  "redisCheckLoopbackOnly": true,
+  "redisPingCheckSucceeded": false,
+  "redisCheckNote": "Read-only availability check could not complete; no queue or application keys created; endpoint/credentials omitted"
+}

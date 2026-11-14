@@ -1,15 +1,22 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { PUBLIC_ROUTES } from './configs/publicRoutes';
+import { isPublicRoute, QR_ENTRY_ROUTE } from './configs/publicRoutes';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
 
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => request.nextUrl.pathname.startsWith(route));
+  const publicRoute = isPublicRoute(request.nextUrl.pathname);
 
-  if (!token && !isPublicRoute) return NextResponse.redirect(new URL('/login', request.url));
+  if (!token && !publicRoute) return NextResponse.redirect(new URL('/login', request.url));
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  if (request.nextUrl.pathname === QR_ENTRY_ROUTE) {
+    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('Referrer-Policy', 'no-referrer');
+  }
+
+  return response;
 }
 
 export const config = {

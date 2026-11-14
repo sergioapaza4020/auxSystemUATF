@@ -1,0 +1,202 @@
+{
+  "simulation": true,
+  "visualResults": [
+    {
+      "code": "LOW_ACCURACY",
+      "message": "No pudimos obtener una ubicación suficientemente precisa. Activa la ubicación precisa de tu dispositivo, mejora la señal e inténtalo nuevamente.",
+      "retryButtons": 1
+    },
+    {
+      "code": "ALREADY_REGISTERED",
+      "message": "Tu asistencia ya fue registrada.",
+      "retryButtons": 0
+    },
+    {
+      "code": "SESSION_NOT_STARTED",
+      "message": "La sesión de asistencia todavía no está disponible.",
+      "retryButtons": 0
+    },
+    {
+      "code": "SESSION_CLOSED",
+      "message": "La sesión de asistencia ya finalizó.",
+      "retryButtons": 0
+    },
+    {
+      "code": "SESSION_CANCELLED",
+      "message": "La sesión de asistencia fue cancelada.",
+      "retryButtons": 0
+    },
+    {
+      "code": "NOT_ENROLLED",
+      "message": "No pudimos validar tu matrícula para esta sesión.",
+      "retryButtons": 1
+    },
+    {
+      "code": "LOCATION_INVALID",
+      "message": "No pudimos validar la ubicación obtenida. Inténtalo nuevamente.",
+      "retryButtons": 1
+    },
+    {
+      "code": "SESSION_CONTEXT_INVALID",
+      "message": "No se puede registrar asistencia en esta sesión en este momento.",
+      "retryButtons": 1
+    },
+    {
+      "code": "GPS_DENIED",
+      "message": "No pudimos acceder a tu ubicación. Debes permitir el acceso para registrar tu asistencia. Puedes habilitar el permiso desde la configuración del navegador e intentarlo nuevamente.",
+      "retryButtons": 1
+    },
+    {
+      "code": "GPS_UNAVAILABLE",
+      "message": "No pudimos obtener tu ubicación. Verifica que la ubicación de tu dispositivo esté activada e inténtalo nuevamente.",
+      "retryButtons": 1
+    },
+    {
+      "code": "GPS_TIMEOUT",
+      "message": "No pudimos obtener tu ubicación a tiempo. Inténtalo nuevamente.",
+      "retryButtons": 1
+    },
+    {
+      "code": "GPS_UNSUPPORTED",
+      "message": "Tu navegador o dispositivo no permite obtener la ubicación. Contacta al auxiliar si necesitas un registro manual.",
+      "retryButtons": 1
+    },
+    {
+      "code": "NETWORK_CONFIRMED",
+      "message": "Tu asistencia aparece registrada en el servidor.",
+      "retryButtons": 0
+    },
+    {
+      "code": "NETWORK_UNKNOWN",
+      "message": "No pudimos confirmar el registro anterior. El estado fue actualizado; si la sesión sigue abierta, puedes volver a intentarlo.",
+      "retryButtons": 1
+    },
+    {
+      "code": "401",
+      "message": "No pudimos completar el registro. Verifica tu conexión e inténtalo nuevamente.",
+      "retryButtons": 1
+    },
+    {
+      "code": "403",
+      "message": "No tienes permiso para registrar asistencia. Contacta al auxiliar o al administrador para revisar tu acceso.",
+      "retryButtons": 1
+    },
+    {
+      "code": "429",
+      "message": "Has realizado varios intentos. Espera un momento antes de volver a intentar.",
+      "retryButtons": 1
+    },
+    {
+      "code": "500",
+      "message": "No pudimos confirmar el registro anterior. El estado fue actualizado; si la sesión sigue abierta, puedes volver a intentarlo.",
+      "retryButtons": 1
+    },
+    {
+      "code": "OUTSIDE_AREA",
+      "message": "No te encuentras dentro de la zona permitida para registrar esta asistencia.",
+      "retryButtons": 1
+    }
+  ],
+  "responsiveResults": [
+    {
+      "bodyWidth": 289,
+      "cardScrollWidth": 257,
+      "cardWidth": 256.8000183105469,
+      "documentWidth": 305,
+      "width": 320
+    },
+    {
+      "bodyWidth": 359,
+      "cardScrollWidth": 327,
+      "cardWidth": 327.20001220703125,
+      "documentWidth": 375,
+      "width": 390
+    },
+    {
+      "bodyWidth": 737,
+      "cardScrollWidth": 689,
+      "cardWidth": 688.7999877929688,
+      "documentWidth": 753,
+      "width": 768
+    },
+    {
+      "bodyWidth": 1249,
+      "cardScrollWidth": 1152,
+      "cardWidth": 1152,
+      "documentWidth": 1265,
+      "width": 1280
+    }
+  ],
+  "auxiliaryResponsive": [
+    {
+      "contentScrollWidth": 241,
+      "contentWidth": 241,
+      "dialogScrollWidth": 256,
+      "dialogWidth": 256,
+      "documentWidth": 320,
+      "width": 320
+    },
+    {
+      "contentScrollWidth": 311,
+      "contentWidth": 311,
+      "dialogScrollWidth": 326,
+      "dialogWidth": 326,
+      "documentWidth": 390,
+      "width": 390
+    },
+    {
+      "contentScrollWidth": 704,
+      "contentWidth": 704,
+      "dialogScrollWidth": 704,
+      "dialogWidth": 704,
+      "documentWidth": 768,
+      "width": 768
+    },
+    {
+      "contentScrollWidth": 1200,
+      "contentWidth": 1200,
+      "dialogScrollWidth": 1200,
+      "dialogWidth": 1200,
+      "documentWidth": 1280,
+      "width": 1280
+    }
+  ],
+  "auxiliaryGPS": [
+    {
+      "code": "GPS_DENIED",
+      "message": "No se pudo acceder a tu ubicación. Puedes seleccionar el punto manualmente en el mapa.",
+      "mapPresent": 1
+    },
+    {
+      "code": "GPS_UNAVAILABLE",
+      "message": "Tu ubicación no está disponible. Puedes seleccionar el punto manualmente en el mapa.",
+      "mapPresent": 1
+    },
+    {
+      "code": "GPS_TIMEOUT",
+      "message": "No pudimos obtener tu ubicación a tiempo. Inténtalo nuevamente o selecciona el punto en el mapa.",
+      "mapPresent": 1
+    },
+    {
+      "code": "GPS_UNSUPPORTED",
+      "message": "Tu navegador no permite obtener ubicación. Selecciona el punto en el mapa.",
+      "mapPresent": 1
+    }
+  ],
+  "map": {
+    "tilesVisible": true,
+    "markerVisible": true,
+    "circleVisible": true,
+    "attributionVisible": true,
+    "mapSelectionChangedCenter": true,
+    "zoomWorked": true
+  },
+  "lifecycleSimulated": [
+    "save",
+    "activate",
+    "open-now",
+    "close",
+    "cancel"
+  ],
+  "theme": "light and dark in isolated MUI fixture"
+}

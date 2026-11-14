@@ -5,9 +5,8 @@ import { Course } from 'src/entities/courses/courses.entity';
 import { Semester } from 'src/entities/semesters/semester.entity';
 import { User } from 'src/entities/users/users.entity';
 import { EnrollmentSeed } from '../interfaces/enrollments.interface';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SemesterNumber } from '@common/enums/semesterNumber';
-import { CourseRelations } from '@common/enums/courseRelations';
+import { findSeedRecord, SeedDataError, SeedRowError } from '../utils/seed-integrity';
 
 export class EnrollmentSeeder {
   constructor(
@@ -18,43 +17,76 @@ export class EnrollmentSeeder {
   ) {}
 
   async run() {
-    for (const item of enrollmentsData) {
-      await this.create(item);
+    for (const [index, item] of enrollmentsData.entries()) {
+      try {
+        await this.create(item);
+      } catch (error: unknown) {
+        throw new SeedRowError(index + 1, error);
+      }
     }
   }
 
   async create(data: EnrollmentSeed) {
     const user = await this.userRepository.findOne({
       where: { username: data.user },
+      withDeleted: true,
       relations: { roles: true },
     });
-    if (!user) throw new NotFoundException(`User ${data.user} cannot be found`);
+    if (!user)
+      throw new SeedDataError('Matrícula: usuario no encontrado; revisar el seeder de usuarios.');
+    const match = /^(I|II)-(\d{4})$/.exec(data.semester);
+    if (!match)
+      throw new SeedDataError('Matrícula: semestre inválido; se espera I-AAAA o II-AAAA.');
+    const semester = await findSeedRecord(
+      this.SemesterRepository,
+      { period: match[1] as SemesterNumber, year: Number(match[2]) },
+      'Semestre',
+    );
+    const course = await findSeedRecord(
+      this.courseRepository,
+      { code: data.courseCode, group: data.courseGroup },
+      'Materia/grupo',
+    );
 
-    const separatorIdx = data.semester.indexOf('-');
-    const period: SemesterNumber =
-      data.semester.substring(0, separatorIdx) === 'I' ? SemesterNumber.I : SemesterNumber.II;
-    const year: number = Number(data.semester.substring(separatorIdx + 1, data.semester.length));
-    const semester = await this.SemesterRepository.findOne({
-      where: { period: period, year: year },
-    });
-    if (!semester) throw new NotFoundException(`Semester ${period}-${year} cannot be found`);
-
-    const course = await this.courseRepository.findOne({
-      where: { code: data.courseCode },
-    });
-    if (!course) throw new NotFoundException(`Course ${data.courseCode} cannot be found`);
-
-    const hasRequiredRole = user.roles.some((r) => (r.name as CourseRelations) === data.role);
-    if (!hasRequiredRole)
-      throw new BadRequestException(`User ${user.username} doesn't have the ${data.role} role`);
-
-    const exists = await this.repository.findOne({
-      where: { user, semester, course },
-    });
-    if (exists)
-      throw new BadRequestException(
-        `User ${user.username} is already enroll in ${course.code} at ${data.semester} period`,
+    if (!semester || !course)
+      throw new SeedDataError(
+        'Matrícula: falta el semestre o la materia/grupo; revisar seeders padre.',
       );
+
+    // Only the three FK identities define the unique enrollment. Never compare loaded
+    // entities: their personal fields, relations and sub-millisecond timestamps differ.
+    const exists = await findSeedRecord(
+      this.repository,
+      {
+        user: { idUser: user.idUser },
+        semester: { idSemester: semester.idSemester },
+        course: { idCourse: course.idCourse },
+      },
+      'Matrícula',
+    );
+    if (exists) {
+      if (exists.role !== data.role)
+        throw new SeedDataError(
+          'Matrícula: el destino ya tiene otra participación; no se convertirá.',
+        );
+      return exists; // Preserve inactive/deleted enrollments and all academic history.
+    }
+    if (!semester.isActive || semester.deletedAt || !course.isActive || course.deletedAt) {
+      throw new SeedDataError(
+        'Matrícula: semestre o materia inactivos; no se crearán relaciones nuevas.',
+      );
+    }
+    if (!user.isActive || user.deletedAt)
+      throw new SeedDataError('Matrícula: usuario inactivo o eliminado; no se reactivará.');
+    if (
+      !user.roles.some(
+        (role) => role.name === String(data.role) && role.isActive && !role.deletedAt,
+      )
+    ) {
+      throw new SeedDataError(
+        'Matrícula: el usuario no tiene el rol activo requerido; no se otorgarán roles.',
+      );
+    }
 
     const enrollment = this.repository.create({
       semester,
@@ -63,6 +95,6 @@ export class EnrollmentSeeder {
       role: data.role,
     });
 
-    await this.repository.save(enrollment);
+    return this.repository.save(enrollment);
   }
 }

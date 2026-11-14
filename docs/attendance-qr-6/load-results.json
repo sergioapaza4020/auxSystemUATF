@@ -1,0 +1,56 @@
+{
+  "executedAt": "2026-11-12T18:01:55.164Z",
+  "environment": "Synthetic real HTTP login/JWT/session + disposable PostgreSQL; no browser or production traffic",
+  "samples": [
+    {
+      "students": 1,
+      "successes": 1,
+      "errors": 0,
+      "duplicates": 0,
+      "p50Ms": 42.42,
+      "p95Ms": 42.42,
+      "totalMs": 43.69
+    },
+    {
+      "students": 5,
+      "successes": 5,
+      "errors": 0,
+      "duplicates": 0,
+      "p50Ms": 115.52,
+      "p95Ms": 184.92,
+      "totalMs": 186.22
+    },
+    {
+      "students": 15,
+      "successes": 15,
+      "errors": 0,
+      "duplicates": 0,
+      "p50Ms": 216.64,
+      "p95Ms": 392.87,
+      "totalMs": 394.19
+    },
+    {
+      "students": 30,
+      "successes": 30,
+      "errors": 0,
+      "duplicates": 0,
+      "p50Ms": 292.86,
+      "p95Ms": 486.7,
+      "totalMs": 500.12
+    },
+    {
+      "students": 50,
+      "successes": 50,
+      "errors": 0,
+      "duplicates": 0,
+      "p50Ms": 444.58,
+      "p95Ms": 724.56,
+      "totalMs": 748.44
+    }
+  ],
+  "testSettings": {
+    "fsync": false,
+    "basis": "createSeedTestDatabase starts postgres with -F",
+    "productionRepresentative": false
+  }
+}

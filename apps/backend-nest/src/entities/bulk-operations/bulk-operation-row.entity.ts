@@ -46,7 +46,6 @@ export class BulkOperationRow {
   @Column({
     type: 'enum',
     enum: BulkOperationRowStatus,
-    enumName: 'bulk_operation_rows_status_enum',
     default: BulkOperationRowStatus.PENDING,
   })
   status: BulkOperationRowStatus;

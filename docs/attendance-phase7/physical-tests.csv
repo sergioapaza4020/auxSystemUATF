@@ -1,0 +1,15 @@
+case_id,platform,browser,device_model,os_version,environment,network,radius_meters,maximum_accuracy_meters,reported_accuracy_meters,result_code,observations,status
+P01,Android,Chrome,,,Exterior centro,,50,50,,,Posicion puntual; sin coordenadas personales,NO PROBADO
+P02,iPhone,Safari,,,Exterior claramente dentro,,50,50,,,Permiso preciso y una sola marca,NO PROBADO
+P03,Ambas,,,,Cerca del borde,,50,50,,,Registrar incertidumbre sin asumir GPS perfecto,NO PROBADO
+P04,Ambas,,,,Claramente fuera,,50,50,,,OUTSIDE_AREA sin marca,NO PROBADO
+P05,Ambas,,,,Aula interior señal deficiente,,50,50,,,Precision insuficiente y alternativa manual,NO PROBADO
+P06,Ambas,,,,Planta superior e inferior,,50,50,,,Limitacion de distancia 2D,NO PROBADO
+P07,Ambas,,,,Ubicacion aproximada,,50,50,,,No ampliar radio con accuracy,NO PROBADO
+P08,Ambas,,,,Permiso denegado luego concedido,,50,50,,,No POST al denegar y reintento explicito,NO PROBADO
+P09,Ambas,,,,GPS apagado o timeout,,50,50,,,No crear ABSENT por fallo tecnico,NO PROBADO
+P10,Ambas,,,,Cambio de red,WiFi a datos,50,50,,,Consultar estado tras POST incierto,NO PROBADO
+P11,Ambas,,,,Pantalla bloqueada y reapertura,,50,50,,,Sin captura automatica ni tracking,NO PROBADO
+P12,Ambas,,,,Teclado virtual y vertical,,50,50,,,Botones alcanzables sin scroll horizontal,NO PROBADO
+P13,Ambas,,,,Dos pestanas y dos dispositivos,,50,50,,,Una marca y ALREADY_REGISTERED,NO PROBADO
+P14,Ambas,,,,Cierre durante captura GPS,,50,50,,,Rechazo backend tras cierre,NO PROBADO

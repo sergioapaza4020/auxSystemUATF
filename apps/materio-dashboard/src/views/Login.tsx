@@ -44,6 +44,7 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import { useSettings } from '@core/hooks/useSettings';
 
 // Utils
+import { qrLoginDestination } from '@/utils/student-qr-flow';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 
 const Login = ({ mode: initialMode }: { mode: Mode }) => {
@@ -83,7 +84,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
       });
 
       // Keep the form locked until navigation unmounts Login.
-      router.replace('/dashboard');
+      router.replace(qrLoginDestination());
     } catch (error) {
       submitLocked.current = false;
       setIsLoading(false);

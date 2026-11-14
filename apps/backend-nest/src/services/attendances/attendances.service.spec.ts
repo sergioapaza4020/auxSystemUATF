@@ -3,6 +3,7 @@ import * as roster from '@common/utils/student-roster';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { EntityManager, Repository } from 'typeorm';
 import { AttendanceStatus as S } from '@common/enums/attendanceStatus';
+import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
 import { CourseRelations } from '@common/enums/courseRelations';
 import { AttendanceSession } from 'src/entities/attendance/attendance-session.entity';
 import { Attendance } from 'src/entities/attendance/attendance.entity';
@@ -25,6 +26,7 @@ function fixture(statuses: S[] = [], total = 9, weight = 0.5) {
     semester: assistant.semester,
   };
   const session = {
+    mode: AttendanceSessionMode.MANUAL,
     idAttendanceSession: 1,
     date: new Date('2026-10-10'),
     assistantEnrollment: assistant,
@@ -34,7 +36,7 @@ function fixture(statuses: S[] = [], total = 9, weight = 0.5) {
     })),
   };
   const sessions = {
-    countBy: jest.fn().mockResolvedValue(0),
+    countBy: jest.fn<Promise<number>, []>().mockResolvedValue(0),
     find: jest.fn().mockResolvedValue([session]),
     findAndCount: jest.fn().mockResolvedValue([[session], 1]),
     findOne: jest.fn().mockResolvedValue(session),
@@ -60,9 +62,14 @@ function fixture(statuses: S[] = [], total = 9, weight = 0.5) {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     setParameters: jest.fn().mockReturnThis(),
-    getRawOne: jest.fn().mockResolvedValue({ present: '0', excused: '0' }),
+    getRawOne: jest
+      .fn<Promise<{ present: string; excused: string }>, []>()
+      .mockResolvedValue({ present: '0', excused: '0' }),
   };
   const attendances = {
+    query: jest.fn(async () => [
+      { enrollmentId: 1, total: await sessions.countBy(), ...(await aggregate.getRawOne()) },
+    ]),
     manager: { transaction: jest.fn() },
     createQueryBuilder: jest.fn(() => aggregate),
   };
@@ -90,13 +97,9 @@ describe('AttendancesService', () => {
     });
     expect(result.percentage).toBe(50);
     expect(f.sessions.find).not.toHaveBeenCalled();
-    expect(f.sessions.countBy).toHaveBeenCalledWith({ assistantEnrollment: { idEnrollment: 20 } });
-    expect(f.aggregate.andWhere).toHaveBeenCalledWith('attendance.id_enrollment = :studentId', {
-      studentId: 1,
-    });
-    expect(f.aggregate.where).toHaveBeenCalledWith(
-      'session.id_assistant_enrollment = :assistantId',
-      { assistantId: 20 },
+    expect(f.attendances.query).toHaveBeenCalledWith(
+      expect.stringContaining('WITH computable AS MATERIALIZED'),
+      [20, [1], expect.any(Date)],
     );
   });
   it.each([

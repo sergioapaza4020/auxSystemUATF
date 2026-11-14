@@ -1,7 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsInt, Matches, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsEnum, IsInt, Matches, Min, ValidateIf } from 'class-validator';
+import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
 
 export class AttendanceSessionCreateDto {
+  @ApiPropertyOptional({
+    enum: AttendanceSessionMode,
+    default: AttendanceSessionMode.MANUAL,
+  })
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsEnum(AttendanceSessionMode)
+  mode?: AttendanceSessionMode;
+
   @ApiProperty({
     example: 15,
     description: 'ID de la matrícula del auxiliar',

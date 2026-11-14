@@ -1,8 +1,14 @@
+import type { IQrContext, IQrCheckInResult, IQrOwnMark } from '@/interfaces/attendances/student-qr.interface';
 import type { StudentRosterQuery } from './enrollments.service';
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 import { instance } from './config/config';
 import type { AttendanceStatus } from '@/enums/attendanceStatus';
 import type { PaginatedApiResponse } from '@/interfaces/apiResponse';
+import type {
+  AttendanceCheckInPayload,
+  AttendanceCheckInResult,
+  IMyAttendanceSessionsResponse,
+} from '@/interfaces/attendances/student-attendance.interface';
 
 import type {
   IAttendanceSession,
@@ -10,12 +16,55 @@ import type {
   IAttendanceSessionDetail,
   IAttendanceSessionSummary,
   IStudentAttendance,
+  AttendanceSessionMode,
+  IAttendanceLifecycle,
+  IAttendanceQrCode,
 } from '@/interfaces/attendances/attendance.interface';
 
 export interface IAttendanceSessionCreate {
   enrollmentId: number;
   date: string;
+  mode?: AttendanceSessionMode;
 }
+
+export interface AttendanceGeolocationConfig {
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  maximumAcceptedAccuracy: number;
+  startsAt: string;
+  endsAt: string;
+}
+
+export interface AttendanceQrConfig {
+  startsAt: string;
+  endsAt: string;
+}
+
+export const configureAttendanceQr = async (id: number, data: AttendanceQrConfig) =>
+  (
+    await instance.patch<{ data: IAttendanceLifecycle }>(`/attendances/sessions/${id}/qr`, {
+      startsAt: data.startsAt,
+      endsAt: data.endsAt,
+    })
+  ).data.data;
+
+export const getAttendanceQrCode = async (id: number, signal?: AbortSignal): Promise<IAttendanceQrCode> =>
+  (await instance.get<{ data: IAttendanceQrCode }>(`/attendances/sessions/${id}/qr`, { signal })).data.data;
+
+export const configureGeolocation = async (id: number, data: Partial<AttendanceGeolocationConfig>) =>
+  (await instance.patch<{ data: IAttendanceLifecycle }>(`/attendances/sessions/${id}/geolocation`, data)).data.data;
+
+export const activateSession = async (id: number) =>
+  (await instance.patch(`/attendances/sessions/${id}/activate`)).data.data;
+
+export const openSessionNow = async (id: number) =>
+  (await instance.patch(`/attendances/sessions/${id}/open-now`)).data.data;
+
+export const closeSession = async (id: number) => (await instance.patch(`/attendances/sessions/${id}/close`)).data.data;
+
+export const cancelSession = async (id: number) =>
+  (await instance.patch(`/attendances/sessions/${id}/cancel`)).data.data;
 
 export interface IAttendanceRecord {
   enrollmentId: number;
@@ -106,3 +155,40 @@ export const getMyStudentAttendance = async (idEnrollment: number): Promise<IStu
 
   return response.data.data;
 };
+
+export const getMyAttendanceSessions = async (
+  idEnrollment: number,
+  signal?: AbortSignal,
+): Promise<IMyAttendanceSessionsResponse> =>
+  (await instance.get<IMyAttendanceSessionsResponse>(`/attendances/student/my/${idEnrollment}/sessions`, { signal }))
+    .data;
+
+export const checkInAttendance = async (
+  idSession: number,
+  position: AttendanceCheckInPayload,
+  signal?: AbortSignal,
+): Promise<AttendanceCheckInResult> =>
+  (
+    await instance.post<{ data: AttendanceCheckInResult }>(
+      `/attendances/sessions/${idSession}/check-in`,
+      {
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+      },
+      { signal },
+    )
+  ).data.data;
+
+// Student QR contracts never accept identity, status, location or marking metadata.
+export const getQrContext = async (id: number, token: string, signal?: AbortSignal) =>
+  (await instance.post<{ data: IQrContext }>(`/attendances/sessions/${id}/qr-context`, { token }, { signal })).data
+    .data;
+
+export const checkInWithQr = async (id: number, token: string, signal?: AbortSignal) =>
+  (await instance.post<{ data: IQrCheckInResult }>(`/attendances/sessions/${id}/qr-check-in`, { token }, { signal }))
+    .data.data;
+
+export const getMyQrMark = async (id: number, signal?: AbortSignal) =>
+  (await instance.get<{ data: { ownMark: IQrOwnMark | null } }>(`/attendances/sessions/${id}/qr-own-mark`, { signal }))
+    .data.data;

@@ -1,7 +1,7 @@
 import type * as React from 'react';
 
 import { describe, expect, it, vi } from 'vitest';
-import { IconButton } from '@mui/material';
+import { IconButton, MenuItem } from '@mui/material';
 
 import { PaginationTable } from '@/components/table';
 import { elements, hookHarness } from '@/test-utils/hook-harness';
@@ -17,6 +17,50 @@ vi.mock('react', async () => ({
 }));
 
 describe('Attendance history remote controls', () => {
+  it.each(['DRAFT', 'SCHEDULED', 'OPEN', 'CLOSED', 'CANCELLED'] as const)(
+    'GEO %s never exposes manual date editing and limits deletion to clean drafts',
+    (state) => {
+      const harness = hookHarness(() =>
+        AttendanceHistory({
+          sessions: [
+            {
+              idAttendanceSession: 1,
+              date: '2026-10-26',
+              mode: 'GEOLOCATION',
+              state,
+              presentCount: 0,
+              excusedCount: 0,
+              absentCount: 0,
+              totalStudents: 20,
+              percentage: 0,
+            },
+          ],
+          meta: { page: 1, limit: 5, total: 1, totalPages: 1 },
+          loading: false,
+          selectedSessionId: null,
+          onPageChange: vi.fn(),
+          onLimitChange: vi.fn(),
+          onSelectSession: vi.fn(),
+          onEditDate: vi.fn(),
+          onDeleteSession: vi.fn(),
+        }),
+      );
+
+      const menu = elements<React.ComponentProps<typeof IconButton>>(harness.render(), IconButton).find(
+        (item) => item.props['aria-haspopup'] === 'menu',
+      );
+
+      menu?.props.onClick?.({ currentTarget: {} } as React.MouseEvent<HTMLButtonElement>);
+
+      const labels = elements<React.ComponentProps<typeof MenuItem>>(harness.render(), MenuItem).map(
+        (item) => item.props.children,
+      );
+
+      expect(labels).not.toContain('Editar fecha');
+      expect(labels.includes('Eliminar sesión')).toBe(state === 'DRAFT');
+      harness.unmount();
+    },
+  );
   it('uses meta.total on page 2 and delegates page/limit to the parent', () => {
     const onPageChange = vi.fn();
     const onLimitChange = vi.fn();

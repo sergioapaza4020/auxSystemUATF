@@ -14,6 +14,7 @@ import {
 import type {
   IAttendanceSessionDetail,
   IAttendanceSessionSummary,
+  AttendanceSessionMode,
 } from '@/interfaces/attendances/attendance.interface';
 import type { PaginationMeta } from '@/interfaces/apiResponse';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
@@ -33,6 +34,7 @@ export function useAttendances(idEnrollment: number | null) {
   const historyRequest = useRef<AbortController | null>(null);
   const recentRequest = useRef<AbortController | null>(null);
   const dateRequest = useRef<AbortController | null>(null);
+  const detailRequest = useRef<AbortController | null>(null);
   const currentQuery = useRef(query);
   const currentSession = useRef(session);
 
@@ -162,12 +164,17 @@ export function useAttendances(idEnrollment: number | null) {
 
   const loadSession = useCallback(
     async (idSession: number) => {
-      const data = await getAttendanceSession(idSession, { page: 1, limit: 25 });
+      detailRequest.current?.abort();
+      const controller = new AbortController();
+
+      detailRequest.current = controller;
+      const data = await getAttendanceSession(idSession, { page: 1, limit: 25 }, controller.signal);
 
       // The detail endpoint returns marks; the paginated endpoint computes the saved summary.
       const summary = await findSessionByDate(data.date.slice(0, 10));
       const detail = summary?.idAttendanceSession === idSession ? { ...data, ...summary } : data;
 
+      controller.signal.throwIfAborted();
       setSession(detail);
 
       return detail;
@@ -176,7 +183,7 @@ export function useAttendances(idEnrollment: number | null) {
   );
 
   const createSession = useCallback(
-    async (date: string) => {
+    async (date: string, mode?: AttendanceSessionMode) => {
       if (!idEnrollment) {
         throw new Error('No se encontró la matrícula del auxiliar.');
       }
@@ -187,9 +194,14 @@ export function useAttendances(idEnrollment: number | null) {
         const data = await createAttendanceSession({
           enrollmentId: idEnrollment,
           date,
+          ...(mode ? { mode } : {}),
         });
 
-        await loadSessions();
+        try {
+          await loadSessions();
+        } catch {
+          setError('La sesión se creó. No se pudo actualizar el historial; vuelve a consultarlo.');
+        }
 
         return data;
       } finally {
@@ -237,7 +249,13 @@ export function useAttendances(idEnrollment: number | null) {
     return () => recentRequest.current?.abort();
   }, [loadRecent]);
 
-  useEffect(() => () => dateRequest.current?.abort(), [idEnrollment]);
+  useEffect(
+    () => () => {
+      dateRequest.current?.abort();
+      detailRequest.current?.abort();
+    },
+    [idEnrollment],
+  );
 
   return {
     sessions,

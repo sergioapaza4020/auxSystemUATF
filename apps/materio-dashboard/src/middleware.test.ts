@@ -15,3 +15,21 @@ describe('Public account verification navigation', () => {
     );
   });
 });
+
+describe('exact public QR entry', () => {
+  it('opens the entry without JWT with privacy headers', () => {
+    const response = middleware(new NextRequest('https://uatf.test/attendance/qr'));
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+  });
+  it.each(['/attendance', '/attendance/qr/other', '/attendance/qr-evil', '/dashboard'])(
+    'does not expose %s',
+    (path) => {
+      expect(middleware(new NextRequest(`https://uatf.test${path}`)).headers.get('location')).toBe(
+        'https://uatf.test/login',
+      );
+    },
+  );
+});
