@@ -1,3 +1,9 @@
+## [1.3.1](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.3.0...v1.3.1) (2026-11-14)
+
+### Bug Fixes
+
+* **backend:** prepare Dockerfile for Render deployment ([d2251bf](https://github.com/sergioapaza4020/auxSystemUATF/commit/d2251bf0cac98686080aa7cd150000bae52e8494))
+
 ## [1.3.0](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.2.1...v1.3.0) (2026-11-14)
 
 ### Features
