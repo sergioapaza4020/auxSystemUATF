@@ -1,3 +1,31 @@
+## [1.3.0](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.2.1...v1.3.0) (2026-11-14)
+
+### Features
+
+* a lot of cruds ([8f72b2d](https://github.com/sergioapaza4020/auxSystemUATF/commit/8f72b2df6d968e99c0fb0a889671d5ad8c6f557b))
+* add a lot of changes :0 ([b19bf02](https://github.com/sergioapaza4020/auxSystemUATF/commit/b19bf02e7441ca24c482a88666628c56e80e3dbd))
+* add a lot of things ([7ef281e](https://github.com/sergioapaza4020/auxSystemUATF/commit/7ef281ebae137d97c9d185a7738001e28b754319))
+* add admin features ui ([133197e](https://github.com/sergioapaza4020/auxSystemUATF/commit/133197e7376bc5fe5cd4793b9a7db28e04025be4))
+* add assistance register manually, geolocation and qr ([fddd8df](https://github.com/sergioapaza4020/auxSystemUATF/commit/fddd8df362e386a107ccab0d784c3ca5b249896f))
+* add assistant grade schemes functional ([6fcbb73](https://github.com/sergioapaza4020/auxSystemUATF/commit/6fcbb7303e7864e20e3b525d2b28739f49acc4b5))
+* add massive import, pagination and redis ([367f3cf](https://github.com/sergioapaza4020/auxSystemUATF/commit/367f3cf145b97b81729728acd95ffdbc6ebd0456))
+* add semesters, enrollments and courses ui ([b270045](https://github.com/sergioapaza4020/auxSystemUATF/commit/b2700450e20015a3ce97b3ca87387fab97160dba))
+* add verify flux ([2a11f44](https://github.com/sergioapaza4020/auxSystemUATF/commit/2a11f44d751773b5a8431dfe892f866497d62a0d))
+* cRUD grade schemes ui ([5e4a0ce](https://github.com/sergioapaza4020/auxSystemUATF/commit/5e4a0ce2487667d6064f534cf3b4cef738881240))
+* **enroll:** add semester and enroll cruds in backend ([41cea0a](https://github.com/sergioapaza4020/auxSystemUATF/commit/41cea0a8f226145a377b8673196265e8a4caf9fb))
+* lot of changes again ([c6e94a4](https://github.com/sergioapaza4020/auxSystemUATF/commit/c6e94a46c62fe078ffbee0241afadfec941e58a3))
+* lot of changes again again ([35f0578](https://github.com/sergioapaza4020/auxSystemUATF/commit/35f05789fd1a60011b23a5f83d70ffe93aad1793))
+* **seed:** add basic seeders ([6f65d93](https://github.com/sergioapaza4020/auxSystemUATF/commit/6f65d9393208a89b1635e2ac41060df738a30efc))
+
+### Bug Fixes
+
+* add seeders uncomplete hehe untested ([f06ebca](https://github.com/sergioapaza4020/auxSystemUATF/commit/f06ebca5c98a1b4ab6a5d99dcc87d4c5c47f323a))
+* faculties careers ([bb54630](https://github.com/sergioapaza4020/auxSystemUATF/commit/bb546307ab9dd27f8d333ccdd5f77818582344b9))
+* rename AuthContext casing ([fc67b4e](https://github.com/sergioapaza4020/auxSystemUATF/commit/fc67b4efb3343228083d5bb6266689003cd88dc7))
+* si ([b40e74a](https://github.com/sergioapaza4020/auxSystemUATF/commit/b40e74acc203f56a0b0fbe4e056523557ca4a9c6))
+* uncomplete changes ([66d7cd4](https://github.com/sergioapaza4020/auxSystemUATF/commit/66d7cd43969d1c2888f95fefbe0beb90e076e8de))
+* uncomplete code ([b2f9bd3](https://github.com/sergioapaza4020/auxSystemUATF/commit/b2f9bd3085e6275dd222707bfe8429a623378b8a))
+
 ## [1.2.1](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.2.0...v1.2.1) (2026-06-16)
 
 ### Bug Fixes
