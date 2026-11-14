@@ -1,15 +1,25 @@
-FROM node:24-alpine AS base
-WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+FROM node:24-alpine
 
-COPY ../../package.json ../../pnpm-lock.yaml ../../pnpm-workspace.yaml ./
-COPY ../../apps ./apps
+WORKDIR /app
+
+RUN corepack enable && \
+    corepack prepare pnpm@10.33.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+COPY apps ./apps
+COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile
 
+RUN pnpm --filter aux-system-uatf-backend build
+
+RUN pnpm --filter aux-system-uatf-backend worker:build
+
 WORKDIR /app/apps/backend-nest
-RUN pnpm build
-RUN pnpm worker:build
+
+ENV NODE_ENV=production
 
 EXPOSE 3001
-CMD ["node","dist/main"]
+
+CMD ["node", "dist/main.js"]
