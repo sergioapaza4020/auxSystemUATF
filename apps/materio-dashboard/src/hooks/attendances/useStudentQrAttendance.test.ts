@@ -6,12 +6,17 @@ import { useStudentQrAttendance } from './useStudentQrAttendance';
 import { deferred, hookHarness } from '@/test-utils/hook-harness';
 import { memorySessionStorage, qrContext, qrMark, qrToken } from '@/test-utils/qr-fixtures';
 import { QR_PENDING_KEY, qrLoginDestination, savePendingQr } from '@/utils/student-qr-flow';
+import type * as BrowserGeolocation from '@/utils/browser-geolocation';
+import { BrowserLocationError } from '@/utils/browser-geolocation';
 import { SESSION_EXPIRED_EVENT } from '@/utils/authEvents';
 import type { ICurrentUser } from '@/interfaces/auth/current-user.interface';
 import type { IQrContext, IQrCheckInResult } from '@/interfaces/attendances/student-qr.interface';
 
 const mocks = vi.hoisted(() => ({
   context: vi.fn(),
+  challenge: vi.fn(),
+  combined: vi.fn(),
+  location: vi.fn(),
   post: vi.fn(),
   own: vi.fn(),
   replace: vi.fn(),
@@ -39,8 +44,15 @@ vi.mock('@/utils/authCookies', () => ({
 }));
 vi.mock('@/api/attendances.service', () => ({
   getQrContext: mocks.context,
+  getCombinedChallenge: mocks.challenge,
+  checkInCombined: mocks.combined,
   checkInWithQr: mocks.post,
   getMyQrMark: mocks.own,
+}));
+
+vi.mock('@/utils/browser-geolocation', async () => ({
+  ...(await vi.importActual<typeof BrowserGeolocation>('@/utils/browser-geolocation')),
+  getCurrentBrowserPosition: mocks.location,
 }));
 
 const student: ICurrentUser = {
@@ -473,4 +485,291 @@ describe('student QR flow', () => {
     log.mockRestore();
     error.mockRestore();
   });
+});
+
+const combinedChallenge = (seconds = 90) => ({
+  ...qrContext(),
+  mode: 'GEOLOCATION_QR' as const,
+  serverNow: new Date(Date.now()).toISOString(),
+  authorization: 'B'.repeat(43),
+  authorizationExpiresAt: new Date(Date.now() + seconds * 1000).toISOString(),
+});
+
+async function combinedSetup() {
+  mocks.context.mockResolvedValue({ ...qrContext(), mode: 'GEOLOCATION_QR' });
+  mocks.challenge.mockResolvedValue(combinedChallenge());
+  mocks.location.mockResolvedValue({ latitude: -19.57, longitude: -65.75, accuracy: 25 });
+  mocks.combined.mockResolvedValue({ ...result, registrationMethod: 'GEOLOCATION_QR' });
+  const h = setup();
+
+  await settle(h);
+
+  return h;
+}
+
+describe('combined student flow', () => {
+  it('discovers mode first, obtains one challenge, and requires explicit GPS and confirmation', async () => {
+    const h = await combinedSetup();
+
+    expect(h.render().phase).toBe('READY_FOR_LOCATION');
+    expect(mocks.context).toHaveBeenCalledOnce();
+    expect(mocks.challenge).toHaveBeenCalledExactlyOnceWith(7, qrToken(), expect.any(AbortSignal));
+    expect(mocks.context.mock.invocationCallOrder[0]).toBeLessThan(mocks.challenge.mock.invocationCallOrder[0]);
+    expect(mocks.location).not.toHaveBeenCalled();
+    expect(mocks.combined).not.toHaveBeenCalled();
+    await h.render().confirm();
+    expect(mocks.combined).not.toHaveBeenCalled();
+    await h.render().locate();
+    expect(h.render().phase).toBe('READY_TO_CONFIRM');
+    expect(mocks.combined).not.toHaveBeenCalled();
+    const flow = h.render();
+
+    await Promise.all([flow.confirm(), flow.confirm()]);
+    expect(mocks.combined).toHaveBeenCalledExactlyOnceWith(
+      7,
+      { authorization: 'B'.repeat(43), latitude: -19.57, longitude: -65.75, accuracy: 25 },
+      expect.any(AbortSignal),
+    );
+    expect(h.render().phase).toBe('SUCCESS');
+    expect(h.render().hasToken).toBe(false);
+    expect(browser.sessionStorage.getItem(QR_PENDING_KEY)).toBeNull();
+    expect(localStorage.setItem).not.toHaveBeenCalled();
+    expect(mocks.post).not.toHaveBeenCalled();
+    await h.render().confirm();
+    expect(mocks.combined).toHaveBeenCalledOnce();
+  });
+  it.each(['MANUAL', 'GEOLOCATION', 'UNKNOWN', undefined])('fails closed for unknown entry mode %s', async (mode) => {
+    mocks.context.mockResolvedValue({ ...qrContext(), mode });
+    const h = setup();
+
+    await settle(h);
+    expect(h.render().phase).toBe('ERROR');
+    expect(mocks.challenge).not.toHaveBeenCalled();
+    expect(mocks.post).not.toHaveBeenCalled();
+  });
+  it('does not issue a challenge or GPS if a mark already exists', async () => {
+    mocks.context.mockResolvedValue({
+      ...qrContext(),
+      mode: 'GEOLOCATION_QR',
+      ownMark: { ...qrMark, registrationMethod: 'MANUAL' },
+    });
+    const h = setup();
+
+    await settle(h);
+    expect(h.render().phase).toBe('ALREADY_REGISTERED');
+    expect(h.render().mark?.registrationMethod).toBe('MANUAL');
+    expect(mocks.challenge).not.toHaveBeenCalled();
+    expect(mocks.location).not.toHaveBeenCalled();
+  });
+  it('expires at 90 seconds, discards the position, and never renews automatically', async () => {
+    const h = await combinedSetup();
+
+    await h.render().locate();
+    await vi.advanceTimersByTimeAsync(90000);
+    expect(h.render().phase).toBe('EXPIRED');
+    await h.render().confirm();
+    expect(mocks.combined).not.toHaveBeenCalled();
+    expect(mocks.challenge).toHaveBeenCalledOnce();
+  });
+  it('ignores slow GPS returned after authorization expiry', async () => {
+    const h = await combinedSetup();
+    const gps = deferred<{ latitude: number; longitude: number; accuracy: number }>();
+
+    mocks.location.mockReturnValue(gps.promise);
+    const locating = h.render().locate();
+
+    await vi.advanceTimersByTimeAsync(91000);
+    gps.resolve({ latitude: -19, longitude: -65, accuracy: 1 });
+    await locating;
+    expect(h.render().phase).toBe('EXPIRED');
+    await h.render().confirm();
+    expect(mocks.combined).not.toHaveBeenCalled();
+  });
+  it.each(['LOW_ACCURACY', 'OUTSIDE_AREA', 'LOCATION_INVALID'])(
+    'allows explicit recapture for %s without renewing challenge',
+    async (code) => {
+      const h = await combinedSetup();
+
+      await h.render().locate();
+      mocks.combined.mockRejectedValueOnce(failure(code, 422));
+      await h.render().confirm();
+      expect(h.render().phase).toBe('READY_FOR_LOCATION');
+      await h.render().locate();
+      await h.render().confirm();
+      expect(h.render().phase).toBe('SUCCESS');
+      expect(mocks.challenge).toHaveBeenCalledOnce();
+    },
+  );
+  it.each(['COMBINED_AUTHORIZATION_EXPIRED', 'COMBINED_AUTHORIZATION_INVALID', 'NOT_ENROLLED'])(
+    'stops on %s',
+    async (code) => {
+      const h = await combinedSetup();
+
+      await h.render().locate();
+      mocks.combined.mockRejectedValueOnce(failure(code));
+      await h.render().confirm();
+      await h.render().confirm();
+      expect(mocks.combined).toHaveBeenCalledOnce();
+      expect(['ERROR', 'EXPIRED']).toContain(h.render().phase);
+    },
+  );
+  it('reconciles a lost response without another combined POST; null remains uncertain', async () => {
+    const h = await combinedSetup();
+
+    await h.render().locate();
+    mocks.combined.mockRejectedValueOnce(new Error('lost response'));
+    await h.render().confirm();
+    expect(h.render().phase).toBe('UNCERTAIN');
+    await h.render().confirm();
+    expect(mocks.combined).toHaveBeenCalledOnce();
+    mocks.own.mockResolvedValueOnce({ ownMark: { ...qrMark, registrationMethod: 'GEOLOCATION_QR' } });
+    await h.render().readOwn();
+    expect(h.render().phase).toBe('ALREADY_REGISTERED');
+    expect(mocks.combined).toHaveBeenCalledOnce();
+  });
+  it('discards authorization and GPS on a change of account', async () => {
+    const h = await combinedSetup();
+
+    await h.render().locate();
+    mocks.user = { ...student, idUser: 6 };
+    h.render();
+    await settle(h);
+    await h.render().confirm();
+    expect(h.render().context).toBeNull();
+    expect(mocks.combined).not.toHaveBeenCalled();
+    expect(mocks.challenge).toHaveBeenCalledOnce();
+  });
+  it('ignores a late challenge from a previous scan', async () => {
+    mocks.context.mockResolvedValue({ ...qrContext(), mode: 'GEOLOCATION_QR' });
+    const old = deferred<ReturnType<typeof combinedChallenge>>();
+
+    mocks.challenge.mockReturnValueOnce(old.promise);
+    const h = setup();
+
+    await settle(h);
+    mocks.context.mockResolvedValue(qrContext(8));
+    browser.location.hash = '#t=' + qrToken(8);
+    browser.dispatchEvent(new Event('hashchange'));
+    await settle(h);
+    old.resolve(combinedChallenge());
+    await settle(h);
+    expect(h.render().context?.idAttendanceSession).toBe(8);
+    expect(h.render().phase).toBe('READY');
+  });
+});
+
+it.each([1, 3, 0])('keeps GPS failure %s separate from an uncertain POST and allows explicit retry', async (code) => {
+  const h = await combinedSetup();
+
+  mocks.location.mockRejectedValueOnce(new BrowserLocationError(code));
+  await h.render().locate();
+  expect(h.render().phase).toBe('READY_FOR_LOCATION');
+  expect(mocks.combined).not.toHaveBeenCalled();
+  await h.render().locate();
+  expect(h.render().phase).toBe('READY_TO_CONFIRM');
+  expect(mocks.challenge).toHaveBeenCalledOnce();
+});
+it.each([
+  { latitude: NaN, longitude: 0, accuracy: 1 },
+  { latitude: 91, longitude: 0, accuracy: 1 },
+  { latitude: 0, longitude: 181, accuracy: 1 },
+  { latitude: 0, longitude: 0, accuracy: -1 },
+  { latitude: 0, longitude: 0, accuracy: Infinity },
+])('rejects invalid browser position without a POST: %j', async (point) => {
+  const h = await combinedSetup();
+
+  mocks.location.mockResolvedValueOnce(point);
+  await h.render().locate();
+  await h.render().confirm();
+  expect(h.render().phase).toBe('READY_FOR_LOCATION');
+  expect(mocks.combined).not.toHaveBeenCalled();
+});
+it('bounds authorization by endsAt and notices browser resume without trusting the device wall clock alone', async () => {
+  mocks.context.mockResolvedValue({ ...qrContext(), mode: 'GEOLOCATION_QR' });
+  mocks.challenge.mockResolvedValue({ ...combinedChallenge(), endsAt: new Date(Date.now() + 15000).toISOString() });
+  const h = setup();
+
+  await settle(h);
+  expect(h.render().remaining).toBeLessThanOrEqual(15);
+  vi.setSystemTime(Date.now() + 16000);
+  browser.dispatchEvent(new Event('pageshow'));
+  expect(h.render().phase).toBe('EXPIRED');
+  expect(mocks.challenge).toHaveBeenCalledOnce();
+});
+it('ignores late GPS after a new scan and never leaks its position into historical QR', async () => {
+  const h = await combinedSetup();
+  const pending = deferred<{ latitude: number; longitude: number; accuracy: number }>();
+
+  mocks.location.mockReturnValueOnce(pending.promise);
+  const locating = h.render().locate();
+
+  mocks.context.mockResolvedValue(qrContext(8));
+  browser.location.hash = '#t=' + qrToken(8);
+  browser.dispatchEvent(new Event('hashchange'));
+  await settle(h);
+  pending.resolve({ latitude: -19, longitude: -65, accuracy: 10 });
+  await locating;
+  expect(h.render().context?.idAttendanceSession).toBe(8);
+  expect(h.render().phase).toBe('READY');
+  expect(mocks.combined).not.toHaveBeenCalled();
+});
+it('does not obtain a challenge when a QR expires during the read-only discovery request', async () => {
+  const pending = deferred<IQrContext>();
+
+  mocks.context.mockReturnValueOnce(pending.promise);
+  const h = setup();
+
+  await settle(h);
+  await vi.advanceTimersByTimeAsync(35000);
+  pending.resolve({ ...qrContext(), mode: 'GEOLOCATION_QR' });
+  await settle(h);
+  expect(h.render().phase).toBe('EXPIRED');
+  expect(mocks.challenge).not.toHaveBeenCalled();
+});
+
+it('does not extend authorization when the wall clock moves backwards', async () => {
+  const monotonic = vi.spyOn(performance, 'now').mockReturnValue(0);
+
+  try {
+    const h = await combinedSetup();
+
+    vi.setSystemTime(Date.now() - 60000);
+    monotonic.mockReturnValue(91000);
+    browser.dispatchEvent(new Event('pageshow'));
+    expect(h.render().phase).toBe('EXPIRED');
+    await h.render().confirm();
+    expect(mocks.combined).not.toHaveBeenCalled();
+  } finally {
+    monotonic.mockRestore();
+  }
+});
+it('respects rate limits without renewing the challenge or retrying POST', async () => {
+  const h = await combinedSetup();
+
+  await h.render().locate();
+  mocks.combined.mockRejectedValueOnce(failure('RATE_LIMITED', 429, { 'retry-after': '2' }));
+  await h.render().confirm();
+  await h.render().locate();
+  expect(mocks.location).toHaveBeenCalledOnce();
+  expect(mocks.combined).toHaveBeenCalledOnce();
+  await vi.advanceTimersByTimeAsync(2000);
+  await h.render().locate();
+  await h.render().confirm();
+  expect(h.render().phase).toBe('SUCCESS');
+  expect(mocks.challenge).toHaveBeenCalledOnce();
+});
+it('respects a 503 Retry-After before own-mark reconciliation, without resending', async () => {
+  const h = await combinedSetup();
+
+  await h.render().locate();
+  mocks.combined.mockRejectedValueOnce(failure('UNAVAILABLE', 503, { 'retry-after': '2' }));
+  await h.render().confirm();
+  expect(h.render().phase).toBe('UNCERTAIN');
+  await h.render().readOwn();
+  expect(mocks.own).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(2000);
+  await h.render().readOwn();
+  expect(mocks.own).toHaveBeenCalledOnce();
+  expect(mocks.combined).toHaveBeenCalledOnce();
+  expect(h.render().phase).toBe('UNCERTAIN');
 });

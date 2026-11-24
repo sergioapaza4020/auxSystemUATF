@@ -18,12 +18,21 @@ import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 
+import { TableAction } from '@/components/table';
+
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 
 import { attendanceSelectedSx } from '@/utils/attendance-status';
+import type { IAttendance, AttendanceSessionState } from '@/interfaces/attendances/attendance.interface';
+import { attendanceMethodLabels, isProtectedAttendance } from '@/utils/attendance-combined';
+import { attendanceLocalTime } from '@/utils/attendance-geolocation';
 import { AttendanceStatus } from '@/enums/attendanceStatus';
 
 interface AttendanceStudentRowProps {
+  combined?: boolean;
+  sessionState?: AttendanceSessionState | null;
+  record?: IAttendance;
+  onContingency?: () => void;
   number: number;
   student: IEnrollmentStudent;
   status: AttendanceStatus;
@@ -37,6 +46,10 @@ interface AttendanceStudentRowProps {
 }
 
 export function AttendanceStudentRow({
+  combined = false,
+  sessionState,
+  record,
+  onContingency,
   number,
   student,
   status,
@@ -108,82 +121,130 @@ export function AttendanceStudentRow({
       </TableCell>
 
       <TableCell>
-        <Stack direction='row' spacing={1} alignItems='center'>
-          {pending && (
-            <Typography variant='caption' color='text.secondary'>
-              Pendiente
+        {combined ? (
+          <Stack spacing={1}>
+            <Typography>
+              {record
+                ? record.status === AttendanceStatus.PRESENT
+                  ? 'Presente'
+                  : record.status === AttendanceStatus.EXCUSED
+                    ? 'Con permiso'
+                    : 'Ausente (explícito)'
+                : sessionState === 'OPEN' || (!sessionState && pending)
+                  ? 'Pendiente'
+                  : sessionState === 'CLOSED' || !sessionState
+                    ? 'Ausente (implícito)'
+                    : 'Sin marca'}
             </Typography>
-          )}
-          <ToggleButtonGroup
-            exclusive
-            disabled={disabled}
-            aria-label={`Asistencia de ${studentName}`}
-            size='small'
-            value={pending ? null : status}
-            onChange={(_, value: AttendanceStatus | null) => {
-              if (value) {
-                onChange(value);
-              }
-            }}
-            sx={{
-              '& .MuiToggleButton-root': {
-                minWidth: 96,
-                px: 1,
-                '&.Mui-focusVisible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
-                py: 0.5,
-                textTransform: 'none',
-              },
-            }}
-          >
-            <ToggleButton
-              value={AttendanceStatus.PRESENT}
-              sx={attendanceSelectedSx(AttendanceStatus.PRESENT)}
-              aria-label={`Marcar a ${studentName} como presente`}
-            >
-              <CheckOutlinedIcon sx={{ fontSize: 17, mr: 0.75, color: 'inherit' }} />
-              Presente
-            </ToggleButton>
-
-            <ToggleButton
-              value={AttendanceStatus.EXCUSED}
-              sx={attendanceSelectedSx(AttendanceStatus.EXCUSED)}
-              aria-label={`Marcar a ${studentName} con permiso`}
-            >
-              <ScheduleOutlinedIcon sx={{ fontSize: 17, mr: 0.75, color: 'inherit' }} />
-              Permiso
-            </ToggleButton>
-
-            <ToggleButton
-              value={AttendanceStatus.ABSENT}
-              sx={attendanceSelectedSx(AttendanceStatus.ABSENT)}
-              aria-label={`Marcar a ${studentName} como ausente`}
-            >
-              <CloseOutlinedIcon sx={{ fontSize: 17, mr: 0.75, color: 'inherit' }} />
-              Ausente
-            </ToggleButton>
-          </ToggleButtonGroup>
-          {onEditObservation && status === AttendanceStatus.EXCUSED && (
-            <Tooltip title={observation || 'Agregar observación'}>
-              <span>
-                <IconButton
-                  size='small'
-                  disabled={disabled}
-                  onClick={onEditObservation}
-                  aria-label={`${observation ? 'Editar' : 'Agregar'} observación de ${studentName}`}
-                  sx={{ color: observation || status === AttendanceStatus.EXCUSED ? 'warning.main' : 'text.secondary' }}
+            {record?.registrationMethod && (
+              <Typography variant='caption'>{attendanceMethodLabels[record.registrationMethod]}</Typography>
+            )}
+            {record?.markedAt && (
+              <Typography variant='caption'>
+                {attendanceLocalTime(record.markedAt).replace('T', ' ')} · Bolivia
+              </Typography>
+            )}
+            {record?.registrationMethod === 'GEOLOCATION_QR' && (
+              <Typography variant='caption'>
+                Precisión: {record.accuracy ?? '—'} m · Distancia: {record.distanceMeters ?? '—'} m
+              </Typography>
+            )}
+            {record?.observation && (
+              <Typography variant='body2' sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                {record.observation}
+              </Typography>
+            )}
+            {onContingency && !isProtectedAttendance(record?.registrationMethod) && (
+              <TableAction
+                intent={record ? 'edit' : 'assign'}
+                label={record ? 'Corregir contingencia' : 'Registrar contingencia'}
+                disabled={disabled}
+                onClick={onContingency}
+              />
+            )}
+          </Stack>
+        ) : (
+          <>
+            <Stack direction='row' spacing={1} alignItems='center'>
+              {pending && (
+                <Typography variant='caption' color='text.secondary'>
+                  Pendiente
+                </Typography>
+              )}
+              <ToggleButtonGroup
+                exclusive
+                disabled={disabled}
+                aria-label={`Asistencia de ${studentName}`}
+                size='small'
+                value={pending ? null : status}
+                onChange={(_, value: AttendanceStatus | null) => {
+                  if (value) {
+                    onChange(value);
+                  }
+                }}
+                sx={{
+                  '& .MuiToggleButton-root': {
+                    minWidth: 96,
+                    px: 1,
+                    '&.Mui-focusVisible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+                    py: 0.5,
+                    textTransform: 'none',
+                  },
+                }}
+              >
+                <ToggleButton
+                  value={AttendanceStatus.PRESENT}
+                  sx={attendanceSelectedSx(AttendanceStatus.PRESENT)}
+                  aria-label={`Marcar a ${studentName} como presente`}
                 >
-                  <Box sx={{ display: 'flex' }}>
-                    <EditNoteOutlinedIcon fontSize='small' />
-                  </Box>
-                </IconButton>
-              </span>
-            </Tooltip>
-          )}
-        </Stack>
-        {onEditObservation && status === AttendanceStatus.EXCUSED && !observation && (
-          <Typography variant='caption' color='text.secondary'>
-            Observación opcional
-          </Typography>
+                  <CheckOutlinedIcon sx={{ fontSize: 17, mr: 0.75, color: 'inherit' }} />
+                  Presente
+                </ToggleButton>
+
+                <ToggleButton
+                  value={AttendanceStatus.EXCUSED}
+                  sx={attendanceSelectedSx(AttendanceStatus.EXCUSED)}
+                  aria-label={`Marcar a ${studentName} con permiso`}
+                >
+                  <ScheduleOutlinedIcon sx={{ fontSize: 17, mr: 0.75, color: 'inherit' }} />
+                  Permiso
+                </ToggleButton>
+
+                <ToggleButton
+                  value={AttendanceStatus.ABSENT}
+                  sx={attendanceSelectedSx(AttendanceStatus.ABSENT)}
+                  aria-label={`Marcar a ${studentName} como ausente`}
+                >
+                  <CloseOutlinedIcon sx={{ fontSize: 17, mr: 0.75, color: 'inherit' }} />
+                  Ausente
+                </ToggleButton>
+              </ToggleButtonGroup>
+              {onEditObservation && status === AttendanceStatus.EXCUSED && (
+                <Tooltip title={observation || 'Agregar observación'}>
+                  <span>
+                    <IconButton
+                      size='small'
+                      disabled={disabled}
+                      onClick={onEditObservation}
+                      aria-label={`${observation ? 'Editar' : 'Agregar'} observación de ${studentName}`}
+                      sx={{
+                        color: observation || status === AttendanceStatus.EXCUSED ? 'warning.main' : 'text.secondary',
+                      }}
+                    >
+                      <Box sx={{ display: 'flex' }}>
+                        <EditNoteOutlinedIcon fontSize='small' />
+                      </Box>
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
+            </Stack>
+            {onEditObservation && status === AttendanceStatus.EXCUSED && !observation && (
+              <Typography variant='caption' color='text.secondary'>
+                Observación opcional
+              </Typography>
+            )}
+          </>
         )}
       </TableCell>
     </TableRow>

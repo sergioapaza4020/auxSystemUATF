@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
-import AppDataSource from 'src/database/datasource';
+import { createAcademicTestDatabase } from '../../../test/academic-postgres';
 import { Course } from 'src/entities/courses/courses.entity';
 import { Activity } from 'src/entities/activities/activity.entity';
 import { Grade } from 'src/entities/grades/grades.entity';
@@ -17,10 +17,12 @@ import { SemestersService } from '../semesters/semesters.service';
 import { CoursesService } from '../courses/courses.service';
 import { CourseRelations } from '@common/enums/courseRelations';
 
-// Explicitly opt in: all writes use one transaction, always rolled back.
-const databaseTest = process.env.RUN_ACTIVITY_DB_TESTS === '1' ? describe : describe.skip;
+// Never uses application DATABASE_URL or existing academic records.
+const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
+const databaseTest = pgBin ? describe : describe.skip;
 databaseTest('Activity lifecycle against PostgreSQL', () => {
   let runner: QueryRunner;
+  let database: Awaited<ReturnType<typeof createAcademicTestDatabase>>;
   let activities: ActivitiesService;
   let summaries: AssistantGradeSchemesService;
   let enrollments: EnrollmentsService;
@@ -30,8 +32,8 @@ databaseTest('Activity lifecycle against PostgreSQL', () => {
   let detail: GradeSchemeDetail;
 
   beforeAll(async () => {
-    await AppDataSource.initialize();
-    runner = AppDataSource.createQueryRunner();
+    database = await createAcademicTestDatabase(pgBin!);
+    runner = database.source.createQueryRunner();
     await runner.connect();
     await runner.startTransaction();
     const manager = runner.manager;
@@ -39,7 +41,7 @@ databaseTest('Activity lifecycle against PostgreSQL', () => {
       where: {
         role: CourseRelations.ASSISTANT,
         isActive: true,
-        course: { name: 'Tecnologías emergentes' },
+        course: { idCourse: 1 },
       },
       relations: { user: true, course: true, semester: true },
     });
@@ -76,7 +78,7 @@ databaseTest('Activity lifecycle against PostgreSQL', () => {
           provide: getRepositoryToken(entity),
           useValue: manager.getRepository(entity),
         })),
-        { provide: DataSource, useValue: AppDataSource },
+        { provide: DataSource, useValue: database.source },
         { provide: UsersService, useValue: {} },
         { provide: SemestersService, useValue: {} },
         { provide: CoursesService, useValue: {} },
@@ -91,7 +93,7 @@ databaseTest('Activity lifecycle against PostgreSQL', () => {
   afterAll(async () => {
     if (runner?.isTransactionActive) await runner.rollbackTransaction();
     if (runner) await runner.release();
-    if (AppDataSource.isInitialized) await AppDataSource.destroy();
+    if (database) await database.close();
   });
 
   async function create(name: string, dueDate = '2026-10-20') {

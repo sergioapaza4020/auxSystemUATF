@@ -15,12 +15,13 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
   Typography,
 } from '@mui/material';
+
+import { DataTableContainer, TableToolbar, TableAction } from '@/components/table';
 
 import type { useEnrollmentStudentsPage } from '@/hooks/enrollments/useEnrollmentStudentsPage';
 import { PaginationTable, type HeadCell } from '@/components/table';
@@ -43,6 +44,7 @@ interface EnrollmentStudentsCardProps {
   summaryLoading?: boolean;
   summaryError?: string | null;
   onRetrySummary?: () => void;
+  onRefresh?: () => void;
   showGrades?: boolean;
   loading: boolean;
 
@@ -60,6 +62,7 @@ export function EnrollmentStudentsCard({
   summaryLoading = false,
   summaryError,
   onRetrySummary,
+  onRefresh,
   showGrades = true,
   loading,
   onSelectStudent,
@@ -218,12 +221,7 @@ export function EnrollmentStudentsCard({
           </Alert>
         )}
         {/* Search */}
-        <Box
-          sx={{
-            px: 3,
-            pb: 2,
-          }}
-        >
+        <TableToolbar onRefresh={onRefresh} refreshDisabled={loading || summaryLoading}>
           {showGrades && <GradeViewToggle value={mode} onChange={setMode} sx={{ mb: 2 }} />}
           {showGrades && summary?.scheme && (
             <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 2 }}>
@@ -248,7 +246,7 @@ export function EnrollmentStudentsCard({
               ),
             }}
           />
-        </Box>
+        </TableToolbar>
 
         {loading ? (
           <Stack
@@ -291,7 +289,7 @@ export function EnrollmentStudentsCard({
           </Box>
         ) : (
           <>
-            <TableContainer sx={{ overflowX: 'auto' }}>
+            <DataTableContainer sx={{ overflowX: 'auto' }}>
               <Table
                 size='small'
                 sx={{
@@ -436,23 +434,21 @@ export function EnrollmentStudentsCard({
                         align='right'
                         sx={{ pr: 3, position: 'sticky', right: 0, bgcolor: 'background.paper' }}
                       >
-                        <Button
-                          size='small'
-                          endIcon={<i className='ri-arrow-right-s-line' />}
+                        <TableAction
+                          intent='view'
+                          label='Ver'
                           onClick={(event) => {
                             event.stopPropagation();
 
                             onSelectStudent(student);
                           }}
-                        >
-                          Ver
-                        </Button>
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </TableContainer>
+            </DataTableContainer>
 
             <PaginationTable
               count={pagination?.meta.total ?? filteredStudents.length}

@@ -7,17 +7,16 @@ import {
   Chip,
   MenuItem,
   LinearProgress,
-  Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   TextField,
   Typography,
 } from '@mui/material';
+
+import { DataTableContainer, PaginationTable, TableToolbar } from '@/components/table';
 
 import { useUserImportPreview } from '@/hooks/users/useUserImportPreview';
 import type { IUserImportPreview, UserImportStatus } from '@/interfaces/users/user-import.interface';
@@ -29,7 +28,7 @@ export function ImportReviewTable({ preview, busy }: { preview: IUserImportPrevi
 
   return (
     <>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+      <TableToolbar compact onRefresh={table.reload} refreshDisabled={busy || table.loading}>
         <TextField
           label='Buscar nombre, apellido, username, CI, RU o email'
           size='small'
@@ -55,7 +54,7 @@ export function ImportReviewTable({ preview, busy }: { preview: IUserImportPrevi
           <MenuItem value='valid'>Válidos</MenuItem>
           <MenuItem value='invalid'>Con errores</MenuItem>
         </TextField>
-      </Stack>
+      </TableToolbar>
       {table.loading && <LinearProgress aria-label='Cargando página del preview' />}
       {table.error && (
         <Alert
@@ -69,7 +68,7 @@ export function ImportReviewTable({ preview, busy }: { preview: IUserImportPrevi
           No se pudo cargar la página. {table.error}
         </Alert>
       )}
-      <TableContainer aria-busy={table.loading} sx={{ opacity: table.loading || table.error ? 0.6 : 1 }}>
+      <DataTableContainer aria-busy={table.loading} sx={{ opacity: table.loading || table.error ? 0.6 : 1 }}>
         <Table size='small' aria-label='Revisión de usuarios a importar' sx={{ minWidth: 950 }}>
           {/* Remote rows retain PostgreSQL rowNumber ordering, as in UsersTable. */}
           <TableHead>
@@ -126,22 +125,15 @@ export function ImportReviewTable({ preview, busy }: { preview: IUserImportPrevi
             )}
           </TableBody>
         </Table>
-      </TableContainer>
-      <TablePagination
-        component='div'
+      </DataTableContainer>
+      <PaginationTable
         count={table.meta.total}
         page={table.meta.page - 1}
         rowsPerPage={table.meta.limit}
         rowsPerPageOptions={[25, 50, 100]}
-        labelRowsPerPage='Filas por página'
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-        onPageChange={(event, page) => {
-          if (!busy && !table.loading) table.changeQuery({ page: page + 1 });
-        }}
+        disabled={busy || table.loading}
+        onPageChange={(_, page) => table.changeQuery({ page: page + 1 })}
         onRowsPerPageChange={(event) => table.changeQuery({ limit: Number(event.target.value) })}
-        SelectProps={{ disabled: busy || table.loading }}
-        backIconButtonProps={{ disabled: busy || table.loading || table.meta.page === 1 }}
-        nextIconButtonProps={{ disabled: busy || table.loading || table.meta.page >= table.meta.totalPages }}
       />
     </>
   );

@@ -35,7 +35,7 @@ export const canEditAttendance = (session: IAttendanceLifecycle | null) =>
   !!session && (!isSelfRegistrationSession(session) || session.state === 'OPEN' || session.state === 'CLOSED');
 
 export const isSelfRegistrationSession = (session?: IAttendanceLifecycle | null) =>
-  session?.mode === 'GEOLOCATION' || session?.mode === 'QR';
+  session?.mode === 'GEOLOCATION' || session?.mode === 'QR' || session?.mode === 'GEOLOCATION_QR';
 
 export const canDeleteAttendanceSession = (
   session: IAttendanceLifecycle & { presentCount: number; excusedCount: number; absentCount: number },
@@ -44,6 +44,11 @@ export const canDeleteAttendanceSession = (
   (session.state === 'DRAFT' && session.presentCount + session.excusedCount + session.absentCount === 0);
 
 const messages: Record<string, string> = {
+  SESSION_DATE_PAST: 'No puedes crear o configurar una sesión con una fecha anterior a hoy en Bolivia.',
+  SESSION_START_PAST: 'El inicio debe ser futuro. Corrige el horario o utiliza Abrir ahora.',
+  SESSION_DURATION_INVALID: 'La duración debe ser de al menos 1 minuto y usar minutos enteros.',
+  SESSION_DURATION_OUT_OF_RANGE: 'La duración excede el rango de fechas admitido.',
+  OUTSIDE_SEMESTER: 'El inicio y el fin deben estar dentro del semestre académico.',
   SESSION_ALREADY_ACTIVATED: 'La sesión ya fue activada. Actualiza para ver su estado.',
   SESSION_NOT_OPEN: 'La sesión no está abierta.',
   SESSION_ALREADY_CLOSED: 'La sesión ya está cerrada.',

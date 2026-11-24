@@ -9,19 +9,25 @@ import {
   Button,
   Chip,
   MenuItem,
-  Paper,
   Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableRow,
   TextField,
   Typography,
 } from '@mui/material';
 
+import {
+  DataTableContainer,
+  DataTableSurface,
+  EnhancedTableHead,
+  PaginationTable,
+  StatusChip,
+  TableActions,
+} from '@/components/table';
+
 import { deactivatePermission, getPermissions, reactivatePermission } from '@/api/permissions.service';
-import { EnhancedTableHead, PaginationTable, StatusChip, TableActions } from '@/components/table';
 import type { HeadCell } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import { useAuth } from '@/hooks/useAuth';
@@ -113,7 +119,7 @@ export function PermissionsTable() {
       </Alert>
       {catalog.mutationError && <Alert severity='error'>{catalog.mutationError}</Alert>}
       {catalog.busy && <LinearProgress aria-label='Guardando cambios' />}
-      <Paper variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
+      <DataTableSurface variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
         <CatalogToolbar
           search={search}
           searchLabel='Buscar clave o descripción'
@@ -128,8 +134,7 @@ export function PermissionsTable() {
           }}
           onReload={() => void catalog.load()}
           disabled={catalog.busy || catalog.loading}
-        />
-        <Box sx={{ px: 3, pb: 3 }}>
+        >
           <TextField
             select
             fullWidth
@@ -149,7 +154,7 @@ export function PermissionsTable() {
               </MenuItem>
             ))}
           </TextField>
-        </Box>
+        </CatalogToolbar>
         {catalog.loading ? (
           <Box sx={{ p: 3 }} role='status' aria-label='Cargando permisos'>
             <LoadingTable />
@@ -164,7 +169,7 @@ export function PermissionsTable() {
           </Alert>
         ) : (
           <>
-            <TableContainer>
+            <DataTableContainer>
               <Table aria-label='Catálogo de permisos' sx={{ minWidth: 700 }}>
                 <EnhancedTableHead<PermissionRow, typeof columns>
                   headCells={columns}
@@ -220,7 +225,7 @@ export function PermissionsTable() {
                   )}
                 </TableBody>
               </Table>
-            </TableContainer>
+            </DataTableContainer>
             <PaginationTable
               count={filtered.length}
               page={page}
@@ -230,7 +235,7 @@ export function PermissionsTable() {
             />
           </>
         )}
-      </Paper>
+      </DataTableSurface>
     </Stack>
   );
 }

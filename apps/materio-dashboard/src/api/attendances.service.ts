@@ -1,4 +1,10 @@
-import type { IQrContext, IQrCheckInResult, IQrOwnMark } from '@/interfaces/attendances/student-qr.interface';
+import type {
+  IQrContext,
+  IQrCheckInResult,
+  IQrOwnMark,
+  ICombinedChallenge,
+  ICombinedCheckInResult,
+} from '@/interfaces/attendances/student-qr.interface';
 import type { StudentRosterQuery } from './enrollments.service';
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 import { instance } from './config/config';
@@ -19,6 +25,7 @@ import type {
   AttendanceSessionMode,
   IAttendanceLifecycle,
   IAttendanceQrCode,
+  IAttendanceAuditEvent,
 } from '@/interfaces/attendances/attendance.interface';
 
 export interface IAttendanceSessionCreate {
@@ -58,8 +65,14 @@ export const configureGeolocation = async (id: number, data: Partial<AttendanceG
 export const activateSession = async (id: number) =>
   (await instance.patch(`/attendances/sessions/${id}/activate`)).data.data;
 
-export const openSessionNow = async (id: number) =>
-  (await instance.patch(`/attendances/sessions/${id}/open-now`)).data.data;
+export const openSessionNow = async (id: number, durationMinutes?: number) => {
+  const url = `/attendances/sessions/${id}/open-now`;
+
+  const response =
+    durationMinutes === undefined ? await instance.patch(url) : await instance.patch(url, { durationMinutes });
+
+  return response.data.data;
+};
 
 export const closeSession = async (id: number) => (await instance.patch(`/attendances/sessions/${id}/close`)).data.data;
 
@@ -192,3 +205,42 @@ export const checkInWithQr = async (id: number, token: string, signal?: AbortSig
 export const getMyQrMark = async (id: number, signal?: AbortSignal) =>
   (await instance.get<{ data: { ownMark: IQrOwnMark | null } }>(`/attendances/sessions/${id}/qr-own-mark`, { signal }))
     .data.data;
+
+export const getAttendanceAudit = async (
+  idSession: number,
+  query: { page: number; limit: number },
+  signal?: AbortSignal,
+): Promise<PaginatedApiResponse<IAttendanceAuditEvent[]>> =>
+  (
+    await instance.get<PaginatedApiResponse<IAttendanceAuditEvent[]>>(`/attendances/sessions/${idSession}/audit`, {
+      params: query,
+      signal,
+    })
+  ).data;
+
+export const getCombinedChallenge = async (id: number, token: string, signal?: AbortSignal) =>
+  (
+    await instance.post<{ data: ICombinedChallenge }>(
+      `/attendances/sessions/${id}/combined-challenge`,
+      { token },
+      { signal },
+    )
+  ).data.data;
+
+export const checkInCombined = async (
+  id: number,
+  data: { authorization: string; latitude: number; longitude: number; accuracy: number },
+  signal?: AbortSignal,
+) =>
+  (
+    await instance.post<{ data: ICombinedCheckInResult }>(
+      `/attendances/sessions/${id}/combined-check-in`,
+      {
+        authorization: data.authorization,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        accuracy: data.accuracy,
+      },
+      { signal },
+    )
+  ).data.data;

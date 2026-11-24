@@ -10,7 +10,11 @@ import {
   totalScore,
 } from '@repo/grade-calculations';
 
-import { Alert, Box, Card, CardContent, CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
+import { Alert, Box, Card, CardContent, LinearProgress, Stack, Typography } from '@mui/material';
+
+import { PageLoading } from '@/components/feedback/PageLoading';
+
+import { tableToolbarSx } from '@/components/table';
 
 import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
@@ -124,7 +128,7 @@ export function StudentGradesView({
     return (
       <Stack spacing={3}>
         {schemeOverview}
-        <CircularProgress aria-label='Cargando mi rendimiento académico' />
+        <PageLoading />
       </Stack>
     );
 
@@ -145,6 +149,7 @@ export function StudentGradesView({
         <Card component='section' aria-label='Mi rendimiento académico' sx={academicSurfaceStyles}>
           <CardContent>
             <Stack
+              sx={{ ...tableToolbarSx, px: 0 }}
               direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
               justifyContent='space-between'

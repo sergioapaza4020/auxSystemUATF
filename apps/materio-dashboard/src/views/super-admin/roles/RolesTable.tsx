@@ -2,15 +2,23 @@
 
 import * as React from 'react';
 
-import { Box, Button, Paper, Table, TableBody, TableContainer } from '@mui/material';
+import { Box, Button, Table, TableBody, TextField, MenuItem } from '@mui/material';
 
 import AddIcon from '@mui/icons-material/Add';
+
+import {
+  DataTableContainer,
+  DataTableSurface,
+  EnhancedTableHead,
+  PaginationTable,
+  TableMessageRow,
+  TableToolbar,
+} from '@/components/table';
 
 import type { IRole, IRoleCreate } from '@/interfaces/roles/role.interface';
 
 import { roleHeadCellsData } from './data/head-cells.data';
 
-import { EnhancedTableHead, PaginationTable } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 
 import { useDialog } from '@/hooks/useDialog';
@@ -41,6 +49,16 @@ export const RolesTable = () => {
 
   const [openDialog, setOpenDialog] = React.useState(false);
   const [editingRole, setEditingRole] = React.useState<IRole | null>(null);
+  const [search, setSearch] = React.useState('');
+  const [status, setStatus] = React.useState('all');
+
+  const filtered = roles.filter(
+    (role) =>
+      `${role.name} ${role.description ?? ''} ${role.permissions?.map((permission) => permission.name).join(' ') ?? ''}`
+        .toLocaleLowerCase()
+        .includes(search.trim().toLocaleLowerCase()) &&
+      (status === 'all' || role.isActive === (status === 'active')),
+  );
 
   const {
     order,
@@ -51,7 +69,7 @@ export const RolesTable = () => {
     handleRequestSort,
     handleChangePage,
     handleChangeRowsPerPage,
-  } = useDataTable<IRole, typeof roleHeadCellsData>(roles, 'name');
+  } = useDataTable<IRole, typeof roleHeadCellsData>(filtered, 'name');
 
   if (loading) {
     return <LoadingTable />;
@@ -155,8 +173,39 @@ export const RolesTable = () => {
         Registrar rol
       </Button>
 
-      <Paper sx={{ width: '100%', mb: 2 }}>
-        <TableContainer>
+      <DataTableSurface sx={{ width: '100%', mb: 2 }}>
+        <TableToolbar
+          onRefresh={() => {
+            void loadRoles().catch(() => dialog.error('No se pudieron actualizar los roles.'));
+          }}
+          refreshDisabled={loading || loadingMutation}
+        >
+          <TextField
+            size='small'
+            label='Buscar rol'
+            placeholder='Buscar rol...'
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              handleChangePage(null, 0);
+            }}
+          />
+          <TextField
+            select
+            size='small'
+            label='Estado'
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value);
+              handleChangePage(null, 0);
+            }}
+          >
+            <MenuItem value='all'>Todos</MenuItem>
+            <MenuItem value='active'>Activos</MenuItem>
+            <MenuItem value='inactive'>Inactivos</MenuItem>
+          </TextField>
+        </TableToolbar>
+        <DataTableContainer>
           <Table sx={{ minWidth: 750 }} aria-label='roles-table'>
             <EnhancedTableHead<IRole, typeof roleHeadCellsData>
               headCells={roleHeadCellsData}
@@ -166,6 +215,7 @@ export const RolesTable = () => {
             />
 
             <TableBody>
+              {!visibleRows.length && <TableMessageRow colSpan={5}>Sin registros</TableMessageRow>}
               {visibleRows.map((role) => (
                 <RoleRow
                   key={role.idRole}
@@ -179,16 +229,16 @@ export const RolesTable = () => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </DataTableContainer>
 
         <PaginationTable
-          count={roles.length}
+          count={filtered.length}
           page={page}
           rowsPerPage={rowsPerPage}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
-      </Paper>
+      </DataTableSurface>
 
       <RoleEditDialog
         open={openDialog}

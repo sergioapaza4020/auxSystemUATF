@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Button, TextField } from '@mui/material';
 
 import { getEnrollmentsPage } from '@/api/enrollments.service';
+import { PaginationTable } from '@/components/table';
 import { elements, hookHarness } from '@/test-utils/hook-harness';
 import EnrollmentsPage from './page';
 
@@ -33,6 +34,9 @@ const click = (tree: React.ReactNode, label: string) =>
 const field = (tree: React.ReactNode, label: string) =>
   elements<FieldProps>(tree, TextField).find((element) => element.props.label === label)?.props;
 
+const pager = (tree: React.ReactNode) =>
+  elements<React.ComponentProps<typeof PaginationTable>>(tree, PaginationTable)[0].props;
+
 let cleanup: () => void;
 
 beforeEach(() => {
@@ -59,7 +63,7 @@ describe('Administrative enrollment page connection', () => {
     cleanup = harness.unmount;
     harness.render();
     await vi.runAllTimersAsync();
-    click(harness.render(), 'Siguiente');
+    pager(harness.render()).onPageChange(null, 1);
     harness.render();
     await vi.runAllTimersAsync();
     let tree = harness.render();
@@ -76,7 +80,7 @@ describe('Administrative enrollment page connection', () => {
       expect.objectContaining({ search: 'Ana', page: 1 }),
       expect.any(AbortSignal),
     );
-    click(harness.render(), 'Siguiente');
+    pager(harness.render()).onPageChange(null, 1);
     harness.render();
     await vi.runAllTimersAsync();
     field(harness.render(), 'Estado')?.onChange?.(event('inactive'));
@@ -86,10 +90,10 @@ describe('Administrative enrollment page connection', () => {
       expect.objectContaining({ status: 'inactive', page: 1 }),
       expect.any(AbortSignal),
     );
-    click(harness.render(), 'Siguiente');
+    pager(harness.render()).onPageChange(null, 1);
     harness.render();
     await vi.runAllTimersAsync();
-    field(harness.render(), 'Filas por página')?.onChange?.(event('50'));
+    pager(harness.render()).onRowsPerPageChange(event('50'));
     harness.render();
     await vi.runAllTimersAsync();
     expect(getEnrollmentsPage).toHaveBeenLastCalledWith(

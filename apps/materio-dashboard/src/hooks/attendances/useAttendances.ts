@@ -125,22 +125,31 @@ export function useAttendances(idEnrollment: number | null) {
   );
 
   const findSessionByDate = useCallback(
-    async (date: string) => {
+    async (date: string, idSession?: number) => {
       if (!idEnrollment) return undefined;
       dateRequest.current?.abort();
       const controller = new AbortController();
 
       dateRequest.current = controller;
+      let page = 1;
 
-      const response = await getAttendanceSessionsByEnrollment(
-        idEnrollment,
-        { page: 1, limit: 1, date },
-        controller.signal,
-      );
+      do {
+        const response = await getAttendanceSessionsByEnrollment(
+          idEnrollment,
+          { page, limit: 25, date },
+          controller.signal,
+        );
 
-      controller.signal.throwIfAborted();
+        controller.signal.throwIfAborted();
 
-      return response.data[0];
+        // A date alone is ambiguous when multiple sessions exist.
+        if (idSession === undefined) return response.meta.total === 1 ? response.data[0] : undefined;
+        const selected = response.data.find((item) => item.idAttendanceSession === idSession);
+
+        if (selected) return selected;
+        if (page >= response.meta.totalPages) return undefined;
+        page += 1;
+      } while (true);
     },
     [idEnrollment],
   );
@@ -150,7 +159,7 @@ export function useAttendances(idEnrollment: number | null) {
       const selected = currentSession.current;
 
       if (!selected) return;
-      const summary = await findSessionByDate(selected.date.slice(0, 10));
+      const summary = await findSessionByDate(selected.date.slice(0, 10), selected.idAttendanceSession);
 
       if (summary)
         setSession((current) =>
@@ -171,7 +180,7 @@ export function useAttendances(idEnrollment: number | null) {
       const data = await getAttendanceSession(idSession, { page: 1, limit: 25 }, controller.signal);
 
       // The detail endpoint returns marks; the paginated endpoint computes the saved summary.
-      const summary = await findSessionByDate(data.date.slice(0, 10));
+      const summary = await findSessionByDate(data.date.slice(0, 10), idSession);
       const detail = summary?.idAttendanceSession === idSession ? { ...data, ...summary } : data;
 
       controller.signal.throwIfAborted();

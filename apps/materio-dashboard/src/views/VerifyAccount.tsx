@@ -108,7 +108,7 @@ export default function VerifyAccount() {
                 Ingresa tu RU para comprobar si ya tienes una cuenta registrada en el sistema.
               </Typography>
             </Box>
-            <Box component='form' noValidate autoComplete='on' onSubmit={handleSubmit} aria-busy={loading}>
+            <Box component='form' noValidate autoComplete='off' onSubmit={handleSubmit} aria-busy={loading}>
               <Stack spacing={3}>
                 <TextField
                   autoFocus
@@ -117,7 +117,7 @@ export default function VerifyAccount() {
                   id='ru'
                   name='ru'
                   label='RU'
-                  autoComplete='username'
+                  autoComplete='off'
                   value={ru}
                   disabled={loading}
                   error={requiredError}

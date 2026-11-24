@@ -1,3 +1,11 @@
+import { AttendanceOpenNowDto } from 'src/dtos/attendances/attendance-open-now.dto';
+import { createHash, randomBytes } from 'node:crypto';
+import { AttendanceCombinedAuthorization } from 'src/entities/attendance/attendance-combined-authorization.entity';
+import { AttendanceAuditEvent } from 'src/entities/attendance/attendance-audit-event.entity';
+import { AttendanceAuditOperation } from '@common/enums/attendanceAuditOperation';
+import { AttendanceCombinedCheckInDto } from 'src/dtos/attendances/attendance-combined.dto';
+import { isProtectedAttendanceEvidence } from '@common/utils/attendance-evidence';
+import { attendanceLocationEvidence } from '@common/utils/attendance-location';
 import { academicAttendanceCounts } from '@common/utils/attendance-academic-counts';
 import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
 import { buildStudentRosterQuery, getStudentRosterPage } from '@common/utils/student-roster';
@@ -23,7 +31,6 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { AttendanceCheckInCode as CheckInCode } from '@common/enums/attendanceCheckInCode';
 import { AttendanceCheckInException } from '@common/errors/attendance-check-in.exception';
-import { calculateDistanceMeters } from '@common/utils/geolocation-distance';
 import { AttendanceCheckInDto } from 'src/dtos/attendances/attendance-check-in.dto';
 import { AttendanceCheckInResponseDto } from 'src/dtos/attendances/attendance-check-in-response.dto';
 import { StudentAttendanceSessionDto } from 'src/dtos/attendances/student-attendance-session.dto';
@@ -74,8 +81,12 @@ export class AttendancesService {
     private readonly qrTokens: AttendanceQrTokenService = new AttendanceQrTokenService(),
   ) {}
 
-  private requireQrOpen(session: AttendanceSession, now: Date) {
-    if (session.mode !== AttendanceSessionMode.QR)
+  private requireQrOpen(
+    session: AttendanceSession,
+    now: Date,
+    modes: AttendanceSessionMode[] = [AttendanceSessionMode.QR],
+  ) {
+    if (!modes.includes(session.mode))
       throw new AttendanceCheckInException(CheckInCode.QR_NOT_AVAILABLE, HttpStatus.CONFLICT);
     const state = this.checkInState(session, now);
     if (state !== State.OPEN)
@@ -91,13 +102,18 @@ export class AttendancesService {
 
   async getQr(idUser: number, idSession: number) {
     return this.withLockedSession(idUser, idSession, (session, _manager, now) => {
-      this.requireQrOpen(session, now);
+      this.requireQrOpen(session, now, [
+        AttendanceSessionMode.QR,
+        AttendanceSessionMode.GEOLOCATION_QR,
+      ]);
       this.validateQrAcademicContext(session);
       return Promise.resolve(this.qrTokens.issue(session, now));
     });
   }
 
-  private validateQrAcademicContext(session: AttendanceSession) {
+  private validateQrAcademicContext(
+    session: Pick<AttendanceSession, 'assistantEnrollment' | 'startsAt' | 'endsAt'>,
+  ) {
     const owner = session.assistantEnrollment;
     if (
       !owner?.isActive ||
@@ -153,15 +169,21 @@ export class AttendancesService {
         !Number.isFinite(session.endsAt.getTime())
       )
         throw new BadRequestException('QR_CONFIGURATION_INVALID');
+      if (attendanceAcademicDate(session.startsAt) < attendanceAcademicDate(now))
+        throw new BadRequestException('SESSION_DATE_PAST');
       session.date = attendanceAcademicDate(session.startsAt) as unknown as Date;
-      this.validateActivation(session, now);
-      await this.ensureDateAvailable(session, manager);
+      this.validateActivation(session, now, false);
       await manager.getRepository(AttendanceSession).save(session);
       return attendanceSessionResponse(session, now);
     });
   }
 
-  private async qrStudentContext(manager: EntityManager, idUser: number, idSession: number) {
+  private async qrStudentContext(
+    manager: EntityManager,
+    idUser: number,
+    idSession: number,
+    modes: AttendanceSessionMode[] = [AttendanceSessionMode.QR],
+  ) {
     const session = await manager.getRepository(AttendanceSession).findOne({
       where: { idAttendanceSession: idSession },
       relations: { assistantEnrollment: { user: true, course: true, semester: true } },
@@ -195,7 +217,7 @@ export class AttendancesService {
         CheckInCode.SESSION_CONTEXT_INVALID,
         HttpStatus.CONFLICT,
       );
-    if (session.mode !== AttendanceSessionMode.QR)
+    if (!modes.includes(session.mode))
       throw new AttendanceCheckInException(CheckInCode.QR_NOT_AVAILABLE, HttpStatus.CONFLICT);
     this.validateQrAcademicContext(session);
     const own = await manager.getRepository(Attendance).findOne({
@@ -219,9 +241,365 @@ export class AttendancesService {
 
   async getQrOwnMark(idUser: number, idSession: number) {
     return this.attendanceSessionRepository.manager.transaction(async (manager) => {
-      const { own } = await this.qrStudentContext(manager, idUser, idSession);
+      const { own } = await this.qrStudentContext(manager, idUser, idSession, [
+        AttendanceSessionMode.QR,
+        AttendanceSessionMode.GEOLOCATION_QR,
+      ]);
       return { ownMark: this.ownQrMark(own) };
     });
+  }
+
+  private authorizationHash(value: string): Buffer {
+    if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(value))
+      throw new AttendanceCheckInException(
+        CheckInCode.COMBINED_AUTHORIZATION_INVALID,
+        HttpStatus.BAD_REQUEST,
+      );
+    const bytes = Buffer.from(value, 'base64url');
+    if (bytes.length !== 32 || bytes.toString('base64url') !== value)
+      throw new AttendanceCheckInException(
+        CheckInCode.COMBINED_AUTHORIZATION_INVALID,
+        HttpStatus.BAD_REQUEST,
+      );
+    return createHash('sha256').update(value, 'ascii').digest();
+  }
+
+  async combinedChallenge(idUser: number, idSession: number, dto: AttendanceQrTokenDto) {
+    if (
+      validateSync(plainToInstance(AttendanceQrTokenDto, dto), {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }).length
+    )
+      throw new AttendanceCheckInException(CheckInCode.QR_TOKEN_INVALID, HttpStatus.BAD_REQUEST);
+    const token = this.qrTokens.verify(dto.token, idSession);
+    return this.attendanceSessionRepository.manager.transaction(async (manager) => {
+      const locked = await manager.getRepository(AttendanceSession).findOne({
+        where: { idAttendanceSession: idSession },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked)
+        throw new AttendanceCheckInException(CheckInCode.NOT_ENROLLED, HttpStatus.FORBIDDEN);
+      const { session, enrollment, own } = await this.qrStudentContext(manager, idUser, idSession, [
+        AttendanceSessionMode.GEOLOCATION_QR,
+      ]);
+      const repository = manager.getRepository(AttendanceCombinedAuthorization);
+      const previous = own
+        ? null
+        : await repository.findOneBy({
+            attendanceSession: { idAttendanceSession: idSession },
+            studentEnrollment: { idEnrollment: enrollment.idEnrollment },
+          });
+      const now = new Date();
+      this.requireQrOpen(session, now, [AttendanceSessionMode.GEOLOCATION_QR]);
+      this.qrTokens.validatePeriod(token, session, now);
+      const context = {
+        idAttendanceSession: idSession,
+        mode: session.mode,
+        course: {
+          name: session.assistantEnrollment.course.name,
+          group: session.assistantEnrollment.course.group,
+        },
+        date: session.date,
+        startsAt: session.startsAt,
+        endsAt: session.endsAt,
+        state: State.OPEN,
+        serverNow: now,
+        ownMark: this.ownQrMark(own),
+      };
+      if (own) return { ...context, authorization: null, authorizationExpiresAt: null };
+      const expiresAt = new Date(Math.min(now.getTime() + 90000, session.endsAt!.getTime()));
+      const authorization = randomBytes(32).toString('base64url');
+      const values = {
+        attendanceSession: { idAttendanceSession: idSession },
+        studentEnrollment: { idEnrollment: enrollment.idEnrollment },
+        tokenHash: this.authorizationHash(authorization),
+        qrValidatedAt: now,
+        expiresAt,
+        consumedAt: null,
+      };
+      await repository.save(previous ? Object.assign(previous, values) : repository.create(values));
+      return { ...context, authorization, authorizationExpiresAt: expiresAt };
+    });
+  }
+
+  async combinedCheckIn(idUser: number, idSession: number, dto: AttendanceCombinedCheckInDto) {
+    // Check canonical secret before any lookup. Do not reflect it in errors/logs.
+    const hash = this.authorizationHash(dto.authorization);
+    if (
+      validateSync(plainToInstance(AttendanceCombinedCheckInDto, dto), {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }).length
+    )
+      throw new AttendanceCheckInException(CheckInCode.LOCATION_INVALID, HttpStatus.BAD_REQUEST);
+    try {
+      return await this.attendanceSessionRepository.manager.transaction(async (manager) => {
+        const locked = await manager.getRepository(AttendanceSession).findOne({
+          where: { idAttendanceSession: idSession },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!locked)
+          throw new AttendanceCheckInException(CheckInCode.NOT_ENROLLED, HttpStatus.FORBIDDEN);
+        const { session, enrollment, own } = await this.qrStudentContext(
+          manager,
+          idUser,
+          idSession,
+          [AttendanceSessionMode.GEOLOCATION_QR],
+        );
+        this.requireQrOpen(session, new Date(), [AttendanceSessionMode.GEOLOCATION_QR]);
+        if (own)
+          throw new AttendanceCheckInException(CheckInCode.ALREADY_REGISTERED, HttpStatus.CONFLICT);
+        const authorizations = manager.getRepository(AttendanceCombinedAuthorization);
+        const authorization = await authorizations.findOneBy({
+          attendanceSession: { idAttendanceSession: idSession },
+          studentEnrollment: { idEnrollment: enrollment.idEnrollment },
+          tokenHash: hash,
+        });
+        if (!authorization || authorization.consumedAt)
+          throw new AttendanceCheckInException(
+            CheckInCode.COMBINED_AUTHORIZATION_INVALID,
+            HttpStatus.BAD_REQUEST,
+          );
+        const evidence = attendanceLocationEvidence(session, dto);
+        const now = new Date();
+        this.requireQrOpen(session, now, [AttendanceSessionMode.GEOLOCATION_QR]);
+        if (now >= authorization.expiresAt)
+          throw new AttendanceCheckInException(
+            CheckInCode.COMBINED_AUTHORIZATION_EXPIRED,
+            HttpStatus.CONFLICT,
+          );
+        if (now < authorization.qrValidatedAt)
+          throw new AttendanceCheckInException(
+            CheckInCode.COMBINED_AUTHORIZATION_INVALID,
+            HttpStatus.BAD_REQUEST,
+          );
+        const repository = manager.getRepository(Attendance);
+        const mark = await repository.save(
+          repository.create({
+            attendanceSession: { idAttendanceSession: idSession },
+            enrollment: { idEnrollment: enrollment.idEnrollment },
+            status: AttendanceStatus.PRESENT,
+            registrationMethod: AttendanceRegistrationMethod.GEOLOCATION_QR,
+            markedAt: now,
+            markedBy: { idUser },
+            ...evidence,
+          }),
+        );
+        authorization.consumedAt = now;
+        await authorizations.save(authorization);
+        await this.writeAttendanceAudit(manager, session, mark, null, idUser, now, State.OPEN);
+        return {
+          code: CheckInCode.SUCCESS,
+          idAttendance: mark.idAttendance,
+          status: AttendanceStatus.PRESENT,
+          registrationMethod: AttendanceRegistrationMethod.GEOLOCATION_QR,
+          markedAt: now,
+        };
+      });
+    } catch (error) {
+      const driver: unknown = error instanceof QueryFailedError ? error.driverError : null;
+      if (
+        driver &&
+        typeof driver === 'object' &&
+        'code' in driver &&
+        driver.code === '23505' &&
+        'constraint' in driver &&
+        driver.constraint === 'UQ_7880aee9d2b1416261167c83e86'
+      )
+        throw new AttendanceCheckInException(CheckInCode.ALREADY_REGISTERED, HttpStatus.CONFLICT);
+      throw error;
+    }
+  }
+
+  private async writeAttendanceAudit(
+    manager: EntityManager,
+    session: AttendanceSession,
+    mark: Attendance,
+    previous: Attendance | null,
+    idUser: number,
+    now: Date,
+    state: State.OPEN | State.CLOSED,
+  ) {
+    const repository = manager.getRepository(AttendanceAuditEvent);
+    await repository.save(
+      repository.create({
+        attendanceSession: { idAttendanceSession: session.idAttendanceSession },
+        studentEnrollment: { idEnrollment: mark.enrollment.idEnrollment },
+        attendance: { idAttendance: mark.idAttendance },
+        actor: { idUser },
+        operation: previous ? AttendanceAuditOperation.UPDATE : AttendanceAuditOperation.CREATE,
+        occurredAt: now,
+        previousStatus: previous?.status ?? null,
+        newStatus: mark.status,
+        previousRegistrationMethod: previous?.registrationMethod ?? null,
+        newRegistrationMethod: mark.registrationMethod,
+        previousObservation: previous?.observation ?? null,
+        newObservation: mark.observation ?? null,
+        sessionStateAtOperation: state,
+      }),
+    );
+  }
+
+  private manualReason(value: string | null | undefined): string {
+    const reason = typeof value === 'string' ? value.replace(/\p{Cf}/gu, '').trim() : '';
+    const useful = reason.match(/[\p{L}\p{N}]/gu) ?? [];
+    if (reason.length > 500 || useful.length < 10)
+      throw new AttendanceCheckInException(
+        CheckInCode.MANUAL_REASON_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+      );
+    return reason;
+  }
+
+  private async saveCombinedAttendances(
+    idUser: number,
+    idSession: number,
+    dto: AttendanceSaveDto,
+    originalBody?: unknown,
+  ) {
+    if (
+      !Array.isArray(dto.attendances) ||
+      dto.attendances.length > 100 ||
+      dto.markAll !== undefined
+    )
+      throw new AttendanceCheckInException(
+        CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+      );
+    const reasons = dto.attendances.map((record) => this.manualReason(record?.observation));
+    if (
+      validateSync(plainToInstance(AttendanceSaveDto, originalBody ?? dto), {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }).length
+    )
+      throw new AttendanceCheckInException(
+        CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+      );
+    const ids = dto.attendances.map((record) => record.enrollmentId);
+    if (new Set(ids).size !== ids.length)
+      throw new AttendanceCheckInException(
+        CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+        HttpStatus.BAD_REQUEST,
+      );
+    return this.withLockedSession(idUser, idSession, async (session, manager) => {
+      if (session.mode !== AttendanceSessionMode.GEOLOCATION_QR)
+        throw new AttendanceCheckInException(
+          CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+          HttpStatus.FORBIDDEN,
+        );
+      this.validateQrAcademicContext(session);
+      const now = new Date();
+      const state = getAttendanceSessionState(session, now);
+      if (state !== State.OPEN && state !== State.CLOSED)
+        throw new AttendanceCheckInException(
+          CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+          HttpStatus.CONFLICT,
+        );
+      const repository = manager.getRepository(Attendance);
+      const result: Attendance[] = [];
+      for (const [index, record] of dto.attendances.entries()) {
+        const enrollment = await manager.getRepository(Enrollment).findOne({
+          where: {
+            idEnrollment: record.enrollmentId,
+            role: CourseRelations.STUDENT,
+            isActive: true,
+            course: { idCourse: session.assistantEnrollment.course.idCourse },
+            semester: { idSemester: session.assistantEnrollment.semester.idSemester },
+          },
+          relations: { user: true },
+          lock: { mode: 'pessimistic_read', tables: ['enrollments'] },
+        });
+        if (!enrollment?.user?.isActive)
+          throw new AttendanceCheckInException(CheckInCode.NOT_ENROLLED, HttpStatus.FORBIDDEN);
+        const previous = await repository.findOne({
+          where: {
+            attendanceSession: { idAttendanceSession: idSession },
+            enrollment: { idEnrollment: record.enrollmentId },
+          },
+          relations: { enrollment: true },
+        });
+        if (previous && isProtectedAttendanceEvidence(previous.registrationMethod))
+          throw new AttendanceCheckInException(
+            CheckInCode.ATTENDANCE_EVIDENCE_PROTECTED,
+            HttpStatus.CONFLICT,
+          );
+        if (previous) {
+          // Only marks created by this audited policy can be corrected through it.
+          const created = await manager.getRepository(AttendanceAuditEvent).existsBy({
+            attendance: { idAttendance: previous.idAttendance },
+            operation: AttendanceAuditOperation.CREATE,
+            newRegistrationMethod: AttendanceRegistrationMethod.MANUAL,
+          });
+          if (!created)
+            throw new AttendanceCheckInException(
+              CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+              HttpStatus.FORBIDDEN,
+            );
+          if (previous.observation === reasons[index])
+            throw new AttendanceCheckInException(
+              CheckInCode.MANUAL_REASON_REQUIRED,
+              HttpStatus.BAD_REQUEST,
+            );
+        }
+        const markedAt = new Date();
+        const mark = await repository.save(
+          repository.create({
+            ...(previous ? { idAttendance: previous.idAttendance } : {}),
+            attendanceSession: { idAttendanceSession: idSession },
+            enrollment: { idEnrollment: record.enrollmentId },
+            status: record.status,
+            registrationMethod: AttendanceRegistrationMethod.MANUAL,
+            observation: reasons[index],
+            markedAt,
+            markedBy: { idUser },
+            accuracy: null,
+            distanceMeters: null,
+          }),
+        );
+        await this.writeAttendanceAudit(manager, session, mark, previous, idUser, markedAt, state);
+        result.push(mark);
+      }
+      return result;
+    });
+  }
+
+  async getAttendanceAudit(idUser: number, idSession: number, query: AttendanceHistoryQueryDto) {
+    const session = await this.getSession(idUser, idSession, false, true);
+    if (!session.assistantEnrollment.user.isActive)
+      throw new AttendanceCheckInException(
+        CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+        HttpStatus.FORBIDDEN,
+      );
+    const { page = 1, limit = 10 } = query;
+    const [events, total] = await this.attendanceSessionRepository.manager
+      .getRepository(AttendanceAuditEvent)
+      .findAndCount({
+        where: { attendanceSession: { idAttendanceSession: idSession } },
+        relations: { studentEnrollment: true, actor: true },
+        order: { occurredAt: 'ASC', idAttendanceAuditEvent: 'ASC' },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    return {
+      data: events.map((event) => ({
+        idAttendanceAuditEvent: event.idAttendanceAuditEvent,
+        idEnrollment: event.studentEnrollment.idEnrollment,
+        idActor: event.actor.idUser,
+        operation: event.operation,
+        occurredAt: event.occurredAt,
+        previousStatus: event.previousStatus,
+        newStatus: event.newStatus,
+        previousRegistrationMethod: event.previousRegistrationMethod,
+        newRegistrationMethod: event.newRegistrationMethod,
+        previousObservation: event.previousObservation,
+        newObservation: event.newObservation,
+        sessionStateAtOperation: event.sessionStateAtOperation,
+      })),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   private async qrAttempt(
@@ -246,20 +624,26 @@ export class AttendancesService {
         });
         if (!locked)
           throw new AttendanceCheckInException(CheckInCode.SESSION_NOT_FOUND, HttpStatus.NOT_FOUND);
+        // Discovery is read-only; the historical write remains QR-only.
+        const modes = insert
+          ? [AttendanceSessionMode.QR]
+          : [AttendanceSessionMode.QR, AttendanceSessionMode.GEOLOCATION_QR];
         const { session, enrollment, own } = await this.qrStudentContext(
           manager,
           idUser,
           idSession,
+          modes,
         );
-        this.requireQrOpen(session, new Date());
+        this.requireQrOpen(session, new Date(), modes);
         if (insert && own)
           throw new AttendanceCheckInException(CheckInCode.ALREADY_REGISTERED, HttpStatus.CONFLICT);
         const now = new Date();
-        this.requireQrOpen(session, now);
+        this.requireQrOpen(session, now, modes);
         const expiresAt = this.qrTokens.validatePeriod(token, session, now);
         if (!insert)
           return {
             idAttendanceSession: idSession,
+            mode: session.mode,
             course: {
               name: session.assistantEnrollment.course.name,
               group: session.assistantEnrollment.course.group,
@@ -406,31 +790,7 @@ export class AttendancesService {
           })
         )
           throw new AttendanceCheckInException(CheckInCode.ALREADY_REGISTERED, HttpStatus.CONFLICT);
-        const latitude = Number(session.latitude);
-        const longitude = Number(session.longitude);
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
-          throw new AttendanceCheckInException(
-            CheckInCode.SESSION_CONTEXT_INVALID,
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        if (dto.accuracy > session.maximumAcceptedAccuracy!)
-          throw new AttendanceCheckInException(
-            CheckInCode.LOW_ACCURACY,
-            HttpStatus.UNPROCESSABLE_ENTITY,
-          );
-        const distance = calculateDistanceMeters(latitude, longitude, dto.latitude, dto.longitude);
-        if (distance > session.radiusMeters!)
-          throw new AttendanceCheckInException(
-            CheckInCode.OUTSIDE_AREA,
-            HttpStatus.UNPROCESSABLE_ENTITY,
-          );
-        const accuracy = dto.accuracy.toFixed(2);
-        // numeric(10,2) cannot represent a larger accepted measurement.
-        if (Number(accuracy) > 99_999_999.99)
-          throw new AttendanceCheckInException(
-            CheckInCode.LOCATION_INVALID,
-            HttpStatus.BAD_REQUEST,
-          );
+        const evidence = attendanceLocationEvidence(session, dto);
         const record = repository.create({
           attendanceSession: { idAttendanceSession: idSession },
           enrollment: { idEnrollment: enrollment.idEnrollment },
@@ -438,8 +798,7 @@ export class AttendancesService {
           registrationMethod: AttendanceRegistrationMethod.GEOLOCATION,
           markedAt: now,
           markedBy: { idUser },
-          accuracy,
-          distanceMeters: distance.toFixed(2),
+          ...evidence,
         });
         const saved = await repository.save(record);
         // Explicit allowlist: no position, geofence, relationships or other students.
@@ -572,7 +931,18 @@ export class AttendancesService {
   }
 
   async createSession(idUser: number, dto: AttendanceSessionCreateDto): Promise<AttendanceSession> {
-    if (dto.mode === AttendanceSessionMode.QR) {
+    if (
+      dto.mode === AttendanceSessionMode.QR ||
+      dto.mode === AttendanceSessionMode.GEOLOCATION_QR
+    ) {
+      if (
+        dto.mode === AttendanceSessionMode.GEOLOCATION_QR &&
+        validateSync(plainToInstance(AttendanceSessionCreateDto, dto), {
+          whitelist: true,
+          forbidNonWhitelisted: true,
+        }).length
+      )
+        throw new BadRequestException('SESSION_CONFIGURATION_INVALID');
       return this.attendanceSessionRepository.manager.transaction(async (manager) => {
         await manager.getRepository(Enrollment).findOne({
           where: { idEnrollment: dto.enrollmentId },
@@ -593,7 +963,8 @@ export class AttendancesService {
       dto.mode !== undefined &&
       dto.mode !== AttendanceSessionMode.MANUAL &&
       dto.mode !== AttendanceSessionMode.GEOLOCATION &&
-      dto.mode !== AttendanceSessionMode.QR
+      dto.mode !== AttendanceSessionMode.QR &&
+      dto.mode !== AttendanceSessionMode.GEOLOCATION_QR
     )
       throw new BadRequestException('SESSION_MODE_INVALID');
     const assistantEnrollment = await this.getAssistantEnrollment(
@@ -601,25 +972,20 @@ export class AttendancesService {
       dto.enrollmentId,
       manager,
     );
+    if (dto.mode === AttendanceSessionMode.GEOLOCATION_QR) {
+      const context = { assistantEnrollment, startsAt: null, endsAt: null };
+      this.validateQrAcademicContext(context);
+    }
+    const today = attendanceAcademicDate(new Date());
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(dto.date) ||
+      !Number.isFinite(Date.parse(`${dto.date}T00:00:00-04:00`)) ||
+      attendanceAcademicDate(new Date(`${dto.date}T00:00:00-04:00`)) !== dto.date
+    )
+      throw new BadRequestException('SESSION_DATE_INVALID');
+    if (dto.date < today) throw new BadRequestException('SESSION_DATE_PAST');
     const repository =
       manager?.getRepository(AttendanceSession) ?? this.attendanceSessionRepository;
-
-    const existingSession = await repository.findOne({
-      where: {
-        assistantEnrollment: {
-          idEnrollment: assistantEnrollment.idEnrollment,
-        },
-        date: dto.date as unknown as Date,
-      },
-    });
-
-    if (existingSession) {
-      throw new ConflictException(
-        dto.mode !== undefined && isSelfRegistrationMode(dto.mode)
-          ? 'SESSION_DATE_CONFLICT'
-          : 'Ya existe una sesión de asistencia para esta fecha',
-      );
-    }
 
     const session = repository.create({
       assistantEnrollment,
@@ -634,25 +1000,7 @@ export class AttendancesService {
         : {}),
     });
 
-    try {
-      return await repository.save(session);
-    } catch (error) {
-      this.rethrowDateConflict(error);
-    }
-  }
-
-  private rethrowDateConflict(error: unknown): never {
-    const driver: unknown = error instanceof QueryFailedError ? error.driverError : null;
-    if (
-      driver &&
-      typeof driver === 'object' &&
-      'code' in driver &&
-      driver.code === '23505' &&
-      'constraint' in driver &&
-      driver.constraint === 'UQ_8cd3866ee6beebfc50a0bab1962'
-    )
-      throw new ConflictException('SESSION_DATE_CONFLICT');
-    throw error;
+    return repository.save(session);
   }
 
   private async withLockedSession<T>(
@@ -661,20 +1009,22 @@ export class AttendancesService {
     work: (session: AttendanceSession, manager: EntityManager, now: Date) => Promise<T>,
   ): Promise<T> {
     await this.getSession(idUser, idSession, false, true);
-    try {
-      return await this.attendanceSessionRepository.manager.transaction(async (manager) => {
-        const locked = await manager.getRepository(AttendanceSession).findOne({
-          where: { idAttendanceSession: idSession },
-          lock: { mode: 'pessimistic_write' },
-        });
-        if (!locked) throw new NotFoundException('Sesión de asistencia no encontrada');
-        const session = await this.getSession(idUser, idSession, false, true, manager);
-        const now = new Date();
-        return work(session, manager, now);
+    return this.attendanceSessionRepository.manager.transaction(async (manager) => {
+      const locked = await manager.getRepository(AttendanceSession).findOne({
+        where: { idAttendanceSession: idSession },
+        lock: { mode: 'pessimistic_write' },
       });
-    } catch (error) {
-      this.rethrowDateConflict(error);
-    }
+      if (!locked) throw new NotFoundException('Sesión de asistencia no encontrada');
+      const session = await this.getSession(idUser, idSession, false, true, manager);
+      if (session.mode === AttendanceSessionMode.GEOLOCATION_QR)
+        this.validateQrAcademicContext({
+          assistantEnrollment: session.assistantEnrollment,
+          startsAt: null,
+          endsAt: null,
+        });
+      const now = new Date();
+      return work(session, manager, now);
+    });
   }
 
   private requireSelfRegistrationDraft(session: AttendanceSession, now: Date) {
@@ -685,26 +1035,23 @@ export class AttendancesService {
     if (state !== State.DRAFT) throw new ConflictException('SESSION_ALREADY_ACTIVATED');
   }
 
-  private async ensureDateAvailable(session: AttendanceSession, manager: EntityManager) {
-    const duplicate = await manager.getRepository(AttendanceSession).findOne({
-      where: {
-        assistantEnrollment: { idEnrollment: session.assistantEnrollment.idEnrollment },
-        date: session.date,
-      },
-    });
-    if (duplicate && duplicate.idAttendanceSession !== session.idAttendanceSession)
-      throw new ConflictException('SESSION_DATE_CONFLICT');
-  }
-
   async configureGeolocation(
     idUser: number,
     idSession: number,
     dto: AttendanceGeolocationConfigDto,
   ) {
-    if (validateSync(plainToInstance(AttendanceGeolocationConfigDto, dto)).length)
+    if (
+      validateSync(plainToInstance(AttendanceGeolocationConfigDto, dto), {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }).length
+    )
       throw new BadRequestException('GEO_CONFIGURATION_INVALID');
     return this.withLockedSession(idUser, idSession, async (session, manager, now) => {
-      if (session.mode !== AttendanceSessionMode.GEOLOCATION)
+      if (
+        session.mode !== AttendanceSessionMode.GEOLOCATION &&
+        session.mode !== AttendanceSessionMode.GEOLOCATION_QR
+      )
         throw new BadRequestException('SESSION_NOT_GEOLOCATION');
       this.requireSelfRegistrationDraft(session, now);
       if (
@@ -720,21 +1067,42 @@ export class AttendancesService {
         session.maximumAcceptedAccuracy = dto.maximumAcceptedAccuracy;
       if (dto.startsAt !== undefined) {
         session.startsAt = new Date(dto.startsAt);
+        if (!Number.isFinite(session.startsAt.getTime()))
+          throw new BadRequestException('GEO_CONFIGURATION_INVALID');
+        if (attendanceAcademicDate(session.startsAt) < attendanceAcademicDate(now))
+          throw new BadRequestException('SESSION_DATE_PAST');
         session.date = attendanceAcademicDate(session.startsAt) as unknown as Date;
       }
-      if (dto.endsAt !== undefined) session.endsAt = new Date(dto.endsAt);
-      if (session.startsAt && session.endsAt && session.startsAt >= session.endsAt)
-        throw new BadRequestException('INVALID_TIME_WINDOW');
-      await this.ensureDateAvailable(session, manager);
+      if (dto.endsAt !== undefined) {
+        session.endsAt = new Date(dto.endsAt);
+        if (!Number.isFinite(session.endsAt.getTime()))
+          throw new BadRequestException('GEO_CONFIGURATION_INVALID');
+      }
+      if (session.startsAt && session.endsAt)
+        this.validateTemporalWindow(session.startsAt, session.endsAt);
       await manager.getRepository(AttendanceSession).save(session);
       return attendanceSessionResponse(session, now);
     });
   }
 
-  private validateActivation(session: AttendanceSession, now: Date) {
+  private validateTemporalWindow(start: Date, end: Date) {
+    if (
+      !Number.isFinite(start.getTime()) ||
+      !Number.isFinite(end.getTime()) ||
+      start.getUTCFullYear() < 1 ||
+      end.getUTCFullYear() > 9999
+    )
+      throw new BadRequestException('SESSION_DURATION_OUT_OF_RANGE');
+    if (start >= end) throw new BadRequestException('INVALID_TIME_WINDOW');
+    if (end.getTime() - start.getTime() < 60000)
+      throw new BadRequestException('SESSION_DURATION_INVALID');
+  }
+
+  private validateActivation(session: AttendanceSession, now: Date, requireFutureStart = true) {
     if (
       [
-        ...(session.mode === AttendanceSessionMode.GEOLOCATION
+        ...(session.mode === AttendanceSessionMode.GEOLOCATION ||
+        session.mode === AttendanceSessionMode.GEOLOCATION_QR
           ? [
               session.latitude,
               session.longitude,
@@ -751,8 +1119,10 @@ export class AttendancesService {
           ? 'QR_CONFIGURATION_INCOMPLETE'
           : 'GEO_CONFIGURATION_INCOMPLETE',
       );
-    if (session.startsAt! >= session.endsAt!) throw new BadRequestException('INVALID_TIME_WINDOW');
+    this.validateTemporalWindow(session.startsAt!, session.endsAt!);
     if (now >= session.endsAt!) throw new ConflictException('SESSION_WINDOW_EXPIRED');
+    if (requireFutureStart && session.startsAt! <= now)
+      throw new BadRequestException('SESSION_START_PAST');
     if (attendanceDateValue(session.date) !== attendanceAcademicDate(session.startsAt!))
       throw new BadRequestException('SESSION_DATE_INVALID');
     // Existing Semester HTTP contracts use ISO instants / Date. Do not reinterpret
@@ -769,15 +1139,41 @@ export class AttendancesService {
       throw new BadRequestException('OUTSIDE_SEMESTER');
   }
 
-  async activateSession(idUser: number, idSession: number, openNow = false) {
+  async activateSession(
+    idUser: number,
+    idSession: number,
+    openNow = false,
+    dto: AttendanceOpenNowDto = {},
+  ) {
+    if (
+      validateSync(plainToInstance(AttendanceOpenNowDto, dto), {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }).length
+    )
+      throw new BadRequestException('SESSION_DURATION_INVALID');
     return this.withLockedSession(idUser, idSession, async (session, manager, now) => {
       this.requireSelfRegistrationDraft(session, now);
       if (openNow) {
+        if (dto.durationMinutes !== undefined) {
+          const end = now.getTime() + dto.durationMinutes * 60000;
+          if (
+            !Number.isSafeInteger(end) ||
+            !Number.isFinite(new Date(end).getTime()) ||
+            new Date(end).getUTCFullYear() > 9999
+          )
+            throw new BadRequestException('SESSION_DURATION_OUT_OF_RANGE');
+          session.endsAt = new Date(end);
+        }
         session.startsAt = now;
         session.date = attendanceAcademicDate(now) as unknown as Date;
       }
-      this.validateActivation(session, now);
-      await this.ensureDateAvailable(session, manager);
+      this.validateActivation(session, now, !openNow);
+      if (session.mode === AttendanceSessionMode.GEOLOCATION_QR) {
+        this.validateQrAcademicContext(session);
+        // Reuse structural policy validation before persisting activation.
+        getAttendanceSessionState(session, now);
+      }
       if (
         await manager
           .getRepository(Attendance)
@@ -875,21 +1271,25 @@ export class AttendancesService {
     const weight = await this.getPermissionWeight(assistantEnrollment);
     const now = new Date();
     return sessions.map((session) => {
-      const summary = summarizeAttendanceStatuses(
-        session.attendances
-          .filter((record) => studentIds.has(record.enrollment.idEnrollment))
-          .map((record) => record.status),
-        students.length,
-        weight,
-      );
+      const statuses = session.attendances
+        .filter((record) => studentIds.has(record.enrollment.idEnrollment))
+        .map((record) => record.status);
+      const explicitAbsent =
+        session.mode === AttendanceSessionMode.GEOLOCATION_QR
+          ? statuses.filter((status) => status === AttendanceStatus.ABSENT).length
+          : 0;
+      const summary = summarizeAttendanceStatuses(statuses, students.length, weight);
       return {
         ...attendanceSessionResponse(session, now),
         idAttendanceSession: session.idAttendanceSession,
         date: session.date,
         presentCount: summary.present,
         excusedCount: summary.excused,
-        absentCount: isAttendanceSessionComputable(session, now) ? summary.absent : 0,
-        pendingCount: getAttendanceSessionState(session, now) === State.OPEN ? summary.absent : 0,
+        absentCount: isAttendanceSessionComputable(session, now) ? summary.absent : explicitAbsent,
+        pendingCount:
+          getAttendanceSessionState(session, now) === State.OPEN
+            ? summary.absent - explicitAbsent
+            : 0,
         totalStudents: summary.total,
         percentage: isAttendanceSessionComputable(session, now) ? summary.percentage : 0,
       };
@@ -927,11 +1327,7 @@ export class AttendancesService {
     if (
       !allowGeolocation &&
       (isSelfRegistrationMode(session.mode) ||
-        session.attendances?.some(
-          (mark) =>
-            mark.registrationMethod === AttendanceRegistrationMethod.GEOLOCATION ||
-            mark.registrationMethod === AttendanceRegistrationMethod.QR,
-        ))
+        session.attendances?.some((mark) => isProtectedAttendanceEvidence(mark.registrationMethod)))
     ) {
       throw new ForbiddenException('SESSION_REQUIRES_LIFECYCLE_OPERATION');
     }
@@ -1001,6 +1397,8 @@ export class AttendancesService {
       total,
       weight,
     );
+    const explicitAbsent =
+      session.mode === AttendanceSessionMode.GEOLOCATION_QR ? count(AttendanceStatus.ABSENT) : 0;
     const now = new Date();
     const computable = isAttendanceSessionComputable(session, now);
     return {
@@ -1011,12 +1409,19 @@ export class AttendancesService {
         students: roster.data,
         attendances: marks.map((mark) => ({
           ...mark,
-          observation: mark.status === AttendanceStatus.EXCUSED ? mark.observation : null,
+          observation:
+            session.mode === AttendanceSessionMode.GEOLOCATION_QR ||
+            mark.status === AttendanceStatus.EXCUSED
+              ? mark.observation
+              : null,
         })),
         presentCount: summary.present,
         excusedCount: summary.excused,
-        absentCount: computable ? summary.absent : 0,
-        pendingCount: getAttendanceSessionState(session, now) === State.OPEN ? summary.absent : 0,
+        absentCount: computable ? summary.absent : explicitAbsent,
+        pendingCount:
+          getAttendanceSessionState(session, now) === State.OPEN
+            ? summary.absent - explicitAbsent
+            : 0,
         totalStudents: total,
         percentage: computable ? summary.percentage : 0,
       },
@@ -1047,8 +1452,11 @@ export class AttendancesService {
     idUser: number,
     idSession: number,
     dto: AttendanceSaveDto,
+    originalBody?: unknown,
   ): Promise<Attendance[]> {
     const session = await this.getSession(idUser, idSession, false, true);
+    if (session.mode === AttendanceSessionMode.GEOLOCATION_QR)
+      return this.saveCombinedAttendances(idUser, idSession, dto, originalBody);
 
     const studentEnrollments = await this.enrollmentRepository.find({
       where: {
@@ -1092,6 +1500,11 @@ export class AttendancesService {
         where: { idAttendanceSession: idSession },
         lock: { mode: 'pessimistic_write' },
       });
+      if (locked.mode === AttendanceSessionMode.GEOLOCATION_QR)
+        throw new AttendanceCheckInException(
+          CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
+          HttpStatus.FORBIDDEN,
+        );
       if (isSelfRegistrationMode(locked.mode))
         await this.getSession(idUser, idSession, false, true, manager);
       const now = new Date();
@@ -1119,13 +1532,7 @@ export class AttendancesService {
         relations: { enrollment: true },
       });
       const previous = new Map(existing.map((record) => [record.enrollment.idEnrollment, record]));
-      if (
-        existing.some(
-          (record) =>
-            record.registrationMethod === AttendanceRegistrationMethod.GEOLOCATION ||
-            record.registrationMethod === AttendanceRegistrationMethod.QR,
-        )
-      ) {
+      if (existing.some((record) => isProtectedAttendanceEvidence(record.registrationMethod))) {
         throw new ForbiddenException('No se puede sobrescribir evidencia GEOLOCATION o QR');
       }
       const overrides = new Map(dto.attendances.map((record) => [record.enrollmentId, record]));
@@ -1281,23 +1688,9 @@ export class AttendancesService {
     const owned = await this.getSession(idUser, idSession, true, true);
     if (isSelfRegistrationMode(owned.mode))
       throw new ConflictException('SESSION_USE_GEO_CONFIGURATION');
-    if (
-      owned.attendances?.some(
-        (mark) =>
-          mark.registrationMethod === AttendanceRegistrationMethod.GEOLOCATION ||
-          mark.registrationMethod === AttendanceRegistrationMethod.QR,
-      )
-    )
+    if (owned.attendances?.some((mark) => isProtectedAttendanceEvidence(mark.registrationMethod)))
       throw new ForbiddenException('No se puede sobrescribir evidencia GEOLOCATION o QR');
     const session = owned;
-    const duplicate = await this.attendanceSessionRepository.findOne({
-      where: {
-        assistantEnrollment: { idEnrollment: session.assistantEnrollment.idEnrollment },
-        date: dto.date as unknown as Date,
-      },
-    });
-    if (duplicate && duplicate.idAttendanceSession !== idSession)
-      throw new ConflictException('Ya existe una sesión de asistencia para esta fecha');
     session.date = dto.date as unknown as Date;
     return this.attendanceSessionRepository.save(session);
   }
@@ -1314,17 +1707,21 @@ export class AttendancesService {
           })
         )
           throw new ConflictException('SESSION_HAS_ATTENDANCE');
+        if (
+          session.mode === AttendanceSessionMode.GEOLOCATION_QR &&
+          ((await manager
+            .getRepository(AttendanceCombinedAuthorization)
+            .countBy({ attendanceSession: { idAttendanceSession: idSession } })) ||
+            (await manager
+              .getRepository(AttendanceAuditEvent)
+              .countBy({ attendanceSession: { idAttendanceSession: idSession } })))
+        )
+          throw new ConflictException('SESSION_HAS_ATTENDANCE');
         await manager.getRepository(AttendanceSession).delete({ idAttendanceSession: idSession });
         return { message: 'Sesión de asistencia eliminada' };
       });
     }
-    if (
-      owned.attendances?.some(
-        (mark) =>
-          mark.registrationMethod === AttendanceRegistrationMethod.GEOLOCATION ||
-          mark.registrationMethod === AttendanceRegistrationMethod.QR,
-      )
-    )
+    if (owned.attendances?.some((mark) => isProtectedAttendanceEvidence(mark.registrationMethod)))
       throw new ForbiddenException('No se puede eliminar evidencia GEOLOCATION o QR');
     await this.attendanceSessionRepository.manager.transaction(async (manager) => {
       await manager

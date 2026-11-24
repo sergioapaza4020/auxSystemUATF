@@ -1,6 +1,10 @@
 import axios from 'axios';
 
 const messages: Record<string, string> = {
+  SESSION_DATE_PAST: 'No puedes crear o configurar una sesión con una fecha anterior a hoy en Bolivia.',
+  SESSION_START_PAST: 'El inicio debe ser futuro. Corrige el horario o utiliza Abrir ahora.',
+  SESSION_DURATION_INVALID: 'La duración debe ser de al menos 1 minuto y usar minutos enteros.',
+  SESSION_DURATION_OUT_OF_RANGE: 'La duración excede el rango de fechas admitido.',
   QR_NOT_AVAILABLE: 'El código QR no está disponible. Revisa el estado de la sesión o contacta al administrador.',
   SESSION_NOT_STARTED: 'La sesión todavía no está abierta.',
   SESSION_CLOSED: 'La sesión está cerrada.',

@@ -2,7 +2,9 @@
 
 import { useParams } from 'next/navigation';
 
-import { Alert, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { Alert, Button, Stack, Typography } from '@mui/material';
+
+import { PageLoading } from '@/components/feedback/PageLoading';
 
 import { useEnrollment } from '@/hooks/enrollments/useEnrollment';
 import { useEnrollmentGrades } from '@/hooks/grades/useEnrollmentGrades';
@@ -32,7 +34,7 @@ export default function EnrollmentDetailPage() {
   const { grades, loading: loadingGrades, error: gradesError, load: reloadGrades } = useEnrollmentGrades(idEnrollment);
 
   if (loadingEnrollment) {
-    return <CircularProgress />;
+    return <PageLoading />;
   }
 
   if (!enrollment) {

@@ -55,7 +55,8 @@ describe('Activity name validation', () => {
       leftJoin: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
-      getExists: jest.fn().mockResolvedValue(duplicate),
+      select: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue(duplicate ? [{ name: 'Práctica 1' }] : []),
     };
     const save = jest.fn().mockImplementation((activity: Activity) => Promise.resolve(activity));
     const course = { findOneOrFail: jest.fn().mockResolvedValue({ idCourse: 5 }) };
@@ -113,10 +114,9 @@ describe('Activity name validation', () => {
       where: { idCourse: 5 },
       lock: { mode: 'pessimistic_write' },
     });
-    expect(ctx.query.andWhere).toHaveBeenCalledWith(
-      'LOWER(BTRIM(activity.name)) = LOWER(BTRIM(:name))',
-      { name: 'Práctica 1' },
-    );
+    expect(ctx.query.andWhere).toHaveBeenCalledWith('activity.isActive = :isActive', {
+      isActive: true,
+    });
   });
   it.each(['create', 'update', 'reactivate'] as const)(
     'rejects duplicates during %s without saving',

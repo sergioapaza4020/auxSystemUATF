@@ -1,17 +1,3 @@
-import { Skeleton, Stack } from '@mui/material';
+import { PageLoading } from '@/components/feedback/PageLoading';
 
-export const LoadingTable = () => {
-  return (
-    <Stack spacing={1.5}>
-      <Skeleton variant='rectangular' height={40} />
-      <Stack spacing={1}>
-        <Skeleton variant='rectangular' height={45} />
-        <Skeleton variant='rectangular' height={45} />
-        <Skeleton variant='rectangular' height={45} />
-        <Skeleton variant='rectangular' height={45} />
-        <Skeleton variant='rectangular' height={45} />
-      </Stack>
-      <Skeleton variant='rectangular' height={40} />
-    </Stack>
-  );
-};
+export const LoadingTable = () => <PageLoading minHeight={0} sx={{ p: 4 }} />;

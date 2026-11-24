@@ -97,7 +97,9 @@ describePostgres('Seeder integrity on a verified disposable PostgreSQL cluster',
     database = await createSeedTestDatabase(pgBin!);
     source = database.source;
     // These are the actual project migrations, not an entity-generated schema.
-    expect((await source.runMigrations({ transaction: 'each' })).length).toBe(22);
+    expect((await source.runMigrations({ transaction: 'each' })).length).toBe(
+      source.migrations.length,
+    );
     expect(await source.showMigrations()).toBe(false);
   }, 90000);
   afterAll(async () => {

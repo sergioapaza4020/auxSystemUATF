@@ -5,16 +5,9 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 
 import { isAttendanceCriterion } from '@repo/grade-calculations';
-import {
-  Alert,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-} from '@mui/material';
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@mui/material';
+
+import { PageLoading } from '@/components/feedback/PageLoading';
 
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/utils/hasPermission';
@@ -54,7 +47,7 @@ function StudentRecordContent({
 
   const error = data.error;
 
-  if (data.loading) return <CircularProgress aria-label='Cargando ficha académica' />;
+  if (data.loading) return <PageLoading />;
 
   if (error || !record || record.summary.student.idEnrollment !== studentEnrollmentId) {
     return (

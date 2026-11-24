@@ -9,6 +9,7 @@ export interface IQrOwnMark {
 
 export interface IQrContext {
   idAttendanceSession: number;
+  mode: 'QR' | 'GEOLOCATION_QR';
   course: { name: string; group: number | string | null };
   date: string;
   startsAt: string;
@@ -24,4 +25,14 @@ export interface IQrCheckInResult extends IQrOwnMark {
   status: AttendanceStatus.PRESENT;
   registrationMethod: 'QR';
   markedAt: string;
+}
+
+export interface ICombinedChallenge extends Omit<IQrContext, 'expiresAt' | 'mode'> {
+  mode: 'GEOLOCATION_QR';
+  serverNow: string;
+  authorization: string | null;
+  authorizationExpiresAt: string | null;
+}
+export interface ICombinedCheckInResult extends Omit<IQrCheckInResult, 'registrationMethod'> {
+  registrationMethod: 'GEOLOCATION_QR';
 }

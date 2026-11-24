@@ -1,3 +1,5 @@
+import { plainToInstance } from 'class-transformer';
+import { AttendanceOpenNowDto } from 'src/dtos/attendances/attendance-open-now.dto';
 import { Repository, EntityManager } from 'typeorm';
 import { AttendanceSessionMode as Mode } from '@common/enums/attendanceSessionMode';
 import { AttendanceSessionState as State } from '@common/enums/attendanceSessionState';
@@ -142,16 +144,69 @@ describe('GEO session lifecycle service', () => {
     ).rejects.toThrow('INVALID_TIME_WINDOW');
     expect(f.sessions.save).not.toHaveBeenCalled();
   });
-  it.each([
-    ['2026-10-25T13:30:00Z', State.SCHEDULED],
-    ['2026-10-25T14:00:00Z', State.OPEN],
-    ['2026-10-25T14:30:00Z', State.OPEN],
-  ])('activates at %s into %s', async (time, state) => {
-    jest.setSystemTime(new Date(time));
+  it.each([['2026-10-25T13:30:00Z', State.SCHEDULED]])(
+    'activates at %s into %s',
+    async (time, state) => {
+      jest.setSystemTime(new Date(time));
+      const f = fixture();
+      const result = await f.service.activateSession(2, 1);
+      expect(result).toMatchObject({ state, openedAt: new Date(time), isComputable: false });
+      expect(result.startsAt).toEqual(new Date('2026-10-25T14:00:00Z'));
+    },
+  );
+  it.each(['2026-10-25T14:00:00Z', '2026-10-25T14:30:00Z'])(
+    'rejects a scheduled start that is no longer future at %s',
+    async (now) => {
+      jest.setSystemTime(new Date(now));
+      await expect(fixture().service.activateSession(2, 1)).rejects.toThrow('SESSION_START_PAST');
+    },
+  );
+  it.each([0, -1, 1.5, 'abc', NaN, Infinity, null])(
+    'rejects invalid opening duration %s',
+    async (durationMinutes) => {
+      const f = fixture();
+      await expect(
+        f.service.activateSession(
+          2,
+          1,
+          true,
+          plainToInstance(AttendanceOpenNowDto, { durationMinutes }),
+        ),
+      ).rejects.toThrow('SESSION_DURATION_INVALID');
+      expect(f.sessions.save).not.toHaveBeenCalled();
+    },
+  );
+  it('opens with precisely one minute from one authoritative server instant', async () => {
     const f = fixture();
-    const result = await f.service.activateSession(2, 1);
-    expect(result).toMatchObject({ state, openedAt: new Date(time), isComputable: false });
-    expect(result.startsAt).toEqual(new Date('2026-10-25T14:00:00Z'));
+    f.session.startsAt = null;
+    f.session.endsAt = null;
+    const opened = await f.service.activateSession(2, 1, true, { durationMinutes: 1 });
+    expect(opened.startsAt).toEqual(new Date('2026-10-25T13:30:00Z'));
+    expect(opened.endsAt).toEqual(new Date('2026-10-25T13:31:00Z'));
+    expect(opened.openedAt).toEqual(opened.startsAt);
+    expect(opened.state).toBe(State.OPEN);
+  });
+  it('rejects overflow and semester escape before saving', async () => {
+    await expect(
+      fixture().service.activateSession(2, 1, true, { durationMinutes: Number.MAX_SAFE_INTEGER }),
+    ).rejects.toThrow('SESSION_DURATION_OUT_OF_RANGE');
+    await expect(
+      fixture().service.activateSession(2, 1, true, { durationMinutes: 1000000 }),
+    ).rejects.toThrow('OUTSIDE_SEMESTER');
+  });
+  it('rejects POST dates before the Bolivia day and accepts today and tomorrow', async () => {
+    jest.setSystemTime(new Date('2026-10-26T03:59:59Z'));
+    await expect(
+      fixture().service.createSession(2, { enrollmentId: 10, date: '2026-10-24' }),
+    ).rejects.toThrow('SESSION_DATE_PAST');
+    for (const date of ['2026-10-25', '2026-10-26'])
+      await expect(
+        fixture().service.createSession(2, { enrollmentId: 10, date }),
+      ).resolves.toMatchObject({ date });
+    jest.setSystemTime(new Date('2026-10-26T04:00:00Z'));
+    await expect(
+      fixture().service.createSession(2, { enrollmentId: 10, date: '2026-10-25' }),
+    ).rejects.toThrow('SESSION_DATE_PAST');
   });
   it('rejects late activation', async () => {
     jest.setSystemTime(new Date('2026-10-25T15:00:00Z'));

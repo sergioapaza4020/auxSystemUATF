@@ -11,7 +11,7 @@ import { GradeViewToggle } from '../GradeViewToggle';
 import { ActivityFormDialog } from '../ActivityFormDialog';
 import { ActivityForm } from '../ActivityForm';
 import { createActivity } from '@/api/activities.service';
-import { PaginationTable } from '@/components/table';
+import { PaginationTable, TableToolbar } from '@/components/table';
 import type { useGradeMatrix } from '@/hooks/grades/useGradeMatrix';
 
 const mocks = vi.hoisted(() => ({ push: vi.fn(), success: vi.fn(), error: vi.fn(), grades: vi.fn(), canCreate: true }));
@@ -143,6 +143,20 @@ function harness(grades: GradeState, renderComponent?: () => React.ReactElement)
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.canCreate = true;
+});
+
+it('prevents refresh from discarding dirty grades and enables it with the current query when clean', () => {
+  const dirty = state();
+  const toolbar = find(harness(dirty).render(), TableToolbar)[0].props;
+
+  expect(toolbar.refreshDisabled).toBe(true);
+  expect(toolbar.refreshReason).toContain('pendientes');
+  expect(dirty.reload).not.toHaveBeenCalled();
+  const clean = state({ changes: [], drafts: {} });
+  const cleanToolbar = find(harness(clean).render(), TableToolbar)[0].props;
+
+  expect(cleanToolbar.refreshDisabled).toBe(false);
+  expect(cleanToolbar.onRefresh).toBe(clean.reload);
 });
 describe('Mass grading screen interactions', () => {
   it.each([true, false])(

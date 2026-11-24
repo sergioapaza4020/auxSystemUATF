@@ -2,19 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import {
-  Alert,
-  Box,
-  Button,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Stack, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
+
+import { DataTableContainer, DataTableSurface, EnhancedTableHead, PaginationTable } from '@/components/table';
 
 import {
   createSemester,
@@ -23,7 +13,6 @@ import {
   reactivateSemester,
   updateSemester,
 } from '@/api/semesters.service';
-import { EnhancedTableHead, PaginationTable } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/utils/hasPermission';
@@ -166,7 +155,7 @@ export function SemestersTable() {
         <Alert severity='info'>No hay un semestre actual para la fecha de hoy.</Alert>
       )}
       {!editorOpen && catalog.mutationError && <Alert severity='error'>{catalog.mutationError}</Alert>}
-      <Paper variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
+      <DataTableSurface variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
         <CatalogToolbar
           search={search}
           searchLabel='Buscar período o año (II-2026)'
@@ -192,7 +181,7 @@ export function SemestersTable() {
           </Alert>
         ) : (
           <>
-            <TableContainer>
+            <DataTableContainer>
               <Table aria-label='Semestres' sx={{ minWidth: 820 }}>
                 <EnhancedTableHead<SemesterTableRecord, typeof semesterHeadCells>
                   headCells={semesterHeadCells}
@@ -235,7 +224,7 @@ export function SemestersTable() {
                   )}
                 </TableBody>
               </Table>
-            </TableContainer>
+            </DataTableContainer>
             <PaginationTable
               count={filtered.length}
               page={page}
@@ -245,7 +234,7 @@ export function SemestersTable() {
             />
           </>
         )}
-      </Paper>
+      </DataTableSurface>
       {editorOpen && (
         <SemesterEditDialog
           semester={editing}

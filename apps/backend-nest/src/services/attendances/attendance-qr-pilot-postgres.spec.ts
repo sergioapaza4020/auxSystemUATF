@@ -90,13 +90,14 @@ isolated('QR-6 real HTTP login, persisted sessions and disposable PostgreSQL', (
       .patch(path(id, 'qr'))
       .auth(assistant, { type: 'bearer' })
       .send({
-        startsAt: new Date(Date.now() - 60000).toISOString(),
+        startsAt: new Date(Date.now() + 60000).toISOString(),
         endsAt: new Date(Date.now() + 600000).toISOString(),
       })
       .expect(200);
     await request(app.getHttpServer())
-      .patch(path(id, 'activate'))
+      .patch(path(id, 'open-now'))
       .auth(assistant, { type: 'bearer' })
+      .send({ durationMinutes: 10 })
       .expect(200);
     return id;
   };

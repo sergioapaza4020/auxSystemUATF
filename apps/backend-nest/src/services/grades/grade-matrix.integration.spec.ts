@@ -5,7 +5,7 @@ import type { NextFunction, Request, Response } from 'express';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { Not, QueryRunner } from 'typeorm';
-import AppDataSource from 'src/database/datasource';
+import { createAcademicTestDatabase } from '../../../test/academic-postgres';
 import { GradesController } from 'src/controllers/grades/grades.controller';
 import { Grade } from 'src/entities/grades/grades.entity';
 import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
@@ -24,10 +24,12 @@ import { ResponseInterceptor } from '@core/interceptors/response/response.interc
 import { HttpExceptionFilter } from '@core/filters/http-exception/http-exception.filter';
 import { averageScores, isAttendanceCriterion } from '@repo/grade-calculations';
 
-// Explicit opt-in; every fixture and grade write is rolled back, with no seed or migration.
-const databaseTest = process.env.RUN_GRADE_MATRIX_DB_TESTS === '1' ? describe : describe.skip;
+// Never uses application DATABASE_URL or existing academic records.
+const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
+const databaseTest = pgBin ? describe : describe.skip;
 databaseTest('Grade matrix HTTP and PostgreSQL regression', () => {
   let app: INestApplication;
+  let database: Awaited<ReturnType<typeof createAcademicTestDatabase>>;
   let runner: QueryRunner;
   let grades: GradesService;
   let enrollments: EnrollmentsService;
@@ -38,8 +40,8 @@ databaseTest('Grade matrix HTTP and PostgreSQL regression', () => {
   let user: { idUser: number; roles: string[]; permissions: string[] };
 
   beforeAll(async () => {
-    await AppDataSource.initialize();
-    runner = AppDataSource.createQueryRunner();
+    database = await createAcademicTestDatabase(pgBin!);
+    runner = database.source.createQueryRunner();
     await runner.connect();
     await runner.startTransaction();
     const manager = runner.manager;
@@ -131,7 +133,7 @@ databaseTest('Grade matrix HTTP and PostgreSQL regression', () => {
     if (app) await app.close();
     if (runner?.isTransactionActive) await runner.rollbackTransaction();
     if (runner) await runner.release();
-    if (AppDataSource.isInitialized) await AppDataSource.destroy();
+    if (database) await database.close();
   });
 
   const save = (cells: { enrollmentId: number; activityId: number; score: number }[]) =>

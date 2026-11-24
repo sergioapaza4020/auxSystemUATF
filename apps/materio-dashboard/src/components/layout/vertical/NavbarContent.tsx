@@ -8,7 +8,6 @@ import classnames from 'classnames';
 
 // Component Imports
 import NavToggle from './NavToggle';
-import NavSearch from '@components/layout/shared/search';
 import ModeDropdown from '@components/layout/shared/ModeDropdown';
 import UserDropdown from '@components/layout/shared/UserDropdown';
 
@@ -32,8 +31,6 @@ const NavbarContent = () => {
         }}
       >
         <NavToggle />
-
-        <NavSearch />
       </Box>
 
       {/* Acciones */}

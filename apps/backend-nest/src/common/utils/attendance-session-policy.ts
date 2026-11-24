@@ -39,7 +39,7 @@ function invalid(): never {
 }
 
 export function isSelfRegistrationMode(mode: Mode): boolean {
-  return mode === Mode.GEOLOCATION || mode === Mode.QR;
+  return mode === Mode.GEOLOCATION || mode === Mode.QR || mode === Mode.GEOLOCATION_QR;
 }
 
 export function getAttendanceSessionState(session: Session, now: Date): State | null {
@@ -83,7 +83,7 @@ export function getAttendanceSessionState(session: Session, now: Date): State | 
   if (session.openedAt) {
     if (
       [
-        ...(session.mode === Mode.GEOLOCATION
+        ...(session.mode === Mode.GEOLOCATION || session.mode === Mode.GEOLOCATION_QR
           ? [
               session.latitude,
               session.longitude,
@@ -137,9 +137,9 @@ export function attendanceSessionComputableSql(alias: string): string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(alias)) throw new Error('Invalid query alias');
   const c = (name: string) => `"${alias}"."${name}"`;
   return `(${c('mode')} = 'MANUAL' OR (
-    (${c('mode')} = 'GEOLOCATION' OR ${c('mode')}::text = 'QR')
+    (${c('mode')} = 'GEOLOCATION' OR ${c('mode')}::text IN ('QR', 'GEOLOCATION_QR'))
     AND ${c('opened_at')} IS NOT NULL AND ${c('cancelled_at')} IS NULL
-    AND ((${c('mode')} = 'GEOLOCATION'
+    AND ((${c('mode')}::text IN ('GEOLOCATION', 'GEOLOCATION_QR')
       AND ${c('latitude')} BETWEEN -90 AND 90 AND ${c('longitude')} BETWEEN -180 AND 180
       AND ${c('radius_meters')} > 0 AND ${c('maximum_accepted_accuracy')} > 0)
       OR (${c('mode')}::text = 'QR' AND ${c('latitude')} IS NULL AND ${c('longitude')} IS NULL

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type HeadCell, type Order, getComparator, type SortableIds } from '@/components/table';
 
@@ -25,9 +25,11 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
 
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
 
-  const currentPage = options.preserveOrder
-    ? Math.min(page, Math.max(0, Math.ceil(rows.length / rowsPerPage) - 1))
-    : page;
+  const currentPage = Math.max(0, Math.min(page, Math.max(0, Math.ceil(rows.length / rowsPerPage) - 1)));
+
+  useEffect(() => {
+    if (!options.remote && page !== currentPage) setPage(currentPage);
+  }, [page, currentPage, options.remote]);
 
   const visibleRows = useMemo(() => {
     if (options.remote) return rows;
@@ -41,6 +43,7 @@ export function useDataTable<T, TColumns extends readonly HeadCell<T>[]>(
 
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
+    if (!options.remote) setPage(0);
   };
 
   const handleChangePage = (_: unknown, newPage: number) => {

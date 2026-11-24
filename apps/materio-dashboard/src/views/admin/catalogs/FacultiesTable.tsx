@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   Alert,
@@ -9,7 +9,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Paper,
   Stack,
   Table,
   TableBody,
@@ -21,6 +20,15 @@ import {
 } from '@mui/material';
 
 import {
+  DataTableContainer,
+  DataTableSurface,
+  PaginationTable,
+  TableMessageRow,
+  TableToolbar,
+  TableAction,
+} from '@/components/table';
+
+import {
   createFaculty,
   deactivateFaculty,
   getFaculties,
@@ -30,6 +38,7 @@ import {
 
 import { RemoteUserSelect } from '@/components/users/RemoteUserSelect';
 
+import { useDataTable } from '@/hooks/table';
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/hooks/useSnackbar';
 
@@ -39,10 +48,15 @@ import type { IUser } from '@/interfaces/users/user.interface';
 import { hasPermission } from '@/utils/hasPermission';
 import { getApiErrorMessage } from '@/utils/http/getApiErrorMessage';
 
+const columns = [{ id: 'name', label: 'Nombre', sortable: true }] as const;
+
 export function FacultiesTable() {
   const { user, loading } = useAuth();
   const snackbar = useSnackbar();
 
+  const request = useRef(0);
+  const [listLoading, setListLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [rows, setRows] = useState<IFaculty[]>([]);
   const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
 
@@ -57,18 +71,35 @@ export function FacultiesTable() {
   const can = useCallback((action: string) => hasPermission(user, `faculty.${action}`), [user]);
 
   const load = useCallback(async () => {
+    const revision = ++request.current;
+
+    setListLoading(true);
+    setLoadError('');
+
     try {
-      setRows(await getFaculties(status));
+      const result = await getFaculties(status);
+
+      if (request.current === revision) setRows(result);
     } catch (e) {
-      snackbar.error(getApiErrorMessage(e));
+      if (request.current === revision) {
+        setLoadError(getApiErrorMessage(e));
+        snackbar.error(getApiErrorMessage(e));
+      }
+    } finally {
+      if (request.current === revision) setListLoading(false);
     }
   }, [status, snackbar]);
 
   useEffect(() => {
-    if (!loading && can('get-all')) {
-      void load();
-    }
+    if (!loading && can('get-all')) void load();
+
+    return () => {
+      request.current += 1;
+    };
   }, [loading, load, can]);
+
+  const filtered = rows.filter((row) => row.name.toLowerCase().includes(search.toLowerCase()));
+  const table = useDataTable<IFaculty, typeof columns>(filtered, 'name', 5, { preserveOrder: true });
 
   if (loading) {
     return <Typography>Cargando…</Typography>;
@@ -133,8 +164,6 @@ export function FacultiesTable() {
     }
   };
 
-  const filtered = rows.filter((row) => row.name.toLowerCase().includes(search.toLowerCase()));
-
   return (
     <Stack spacing={3}>
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
@@ -147,23 +176,27 @@ export function FacultiesTable() {
         )}
       </Stack>
 
-      <Paper variant='outlined'>
-        <Stack
-          direction={{
-            xs: 'column',
-            sm: 'row',
-          }}
-          spacing={2}
-          sx={{ p: 2 }}
-        >
-          <TextField size='small' label='Buscar facultad' value={search} onChange={(e) => setSearch(e.target.value)} />
+      <DataTableSurface variant='outlined'>
+        <TableToolbar onRefresh={() => void load()} refreshDisabled={busy || listLoading}>
+          <TextField
+            size='small'
+            label='Buscar facultad'
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              table.handleChangePage(null, 0);
+            }}
+          />
 
           <TextField
             select
             size='small'
             label='Estado'
             value={status}
-            onChange={(e) => setStatus(e.target.value as typeof status)}
+            onChange={(e) => {
+              setStatus(e.target.value as typeof status);
+              table.handleChangePage(null, 0);
+            }}
             SelectProps={{
               native: true,
             }}
@@ -172,52 +205,69 @@ export function FacultiesTable() {
             <option value='active'>Activas</option>
             <option value='inactive'>Inactivas</option>
           </TextField>
+        </TableToolbar>
 
-          <Button onClick={() => void load()}>Actualizar</Button>
-        </Stack>
-
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Decano</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {filtered.map((row) => (
-              <TableRow key={row.idFaculty}>
-                <TableCell>{row.name}</TableCell>
-
-                <TableCell>{row.dean ? `${row.dean.name} ${row.dean.lastname}` : '—'}</TableCell>
-
-                <TableCell>{row.isActive ? 'Activa' : 'Inactiva'}</TableCell>
-
-                <TableCell>
-                  {row.isActive && can('update') && (
-                    <Button size='small' onClick={() => open(row)}>
-                      Editar
-                    </Button>
-                  )}
-
-                  {can(row.isActive ? 'delete' : 'reactivate') && (
-                    <Button
-                      size='small'
-                      color={row.isActive ? 'error' : 'success'}
-                      disabled={busy}
-                      onClick={() => void toggleStatus(row)}
-                    >
-                      {row.isActive ? 'Desactivar' : 'Reactivar'}
-                    </Button>
-                  )}
-                </TableCell>
+        <DataTableContainer aria-busy={listLoading}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Decano</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Acciones</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
+            </TableHead>
+
+            <TableBody>
+              {listLoading ? (
+                <TableMessageRow colSpan={4} loading />
+              ) : loadError ? (
+                <TableMessageRow colSpan={4}>{loadError}</TableMessageRow>
+              ) : (
+                table.visibleRows.map((row) => (
+                  <TableRow key={row.idFaculty}>
+                    <TableCell>{row.name}</TableCell>
+
+                    <TableCell>{row.dean ? `${row.dean.name} ${row.dean.lastname}` : '—'}</TableCell>
+
+                    <TableCell>{row.isActive ? 'Activa' : 'Inactiva'}</TableCell>
+
+                    <TableCell>
+                      <Stack direction='row' spacing={0.75} alignItems='center'>
+                        {row.isActive && can('update') && (
+                          <TableAction intent='edit' label='Editar' disabled={busy} onClick={() => open(row)} />
+                        )}
+
+                        {can(row.isActive ? 'delete' : 'reactivate') && (
+                          <TableAction
+                            intent={row.isActive ? 'deactivate' : 'activate'}
+                            label={row.isActive ? 'Desactivar' : 'Reactivar'}
+                            disabled={busy}
+                            onClick={() => void toggleStatus(row)}
+                          />
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+              {!listLoading && !loadError && !filtered.length && (
+                <TableMessageRow colSpan={4}>Sin resultados</TableMessageRow>
+              )}
+            </TableBody>
+          </Table>
+        </DataTableContainer>
+        {!loadError && (
+          <PaginationTable
+            count={filtered.length}
+            page={table.page}
+            rowsPerPage={table.rowsPerPage}
+            onPageChange={table.handleChangePage}
+            onRowsPerPageChange={table.handleChangeRowsPerPage}
+            disabled={listLoading || busy}
+          />
+        )}
+      </DataTableSurface>
 
       <Dialog
         open={edit !== undefined}

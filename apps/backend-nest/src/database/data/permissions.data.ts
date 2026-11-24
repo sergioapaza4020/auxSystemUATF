@@ -3,7 +3,10 @@ import { DeepPartial } from 'typeorm';
 
 export const permissionsData: DeepPartial<Permission>[] = [
   { name: 'attendance.qr.get', description: 'Get QR code for own open attendance session' },
-  { name: 'attendance.qr.check-in', description: 'Register and consult own QR attendance' },
+  {
+    name: 'attendance.qr.check-in',
+    description: 'Register and consult own QR attendance, including mandatory QR plus geolocation',
+  },
   {
     name: 'user.get-all',
     description: 'Get all users',

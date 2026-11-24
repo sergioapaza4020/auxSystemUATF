@@ -63,7 +63,7 @@ export function AttendanceSessionToolbar({
               Sesión de asistencia
             </Typography>
             <Typography variant='caption' color='text.secondary'>
-              Crea una sesión o abre una fecha del historial.
+              Crea una sesión o selecciona una sesión del historial.
             </Typography>
           </Box>
         </Stack>
@@ -78,7 +78,11 @@ export function AttendanceSessionToolbar({
             label='Fecha'
             size='small'
             value={selectedDate}
-            disabled={saving || (!!selectedSessionId && (session?.mode === 'GEOLOCATION' || session?.mode === 'QR'))}
+            disabled={
+              saving ||
+              (!!selectedSessionId &&
+                (session?.mode === 'GEOLOCATION' || session?.mode === 'QR' || session?.mode === 'GEOLOCATION_QR'))
+            }
             onChange={onDateChange}
             sx={{ width: { xs: '100%', sm: 175 } }}
           />
@@ -93,7 +97,7 @@ export function AttendanceSessionToolbar({
                 size='small'
                 variant='outlined'
                 icon={<EditOutlinedIcon />}
-                label={`Editando sesión del ${sessionDate}`}
+                label={`Editando sesión #${selectedSessionId} del ${sessionDate}`}
               />
               <Typography
                 variant='caption'
@@ -110,7 +114,7 @@ export function AttendanceSessionToolbar({
               {session.state === 'DRAFT' ? 'Configurar QR' : 'Ver sesión QR'}
             </Button>
           )}
-          {session?.mode === 'QR' && session.state === 'OPEN' && onShowQr && (
+          {(session?.mode === 'QR' || session?.mode === 'GEOLOCATION_QR') && session.state === 'OPEN' && onShowQr && (
             <Button variant='contained' onClick={onShowQr} disabled={saving || hasChanges}>
               Mostrar QR
             </Button>

@@ -22,6 +22,7 @@ type DateFieldProps = Pick<
   'label' | 'size' | 'fullWidth' | 'required' | 'disabled' | 'error' | 'helperText' | 'sx'
 > & {
   value: string;
+  minDate?: string;
   onChange: (value: string) => void;
 };
 
@@ -65,7 +66,7 @@ const daySx: SxProps<Theme> = {
   '&.Mui-focusVisible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
 };
 
-export function DateField({ value, onChange, ...fieldProps }: DateFieldProps) {
+export function DateField({ value, onChange, minDate, ...fieldProps }: DateFieldProps) {
   const [draft, setDraft] = useState<Dayjs | null>(() => (value ? dayjs(value, 'YYYY-MM-DD', true) : null));
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export function DateField({ value, onChange, ...fieldProps }: DateFieldProps) {
           else if (next.isValid()) onChange(next.format('YYYY-MM-DD'));
         }}
         inputFormat='DD/MM/YYYY'
-        minDate={dayjs('2001-01-01').year(1)}
+        minDate={minDate ? dayjs(minDate, 'YYYY-MM-DD', true) : dayjs('2001-01-01').year(1)}
         maxDate={dayjs('9999-12-31', 'YYYY-MM-DD', true)}
         showDaysOutsideCurrentMonth
         showToolbar={false}

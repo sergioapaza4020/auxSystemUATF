@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -12,7 +12,6 @@ import {
   DialogContent,
   DialogTitle,
   MenuItem,
-  Paper,
   Stack,
   Table,
   TableBody,
@@ -23,8 +22,9 @@ import {
   Typography,
 } from '@mui/material';
 
+import { DataTableContainer, DataTableSurface, PaginationTable, TableAction } from '@/components/table';
+
 import { useCatalogPage } from '@/hooks/useCatalogPage';
-import { PaginationTable } from '@/components/table';
 import { useDataTable } from '@/hooks/table';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -57,6 +57,7 @@ import type { RecordStatus } from '@/interfaces/status-query.interface';
 type Kind = 'careers' | 'courses';
 
 type RecordItem = ICareer | ICourse;
+const careerColumns = [{ id: 'name', label: 'Carrera', sortable: true }] as const;
 const courseColumns = [{ id: 'code', label: 'Código', sortable: true }] as const;
 
 export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
@@ -71,6 +72,8 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
   const [search, setSearch] = useState('');
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const request = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [editor, setEditor] = useState<RecordItem | null | undefined>(undefined);
@@ -102,23 +105,38 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
       return;
     }
 
+    request.current?.abort();
+    const controller = new AbortController();
+
+    request.current = controller;
     setLoading(true);
+    setLoadError('');
 
     try {
-      setRecords(await getCareers('all'));
+      const result = await getCareers('all', controller.signal);
+
+      if (controller.signal.aborted) return;
+      setRecords(result);
 
       if (kind === 'careers') {
-        setFaculty(await getCareerFaculties());
+        const faculties = await getCareerFaculties();
+
+        if (!controller.signal.aborted) setFaculty(faculties);
       }
     } catch (e) {
-      snackbar.error(getApiErrorMessage(e));
+      if (!controller.signal.aborted) {
+        setLoadError(getApiErrorMessage(e));
+        snackbar.error(getApiErrorMessage(e));
+      }
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [kind, snackbar, reloadCourses]);
 
   useEffect(() => {
     if (kind === 'careers' && !authLoading && canRead) void load();
+
+    return () => request.current?.abort();
   }, [load, authLoading, canRead, kind]);
 
   const localFiltered = useMemo(
@@ -138,7 +156,8 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
     [records, search, status, kind],
   );
 
-  const filtered = kind === 'courses' ? courseTable.visibleRows : localFiltered;
+  const careerTable = useDataTable<RecordItem, typeof careerColumns>(localFiltered, 'name', 5, { preserveOrder: true });
+  const filtered = kind === 'courses' ? courseTable.visibleRows : careerTable.visibleRows;
   const tableLoading = kind === 'courses' ? courses.loading : loading;
 
   const open = (item: RecordItem | null) => {
@@ -258,88 +277,108 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
       <CatalogToolbar
         search={kind === 'courses' ? courses.query.search : search}
         searchLabel={kind === 'careers' ? 'Buscar carrera' : 'Buscar código, nombre o grupo'}
-        onSearch={(value) => (kind === 'courses' ? courses.changeQuery({ search: value }) : setSearch(value))}
+        onSearch={(value) => {
+          if (kind === 'courses') courses.changeQuery({ search: value });
+          else {
+            setSearch(value);
+            careerTable.handleChangePage(null, 0);
+          }
+        }}
         status={kind === 'courses' ? courses.query.status : (status as RecordStatus)}
-        onStatus={(value) => (kind === 'courses' ? courses.changeQuery({ status: value }) : setStatus(value))}
+        onStatus={(value) => {
+          if (kind === 'courses') courses.changeQuery({ status: value });
+          else {
+            setStatus(value);
+            careerTable.handleChangePage(null, 0);
+          }
+        }}
         onReload={() => void load()}
-        disabled={busy || (kind === 'careers' && loading)}
+        disabled={busy || (kind === 'careers' ? loading : courses.loading)}
       />
 
       {kind === 'courses' && courses.error && <Alert severity='error'>{courses.error}</Alert>}
+      {kind === 'careers' && loadError && <Alert severity='error'>{loadError}</Alert>}
       {tableLoading ? (
         <Typography sx={{ p: 4 }}>Cargando…</Typography>
       ) : (
-        <Paper>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{kind === 'careers' ? 'Carrera' : 'Código'}</TableCell>
-
-                <TableCell>{kind === 'careers' ? 'Facultad / director' : 'Nombre / grupo'}</TableCell>
-
-                <TableCell>Estado</TableCell>
-
-                <TableCell align='right'>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {filtered.map((item) => (
-                <TableRow key={kind === 'careers' ? (item as ICareer).idCareer : (item as ICourse).idCourse}>
-                  <TableCell>{kind === 'careers' ? item.name : (item as ICourse).code}</TableCell>
-
-                  <TableCell>
-                    {kind === 'careers'
-                      ? `${(item as ICareer).faculty?.name ?? '—'} · ${(item as ICareer).director?.name ?? '—'}`
-                      : `${item.name} · grupo ${(item as ICourse).group}`}
-                  </TableCell>
-
-                  <TableCell>{item.isActive ? 'Activo' : 'Inactivo'}</TableCell>
-
-                  <TableCell align='right'>
-                    <Stack direction='row' spacing={1} justifyContent='flex-end'>
-                      {kind === 'careers' && can('update') && (
-                        <Button
-                          onClick={() =>
-                            router.push(`/dashboard/admin/careers/${(item as ICareer).idCareer}/students/import`)
-                          }
-                          variant='outlined'
-                          size='small'
-                          disabled={busy || !item.isActive}
-                        >
-                          Importar estudiantes
-                        </Button>
-                      )}
-                      <Button
-                        size='small'
-                        onClick={() => open(item)}
-                        disabled={!can('update') || !item.isActive || busy}
-                      >
-                        Editar
-                      </Button>
-
-                      <Button
-                        size='small'
-                        color={item.isActive ? 'error' : 'success'}
-                        onClick={() => void toggle(item)}
-                        disabled={busy || !can(item.isActive ? 'delete' : 'reactivate')}
-                      >
-                        {item.isActive ? 'Desactivar' : 'Reactivar'}
-                      </Button>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-
-              {!filtered.length && (
+        <DataTableSurface>
+          <DataTableContainer>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={4} align='center'>
-                    Sin resultados
-                  </TableCell>
+                  <TableCell>{kind === 'careers' ? 'Carrera' : 'Código'}</TableCell>
+
+                  <TableCell>{kind === 'careers' ? 'Facultad / director' : 'Nombre / grupo'}</TableCell>
+
+                  <TableCell>Estado</TableCell>
+
+                  <TableCell align='right'>Acciones</TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHead>
+
+              <TableBody>
+                {filtered.map((item) => (
+                  <TableRow key={kind === 'careers' ? (item as ICareer).idCareer : (item as ICourse).idCourse}>
+                    <TableCell>{kind === 'careers' ? item.name : (item as ICourse).code}</TableCell>
+
+                    <TableCell>
+                      {kind === 'careers'
+                        ? `${(item as ICareer).faculty?.name ?? '—'} · ${(item as ICareer).director?.name ?? '—'}`
+                        : `${item.name} · grupo ${(item as ICourse).group}`}
+                    </TableCell>
+
+                    <TableCell>{item.isActive ? 'Activo' : 'Inactivo'}</TableCell>
+
+                    <TableCell align='right'>
+                      <Stack direction='row' spacing={1} justifyContent='flex-end'>
+                        {kind === 'careers' && can('update') && (
+                          <TableAction
+                            intent='import'
+                            label='Importar estudiantes'
+                            onClick={() =>
+                              router.push(`/dashboard/admin/careers/${(item as ICareer).idCareer}/students/import`)
+                            }
+                            disabled={busy || !item.isActive}
+                          />
+                        )}
+                        <TableAction
+                          intent='edit'
+                          label='Editar'
+                          onClick={() => open(item)}
+                          disabled={!can('update') || !item.isActive || busy}
+                        />
+
+                        <TableAction
+                          intent={item.isActive ? 'deactivate' : 'activate'}
+                          label={item.isActive ? 'Desactivar' : 'Reactivar'}
+                          onClick={() => void toggle(item)}
+                          disabled={busy || !can(item.isActive ? 'delete' : 'reactivate')}
+                        />
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {!filtered.length && !(kind === 'courses' ? courses.error : loadError) && (
+                  <TableRow>
+                    <TableCell colSpan={4} align='center'>
+                      Sin resultados
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </DataTableContainer>
+          {kind === 'careers' && (
+            <PaginationTable
+              count={localFiltered.length}
+              page={careerTable.page}
+              rowsPerPage={careerTable.rowsPerPage}
+              onPageChange={careerTable.handleChangePage}
+              onRowsPerPageChange={careerTable.handleChangeRowsPerPage}
+              disabled={loading || busy}
+            />
+          )}
           {kind === 'courses' && (
             <PaginationTable
               count={courses.meta.total}
@@ -349,7 +388,7 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
               onRowsPerPageChange={(event) => courses.changeQuery({ limit: Number(event.target.value) })}
             />
           )}
-        </Paper>
+        </DataTableSurface>
       )}
 
       <Dialog

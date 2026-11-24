@@ -1,8 +1,8 @@
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
 import type { AttendanceStatus } from '@/enums/attendanceStatus';
 
-export type AttendanceSessionMode = 'MANUAL' | 'GEOLOCATION' | 'QR';
-export type AttendanceRegistrationMethod = 'MANUAL' | 'GEOLOCATION' | 'QR';
+export type AttendanceSessionMode = 'MANUAL' | 'GEOLOCATION' | 'QR' | 'GEOLOCATION_QR';
+export type AttendanceRegistrationMethod = 'MANUAL' | 'GEOLOCATION' | 'QR' | 'GEOLOCATION_QR';
 
 export interface IAttendanceQrCode {
   idAttendanceSession: number;
@@ -48,6 +48,8 @@ export interface IAttendance {
   enrollment: IEnrollmentStudent;
   registrationMethod?: AttendanceRegistrationMethod;
   markedAt?: string | null;
+  accuracy?: number | string | null;
+  distanceMeters?: number | string | null;
 }
 
 export interface IAttendanceSessionSummary extends IAttendanceLifecycle {
@@ -70,4 +72,19 @@ export interface IStudentAttendance {
   excusedSessions: number;
   absentSessions: number;
   percentage: number;
+}
+
+export interface IAttendanceAuditEvent {
+  idAttendanceAuditEvent: number;
+  idEnrollment: number;
+  idActor: number;
+  operation: 'CREATE' | 'UPDATE';
+  occurredAt: string;
+  previousStatus: AttendanceStatus | null;
+  newStatus: AttendanceStatus;
+  previousRegistrationMethod: AttendanceRegistrationMethod | null;
+  newRegistrationMethod: AttendanceRegistrationMethod;
+  previousObservation: string | null;
+  newObservation: string | null;
+  sessionStateAtOperation: 'OPEN' | 'CLOSED';
 }

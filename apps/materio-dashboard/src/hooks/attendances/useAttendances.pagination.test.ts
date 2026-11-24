@@ -124,14 +124,27 @@ describe('Attendance remote history and recent sessions', () => {
     const opened = harness.render().session;
 
     api.mockResolvedValueOnce({ ...response(), data: [summary(80)] });
-    expect(await harness.render().findSessionByDate('2020-01-01')).toEqual(summary(80));
-    expect(api).toHaveBeenLastCalledWith(20, { page: 1, limit: 1, date: '2020-01-01' }, expect.any(AbortSignal));
+    expect(await harness.render().findSessionByDate('2020-01-01', 80)).toEqual(summary(80));
+    expect(api).toHaveBeenLastCalledWith(20, { page: 1, limit: 25, date: '2020-01-01' }, expect.any(AbortSignal));
     expect(harness.render().sessions).toBe(history);
     harness.render().changeQuery({ page: 2 });
     harness.render();
     await flush();
     expect(harness.render().session).toBe(opened);
     expect(opened?.percentage).toBe(summary(100).percentage);
+  });
+
+  it('finds the selected ID on later pages of the same date and refuses ambiguous date-only selection', async () => {
+    const harness = mount();
+
+    harness.render();
+    await flush();
+    api.mockResolvedValueOnce({ ...response(1, 25, 26), data: [summary(1)] });
+    api.mockResolvedValueOnce({ ...response(2, 25, 26), data: [summary(80)] });
+    expect(await harness.render().findSessionByDate('2026-10-10', 80)).toEqual(summary(80));
+    expect(api).toHaveBeenLastCalledWith(20, { page: 2, limit: 25, date: '2026-10-10' }, expect.any(AbortSignal));
+    api.mockResolvedValueOnce({ ...response(1, 25, 2), data: [summary(1), summary(80)] });
+    expect(await harness.render().findSessionByDate('2026-10-10')).toBeUndefined();
   });
 
   it('handles an empty history', async () => {

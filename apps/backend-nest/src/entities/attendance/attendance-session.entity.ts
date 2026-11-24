@@ -1,20 +1,27 @@
+import { attendanceCombinedChecksV1 as checks } from '../../database/utils/attendance-combined-schema-v1';
 import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
 import {
   BaseEntity,
   Column,
   Check,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 
 import { Attendance } from './attendance.entity';
 import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
 
 @Entity('attendance_sessions')
+@Index('IDX_attendance_session_assistant_date', ['assistantEnrollment', 'date'])
+@Check(
+  'CHK_attendance_session_combined_configuration',
+  checks.CHK_attendance_session_combined_configuration,
+)
+@Check('CHK_attendance_session_combined_window', checks.CHK_attendance_session_combined_window)
 @Check(
   'CHK_attendance_session_qr_fields',
   `"mode" <> 'QR' OR ("id_assistant_enrollment" IS NOT NULL
@@ -74,7 +81,6 @@ import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
   'CHK_attendance_session_manual_fields',
   `"mode" <> 'MANUAL' OR ("latitude" IS NULL AND "longitude" IS NULL AND "radius_meters" IS NULL AND "maximum_accepted_accuracy" IS NULL AND "starts_at" IS NULL AND "ends_at" IS NULL AND "opened_at" IS NULL AND "closed_at" IS NULL AND "cancelled_at" IS NULL)`,
 )
-@Unique(['assistantEnrollment', 'date'])
 export class AttendanceSession extends BaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_attendance_session' })
   idAttendanceSession: number;

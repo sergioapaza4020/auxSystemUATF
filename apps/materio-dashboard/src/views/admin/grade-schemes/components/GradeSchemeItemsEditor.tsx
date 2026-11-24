@@ -1,14 +1,8 @@
 import { isAttendanceCriterion } from '@repo/grade-calculations';
-import {
-  Box,
-  Checkbox,
-  CircularProgress,
-  InputAdornment,
-  LinearProgress,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Checkbox, InputAdornment, LinearProgress, Stack, TextField, Typography } from '@mui/material';
+
+import { dataTableGridRowSx, tableToolbarSx } from '@/components/table';
+import { PageLoading } from '@/components/feedback/PageLoading';
 
 import { parsePermissionPercentage, permissionWeightToPercentage } from '@/utils/attendance-permission';
 
@@ -47,19 +41,7 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
   const totalIsValid = totalPercentage === 100;
 
   if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: 180,
-
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <CircularProgress size={28} />
-      </Box>
-    );
+    return <PageLoading minHeight={180} />;
   }
 
   return (
@@ -77,7 +59,8 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
         justifyContent='space-between'
         spacing={1.5}
         sx={{
-          mb: 2,
+          ...tableToolbarSx,
+          px: 2,
         }}
       >
         <Box>
@@ -145,6 +128,7 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
             <Box
               key={gradeItem.idGradeItem}
               sx={{
+                ...dataTableGridRowSx,
                 display: 'grid',
 
                 gridTemplateColumns: {
@@ -156,9 +140,6 @@ export function GradeSchemeItemsEditor<T extends IGradeSchemeDetailBase>(props: 
 
                 columnGap: 2,
                 rowGap: 1,
-
-                px: 2,
-                py: 1.25,
 
                 bgcolor: detail ? 'transparent' : 'action.hover',
 

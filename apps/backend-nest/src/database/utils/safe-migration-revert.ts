@@ -3,6 +3,9 @@ import { DataSource, MigrationExecutor } from 'typeorm';
 // Historical downs include DROP COLUMN/TABLE and lossy status conversions.
 // Only reviewed, data-aware rollbacks may be invoked by the package script.
 const reviewedRollbacks = new Set([
+  'AttendanceMultipleDailySessions1794700800000',
+  'AttendanceCombinedPersistence1794614460000',
+  'AttendanceCombinedEnums1794614400000',
   'AttendanceQrChecks1794355260000',
   'AttendanceQrEnums1794355200000',
 ]);

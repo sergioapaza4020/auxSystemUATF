@@ -51,12 +51,15 @@ export class ActivitiesService {
           idCourse,
         })
         .andWhere('activity.isActive = :isActive', { isActive: true })
-        .andWhere('activity.deletedAt IS NULL')
-        .andWhere('LOWER(BTRIM(activity.name)) = LOWER(BTRIM(:name))', { name: activity.name });
+        .andWhere('activity.deletedAt IS NULL');
       if (activity.idActivity !== undefined) {
         query.andWhere('activity.idActivity != :idActivity', { idActivity: activity.idActivity });
       }
-      if (await query.getExists()) {
+      // PostgreSQL's C locale does not lowercase accented letters. Compare names
+      // consistently in JavaScript while retaining the course lock and SQL scope.
+      const names = await query.select('activity.name', 'name').getRawMany<{ name: string }>();
+      const normalizedName = activity.name.toLowerCase();
+      if (names.some(({ name }) => name.trim().toLowerCase() === normalizedName)) {
         throw new ConflictException('Ya existe una actividad con ese nombre en esta materia.');
       }
       return repository.save(activity);

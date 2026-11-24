@@ -122,8 +122,8 @@ describe('QR configuration and authorized lifecycle', () => {
     const fields = elements<React.ComponentProps<typeof TextField>>(h.render(), TextField);
 
     fields
-      .find((f) => f.props.label === 'Finalización')!
-      .props.onChange?.({ target: { value: '2026-11-12T09:00' } } as React.ChangeEvent<HTMLInputElement>);
+      .find((f) => f.props.label === 'Duración de la asistencia (minutos)')!
+      .props.onChange?.({ target: { value: '0' } } as React.ChangeEvent<HTMLInputElement>);
     await click(h, 'Guardar configuración');
     expect(mocks.configure).not.toHaveBeenCalled();
   });

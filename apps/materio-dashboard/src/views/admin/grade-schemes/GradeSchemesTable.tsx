@@ -10,11 +10,9 @@ import {
   Button,
   InputAdornment,
   MenuItem,
-  Paper,
   Stack,
   Table,
   TableBody,
-  TableContainer,
   TextField,
   Typography,
 } from '@mui/material';
@@ -27,7 +25,13 @@ import type { IGradeSchemeCreateOrEdit } from '@/interfaces/grade-schemes/grade-
 import { gradeSchemeHeadCellsData } from '@/views/admin/grade-schemes/data/head-cells.data';
 
 // Components Imports
-import { EnhancedTableHead, PaginationTable } from '@/components/table';
+import {
+  EnhancedTableHead,
+  PaginationTable,
+  DataTableContainer,
+  DataTableSurface,
+  TableToolbar,
+} from '@/components/table';
 
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 
@@ -165,7 +169,7 @@ export const GradeSchemesTable = () => {
 
       {error && <Alert severity='error'>{error}</Alert>}
       {/* Tabla */}
-      <Paper
+      <DataTableSurface
         variant='outlined'
         sx={{
           width: '100%',
@@ -180,21 +184,9 @@ export const GradeSchemesTable = () => {
         }}
       >
         {/* Toolbar */}
-        <Stack
-          direction={{
-            xs: 'column',
-            md: 'row',
-          }}
-          alignItems={{
-            xs: 'stretch',
-            md: 'center',
-          }}
-          spacing={2}
-          sx={{
-            p: 2.5,
-
-            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-          }}
+        <TableToolbar
+          onRefresh={() => void loadGS()}
+          refreshDisabled={loading || creating || createOpen || editor.open}
         >
           {/* Buscar */}
           <TextField
@@ -255,24 +247,11 @@ export const GradeSchemesTable = () => {
           >
             {meta.total} {meta.total === 1 ? 'resultado' : 'resultados'}
           </Typography>
-        </Stack>
+        </TableToolbar>
 
         {/* Contenido */}
-        <TableContainer>
-          <Table
-            sx={{
-              minWidth: 950,
-
-              '& .MuiTableCell-root': {
-                px: 2.5,
-              },
-
-              '& .MuiTableBody-root .MuiTableCell-root': {
-                py: 2.25,
-              },
-            }}
-            aria-label='Tabla de esquemas de notas'
-          >
+        <DataTableContainer>
+          <Table sx={{ minWidth: 950 }} aria-label='Tabla de esquemas de notas'>
             <EnhancedTableHead<IGradeScheme, typeof gradeSchemeHeadCellsData>
               headCells={gradeSchemeHeadCellsData}
               order={order}
@@ -344,7 +323,7 @@ export const GradeSchemesTable = () => {
               )}
             </TableBody>
           </Table>
-        </TableContainer>
+        </DataTableContainer>
 
         <PaginationTable
           count={meta.total}
@@ -353,7 +332,7 @@ export const GradeSchemesTable = () => {
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
-      </Paper>
+      </DataTableSurface>
 
       {createOpen && (
         <GradeSchemeEditDialog

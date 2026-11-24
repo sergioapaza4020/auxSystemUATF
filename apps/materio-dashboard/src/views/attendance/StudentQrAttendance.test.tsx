@@ -70,6 +70,14 @@ describe('student mobile QR view', () => {
 
       expect(html).toContain('role="status"');
       expect(html).toContain('aria-live="polite"');
+
+      if (phase === 'SUBMITTING') {
+        expect(html).toContain('Registrando asistencia...');
+        expect(html).not.toContain('Cargando...');
+      } else {
+        expect(html).toContain('Cargando...');
+      }
+
       expect(html).not.toContain('Confirmar asistencia');
     },
   );
@@ -89,3 +97,31 @@ describe('student mobile QR view', () => {
     expect(html).not.toContain('Confirmar asistencia');
   });
 });
+
+it.each(['READY_FOR_LOCATION', 'LOCATING', 'READY_TO_CONFIRM'])(
+  'shows combined consent and the correct actions in %s',
+  (phase) => {
+    const locate = vi.fn();
+
+    mock.hook.mockReturnValue({
+      phase,
+      context: { ...qrContext(), mode: 'GEOLOCATION_QR' },
+      remaining: 80,
+      locate,
+      confirm: mock.confirm,
+      mark: null,
+      rateLimited: false,
+      canRead: true,
+      readOwn: mock.read,
+    });
+    const html = renderToStaticMarkup(<StudentQrAttendance />);
+
+    expect(html).toContain('Obtener mi ubicación');
+    expect(html).toContain('no se guardan tus coordenadas exactas');
+    expect(html).toContain('80');
+    if (phase === 'READY_TO_CONFIRM') expect(html).toContain('Confirmar asistencia');
+    else expect(html).not.toContain('Confirmar asistencia');
+    expect(locate).not.toHaveBeenCalled();
+    expect(mock.confirm).not.toHaveBeenCalled();
+  },
+);

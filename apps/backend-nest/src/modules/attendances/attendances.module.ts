@@ -1,3 +1,9 @@
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { UserImportQueueModule } from '../bulk-operations/user-import-queue.module';
+import { AttendanceRateLimitService } from 'src/services/attendances/attendance-rate-limit.service';
+import { AttendanceRateLimitInterceptor } from 'src/services/attendances/attendance-rate-limit.interceptor';
+import { AttendanceCombinedAuthorization } from 'src/entities/attendance/attendance-combined-authorization.entity';
+import { AttendanceAuditEvent } from 'src/entities/attendance/attendance-audit-event.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -11,8 +17,22 @@ import { AttendancesService } from 'src/services/attendances/attendances.service
 import { AttendanceQrTokenService } from 'src/services/attendances/attendance-qr-token.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Attendance, AttendanceSession, Enrollment])],
-  providers: [AttendancesService, AttendanceQrTokenService],
+  imports: [
+    UserImportQueueModule,
+    TypeOrmModule.forFeature([
+      Attendance,
+      AttendanceSession,
+      Enrollment,
+      AttendanceCombinedAuthorization,
+      AttendanceAuditEvent,
+    ]),
+  ],
+  providers: [
+    AttendancesService,
+    AttendanceQrTokenService,
+    AttendanceRateLimitService,
+    { provide: APP_INTERCEPTOR, useClass: AttendanceRateLimitInterceptor },
+  ],
   controllers: [AttendancesController],
   exports: [AttendancesService],
 })
