@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.3.1...v1.4.0) (2026-11-24)
+
+### Features
+
+* add unified assitance qr + geolocation, fix minor bug ([4e8e0c5](https://github.com/sergioapaza4020/auxSystemUATF/commit/4e8e0c5e79ea04f046362d61d96585c2a7ced8c9))
+
 ## [1.3.1](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.3.0...v1.3.1) (2026-11-14)
 
 ### Bug Fixes
