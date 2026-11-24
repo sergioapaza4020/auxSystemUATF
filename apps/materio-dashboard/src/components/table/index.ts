@@ -10,3 +10,15 @@ export * from './types/sortableIds';
 export * from './types/specialColumnId';
 
 export * from './utils/getComparator';
+
+export {
+  DataTableContainer,
+  DataTableSurface,
+  dataTableCellSx,
+  dataTableHeadCellSx,
+  dataTableGridRowSx,
+} from './components/DataTableContainer';
+
+export { TableMessageRow } from './components/TableMessageRow';
+export { TableAction } from './components/TableAction';
+export { TableToolbar, tableToolbarSx } from './components/TableToolbar';

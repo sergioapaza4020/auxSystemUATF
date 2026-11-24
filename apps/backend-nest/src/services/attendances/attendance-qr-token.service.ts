@@ -70,7 +70,10 @@ export class AttendanceQrTokenService {
   validatePeriod(token: VerifiedQrToken, session: AttendanceSession, now: Date): Date {
     this.requireAvailable();
     if (token.idSession !== session.idAttendanceSession) this.invalid();
-    if (session.mode !== Mode.QR || getAttendanceSessionState(session, now) !== State.OPEN)
+    if (
+      (session.mode !== Mode.QR && session.mode !== Mode.GEOLOCATION_QR) ||
+      getAttendanceSessionState(session, now) !== State.OPEN
+    )
       throw new AttendanceCheckInException(Code.QR_NOT_AVAILABLE, HttpStatus.CONFLICT);
     const time = now.getTime();
     const current = Math.floor(time / 30000);

@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { LinearProgress, Paper, Table, TableBody, TableContainer, TableHead, TableRow, TableCell } from '@mui/material';
+import { LinearProgress, Table, TableBody, TableHead, TableRow, TableCell, TextField } from '@mui/material';
+
+import { DataTableContainer, DataTableSurface, TableMessageRow, TableToolbar } from '@/components/table';
 
 import { revokeSessionById } from '@/api/sessions.service';
 
@@ -72,32 +74,27 @@ export const SessionsTable = () => {
   };
 
   return (
-    <Paper sx={{ width: '100%', mb: 2 }}>
+    <DataTableSurface sx={{ width: '100%', mb: 2 }}>
+      <TableToolbar onRefresh={load} refreshDisabled={loading || processing}>
+        <TextField
+          size='small'
+          label='Buscar sesión'
+          disabled
+          helperText='La API de sesiones no admite búsqueda global.'
+        />
+      </TableToolbar>
       {loading && <LinearProgress />}
-      <TableContainer>
+      <DataTableContainer>
         <Table sx={{ minWidth: 750 }} aria-label='sessions-table' aria-busy={loading}>
           <TableHead>
             <TableRow>
               {sessionHeadCellsData.map((column) => (
-                <TableCell
-                  key={column.id}
-                  sx={{
-                    py: 2,
-                    bgcolor: 'action.hover',
-                    color: 'text.secondary',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.02em',
-                    whiteSpace: 'nowrap',
-                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-                  }}
-                >
-                  {column.label}
-                </TableCell>
+                <TableCell key={column.id}>{column.label}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
+            {!loading && !sessions.length && <TableMessageRow colSpan={9}>{error || 'Sin registros'}</TableMessageRow>}
             {sessions.map((session) => (
               <SessionRow
                 key={session.idSession}
@@ -110,7 +107,7 @@ export const SessionsTable = () => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+      </DataTableContainer>
       <PaginationTable
         count={meta.total}
         page={meta.page - 1}
@@ -118,6 +115,6 @@ export const SessionsTable = () => {
         onPageChange={(_, page) => changeQuery({ page: page + 1 })}
         onRowsPerPageChange={(event) => changeQuery({ limit: Number(event.target.value) })}
       />
-    </Paper>
+    </DataTableSurface>
   );
 };

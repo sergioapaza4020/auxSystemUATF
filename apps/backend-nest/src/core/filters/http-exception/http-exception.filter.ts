@@ -8,8 +8,13 @@ export class HttpExceptionFilter<T> implements ExceptionFilter {
 
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const qrRequest = /\/attendances\/sessions\/[^/]+\/qr(?:[/?-]|$)/.test(request.url);
-    if (qrRequest) response.setHeader('Cache-Control', 'no-store');
+    const qrRequest = /\/attendances\/sessions\/[^/]+\/(?:qr|combined|audit)(?:[/?-]|$)/.test(
+      request.url,
+    );
+    if (qrRequest) {
+      response.setHeader('Cache-Control', 'no-store');
+      response.setHeader('Referrer-Policy', 'no-referrer');
+    }
 
     const status =
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;

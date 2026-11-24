@@ -33,7 +33,11 @@ interface Props {
 
 export function AttendanceSidebar(props: Props) {
   const summary = props.summary;
-  const pending = (summary?.mode === 'GEOLOCATION' || summary?.mode === 'QR') && summary.isComputable === false;
+
+  const pending =
+    (summary?.mode === 'GEOLOCATION' || summary?.mode === 'QR' || summary?.mode === 'GEOLOCATION_QR') &&
+    summary.isComputable === false;
+
   const percentage = pending ? null : summary?.percentage;
 
   const counts = [
@@ -51,7 +55,7 @@ export function AttendanceSidebar(props: Props) {
     },
     {
       status: AttendanceStatus.ABSENT,
-      label: pending ? 'Pendientes' : 'Ausentes',
+      label: pending && summary?.mode !== 'GEOLOCATION_QR' ? 'Pendientes' : 'Ausentes',
       value: props.absent,
       icon: <CloseOutlinedIcon fontSize='small' />,
     },
@@ -59,6 +63,54 @@ export function AttendanceSidebar(props: Props) {
 
   return (
     <Stack spacing={3}>
+      <Card sx={{ p: 3 }}>
+        <Typography variant='h6' fontWeight={700}>
+          Configuración de asistencia
+        </Typography>
+        <Typography variant='caption' color='text.secondary'>
+          Valor de cada estado en el esquema académico.
+        </Typography>
+        <Stack spacing={1.5} sx={{ my: 2 }}>
+          {counts.map((item, index) => (
+            <Stack key={item.status} direction='row' justifyContent='space-between' alignItems='center'>
+              <Stack direction='row' alignItems='center' spacing={1} sx={{ color: attendanceStatusColor(item.status) }}>
+                {item.icon}
+                <Typography variant='body2'>{['Presente', 'Permiso', 'Ausente'][index]}</Typography>
+              </Stack>
+              <Typography variant='body2' fontWeight={600}>
+                {index === 0
+                  ? '100%'
+                  : index === 2
+                    ? '0%'
+                    : props.configLoading
+                      ? '…'
+                      : props.permissionWeight == null
+                        ? '—'
+                        : `${permissionWeightToPercentage(props.permissionWeight)}%`}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+        {(props.configError || (!props.configLoading && props.permissionWeight == null)) && (
+          <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 2 }}>
+            {props.configError
+              ? 'No se pudo cargar la configuración.'
+              : 'Configura el criterio de asistencia en el esquema académico de la materia.'}
+          </Typography>
+        )}
+        {props.canEditConfig && (
+          <Button
+            fullWidth
+            variant='outlined'
+            size='small'
+            startIcon={<SettingsOutlinedIcon />}
+            onClick={props.onEditConfig}
+            disabled={props.disabled || props.configLoading || props.permissionWeight == null}
+          >
+            Editar configuración
+          </Button>
+        )}
+      </Card>
       <Card sx={{ p: 3 }}>
         <Typography variant='h6' fontWeight={700}>
           Resumen de la sesión
@@ -94,6 +146,9 @@ export function AttendanceSidebar(props: Props) {
                   </Typography>
                 </Stack>
               ))}
+              {summary?.mode === 'GEOLOCATION_QR' && (
+                <Typography variant='body2'>Pendientes: {summary.pendingCount ?? 0}</Typography>
+              )}
               <Divider />
               <Stack direction='row' justifyContent='space-between'>
                 <Typography variant='body2'>Total</Typography>
@@ -155,11 +210,13 @@ export function AttendanceSidebar(props: Props) {
                     {item.date.slice(0, 10).split('-').reverse().join('/')}
                   </Button>
                   <Typography variant='body2'>
-                    {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false
+                    {(item.mode === 'GEOLOCATION' || item.mode === 'QR' || item.mode === 'GEOLOCATION_QR') &&
+                    item.isComputable === false
                       ? 'Sin consolidar'
                       : `${item.percentage.toFixed(1)}%`}
                   </Typography>
                 </Stack>
+                <Typography variant='caption'>Sesión #{item.idAttendanceSession}</Typography>
                 <AttendanceSessionBadge session={item} />
                 <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
                   <Typography variant='caption' color={attendanceStatusColor(AttendanceStatus.PRESENT)}>
@@ -169,7 +226,8 @@ export function AttendanceSidebar(props: Props) {
                     {item.excusedCount} permisos
                   </Typography>
                   <Typography variant='caption' color={attendanceStatusColor(AttendanceStatus.ABSENT)}>
-                    {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false
+                    {(item.mode === 'GEOLOCATION' || item.mode === 'QR' || item.mode === 'GEOLOCATION_QR') &&
+                    item.isComputable === false
                       ? `${item.pendingCount ?? 0} pendientes`
                       : `${item.absentCount} ausentes`}
                   </Typography>
@@ -177,54 +235,6 @@ export function AttendanceSidebar(props: Props) {
               </Box>
             ))}
           </Stack>
-        )}
-      </Card>
-      <Card sx={{ p: 3 }}>
-        <Typography variant='h6' fontWeight={700}>
-          Configuración de asistencia
-        </Typography>
-        <Typography variant='caption' color='text.secondary'>
-          Valor de cada estado en el esquema académico.
-        </Typography>
-        <Stack spacing={1.5} sx={{ my: 2 }}>
-          {counts.map((item, index) => (
-            <Stack key={item.status} direction='row' justifyContent='space-between' alignItems='center'>
-              <Stack direction='row' alignItems='center' spacing={1} sx={{ color: attendanceStatusColor(item.status) }}>
-                {item.icon}
-                <Typography variant='body2'>{['Presente', 'Permiso', 'Ausente'][index]}</Typography>
-              </Stack>
-              <Typography variant='body2' fontWeight={600}>
-                {index === 0
-                  ? '100%'
-                  : index === 2
-                    ? '0%'
-                    : props.configLoading
-                      ? '…'
-                      : props.permissionWeight == null
-                        ? '—'
-                        : `${permissionWeightToPercentage(props.permissionWeight)}%`}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-        {(props.configError || (!props.configLoading && props.permissionWeight == null)) && (
-          <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 2 }}>
-            {props.configError
-              ? 'No se pudo cargar la configuración.'
-              : 'Configura el criterio de asistencia en el esquema académico de la materia.'}
-          </Typography>
-        )}
-        {props.canEditConfig && (
-          <Button
-            fullWidth
-            variant='outlined'
-            size='small'
-            startIcon={<SettingsOutlinedIcon />}
-            onClick={props.onEditConfig}
-            disabled={props.disabled || props.configLoading || props.permissionWeight == null}
-          >
-            Editar configuración
-          </Button>
         )}
       </Card>
     </Stack>

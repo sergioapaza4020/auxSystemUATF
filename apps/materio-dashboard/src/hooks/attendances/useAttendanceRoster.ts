@@ -16,6 +16,8 @@ type Mark = { status: AttendanceStatus; observation: string | null };
 const absent: Mark = { status: AttendanceStatus.ABSENT, observation: null };
 
 export function useAttendanceRoster(idEnrollment: number, sessionId: number | null) {
+  const scope = `${idEnrollment}:${sessionId ?? 'roster'}`;
+  const [loadedScope, setLoadedScope] = useState<string | null>(null);
   const [query, setQuery] = useState<StudentRosterQuery>({ page: 1, limit: 25, search: '' });
   const [students, setStudents] = useState<IEnrollmentStudent[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({ page: 1, limit: 25, total: 0, totalPages: 0 });
@@ -34,6 +36,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
   draftRef.current = drafts;
 
   useEffect(() => {
+    setStudents([]);
     setOriginals({});
     setGeographicStudentIds([]);
     setDrafts({});
@@ -79,13 +82,19 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
             return;
           }
 
+          setLoadedScope(scope);
           setStudents(data.students);
           setMeta(data.meta);
           setSession(data.session);
 
           if (data.session) {
             const geoIds = data.session.attendances
-              .filter((mark) => mark.registrationMethod === 'GEOLOCATION' || mark.registrationMethod === 'QR')
+              .filter(
+                (mark) =>
+                  mark.registrationMethod === 'GEOLOCATION' ||
+                  mark.registrationMethod === 'QR' ||
+                  mark.registrationMethod === 'GEOLOCATION_QR',
+              )
               .map((mark) => mark.enrollment.idEnrollment);
 
             setGeographicStudentIds((current) => [...new Set([...current, ...geoIds])]);
@@ -110,10 +119,10 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
 
                 next[id] = {
                   status: mark?.status ?? AttendanceStatus.ABSENT,
-                  observation: normalizeAttendanceObservation(
-                    mark?.status ?? AttendanceStatus.ABSENT,
-                    mark?.observation,
-                  ),
+                  observation:
+                    data.session?.mode === 'GEOLOCATION_QR'
+                      ? (mark?.observation ?? null)
+                      : normalizeAttendanceObservation(mark?.status ?? AttendanceStatus.ABSENT, mark?.observation),
                 };
               }
 
@@ -136,7 +145,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [idEnrollment, sessionId, query, revision]);
+  }, [idEnrollment, sessionId, query, revision, scope]);
 
   const current = (id: number): Mark =>
     drafts[id] ?? (markAll ? { status: markAll, observation: null } : (originals[id] ?? absent));
@@ -170,6 +179,8 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
   const total = session?.totalStudents ?? meta.total;
 
   const counts = useMemo(() => {
+    if (session?.mode === 'GEOLOCATION_QR')
+      return { present: session.presentCount, excused: session.excusedCount, absent: session.absentCount };
     let present = markAll ? (markAll === AttendanceStatus.PRESENT ? total : 0) : (session?.presentCount ?? 0);
     let excused = markAll ? (markAll === AttendanceStatus.EXCUSED ? total : 0) : (session?.excusedCount ?? 0);
 
@@ -184,7 +195,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
   }, [session, total, drafts, originals, markAll]);
 
   const edit = (id: number, status: AttendanceStatus, observation?: string | null) => {
-    if (geographicStudentIds.includes(id)) return;
+    if (loadedScope !== scope || session?.mode === 'GEOLOCATION_QR' || geographicStudentIds.includes(id)) return;
     setDrafts((previous) => ({
       ...previous,
       [id]: {
@@ -222,19 +233,19 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
   });
 
   return {
-    students,
-    meta,
+    students: loadedScope === scope ? students : [],
+    meta: loadedScope === scope ? meta : { page: 1, limit: query.limit, total: 0, totalPages: 0 },
     query,
-    session,
-    loading,
+    session: loadedScope === scope ? session : null,
+    loading: loading || (!error && loadedScope !== scope),
     error,
-    attendance,
-    observations,
-    geographicStudentIds,
-    protectedStudentIds: geographicStudentIds,
+    attendance: loadedScope === scope ? attendance : {},
+    observations: loadedScope === scope ? observations : {},
+    geographicStudentIds: loadedScope === scope ? geographicStudentIds : [],
+    protectedStudentIds: loadedScope === scope ? geographicStudentIds : [],
     modifiedStudentIds,
-    total,
-    counts,
+    total: loadedScope === scope ? total : 0,
+    counts: loadedScope === scope ? counts : { present: 0, excused: 0, absent: 0 },
     markAllActive: markAll !== undefined,
     hasChanges: markAll !== undefined || modifiedStudentIds.length > 0,
     changeQuery,
@@ -244,7 +255,7 @@ export function useAttendanceRoster(idEnrollment: number, sessionId: number | nu
     refresh: () => setRevision((value) => value + 1),
     payload,
     markAllStudents: (status: AttendanceStatus) => {
-      if (geographicStudentIds.length) return;
+      if (loadedScope !== scope || session?.mode === 'GEOLOCATION_QR' || geographicStudentIds.length) return;
       setMarkAll(status);
       setDrafts({});
     },

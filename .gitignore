@@ -42,3 +42,5 @@ yarn-error.log*
 tools/test-data/output/
 
 /work
+/docs
+/apps/*/docs

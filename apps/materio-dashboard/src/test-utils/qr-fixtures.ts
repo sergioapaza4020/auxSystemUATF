@@ -9,6 +9,7 @@ export const qrMark: IQrOwnMark = {
 };
 export const qrContext = (id = 7): IQrContext => ({
   idAttendanceSession: id,
+  mode: 'QR',
   course: { name: 'Materia de prueba', group: 1 },
   date: '2026-11-12',
   startsAt: '2026-11-12T14:00:00Z',

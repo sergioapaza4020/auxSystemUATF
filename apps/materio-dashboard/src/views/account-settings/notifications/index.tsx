@@ -1,6 +1,5 @@
 // MUI Imports
 import Card from '@mui/material/Card';
-import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Checkbox from '@mui/material/Checkbox';
@@ -8,6 +7,8 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
+
+import { DataTableContainer, TableToolbar } from '@/components/table';
 
 // Component Imports
 import Link from '@components/Link';
@@ -54,9 +55,9 @@ const tableData: TableDataType[] = [
 const Notifications = () => {
   return (
     <Card>
-      <CardHeader
+      <TableToolbar
         title='Recent Devices'
-        subheader={
+        description={
           <>
             We need permission from your browser to show notifications.
             <Link className='text-primary'> Request Permission</Link>
@@ -64,7 +65,7 @@ const Notifications = () => {
         }
       />
       <Form>
-        <div className='overflow-x-auto'>
+        <DataTableContainer>
           <table className={tableStyles.table}>
             <thead>
               <tr>
@@ -93,7 +94,7 @@ const Notifications = () => {
               ))}
             </tbody>
           </table>
-        </div>
+        </DataTableContainer>
         <CardContent>
           <Typography className='mbe-6 font-medium'>When should we send you notifications?</Typography>
           <Grid container spacing={6}>

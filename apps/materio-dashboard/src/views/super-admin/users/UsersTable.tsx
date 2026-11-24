@@ -10,20 +10,19 @@ import {
   Box,
   Button,
   MenuItem,
-  Paper,
   Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
   Typography,
 } from '@mui/material';
 
+import { DataTableContainer, DataTableSurface, PaginationTable, TableToolbar } from '@/components/table';
+
 import { addUserRoles, createUser, deactivateUser, reactivateUser, updateUser } from '@/api/users.service';
-import { PaginationTable } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsersPage } from '@/hooks/users/useUsersPage';
@@ -162,8 +161,8 @@ export function UsersTable() {
       )}
       {!dialog && mutation.error && <Alert severity='error'>{mutation.error}</Alert>}
       {mutation.busy && <LinearProgress aria-label='Guardando cambios' />}
-      <Paper variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ p: 3 }}>
+      <DataTableSurface variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
+        <TableToolbar onRefresh={users.reload} refreshDisabled={users.loading || mutation.busy}>
           <TextField
             size='small'
             label='Buscar nombre, username, CI o RU'
@@ -204,10 +203,7 @@ export function UsersTable() {
               ))}
             </TextField>
           )}
-          <Button disabled={users.loading || mutation.busy} onClick={users.reload}>
-            Actualizar
-          </Button>
-        </Stack>
+        </TableToolbar>
         {users.loading ? (
           <Box sx={{ p: 3 }} role='status' aria-label='Cargando usuarios'>
             <LoadingTable />
@@ -226,7 +222,7 @@ export function UsersTable() {
           </Alert>
         ) : (
           <>
-            <TableContainer>
+            <DataTableContainer>
               <Table aria-label='Usuarios' sx={{ minWidth: 950 }}>
                 {/* The backend fixes ordering by idUser; do not offer local sorting of a remote page. */}
                 <TableHead>
@@ -267,7 +263,7 @@ export function UsersTable() {
                   )}
                 </TableBody>
               </Table>
-            </TableContainer>
+            </DataTableContainer>
             <PaginationTable
               count={users.meta.total}
               page={users.meta.page - 1}
@@ -281,7 +277,7 @@ export function UsersTable() {
             />
           </>
         )}
-      </Paper>
+      </DataTableSurface>
       {(dialog?.type === 'create' || dialog?.type === 'edit') && (
         <UserEditDialog
           user={dialog.type === 'edit' ? dialog.user : null}

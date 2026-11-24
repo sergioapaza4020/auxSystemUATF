@@ -2,6 +2,8 @@ import { Box, Chip, LinearProgress, Stack, Typography } from '@mui/material';
 
 import type { SvgIconComponent } from '@mui/icons-material';
 
+import { dataTableGridRowSx } from '@/components/table';
+
 interface GradeSummaryRowProps {
   name: string;
   description: string;
@@ -26,6 +28,7 @@ export function GradeSummaryRow({
   return (
     <Box
       sx={{
+        ...dataTableGridRowSx,
         display: 'grid',
         gridTemplateColumns: {
           xs: '1fr',
@@ -33,8 +36,6 @@ export function GradeSummaryRow({
         },
         gap: 3,
         alignItems: 'center',
-        px: 3,
-        py: 2.5,
         borderBottom: 1,
         borderColor: 'divider',
         '&:last-of-type': {

@@ -1,3 +1,7 @@
+import { AttendanceOpenNowDto } from 'src/dtos/attendances/attendance-open-now.dto';
+import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
+import { AttendanceCombinedCheckInDto } from 'src/dtos/attendances/attendance-combined.dto';
+import { AttendanceCombinedValidationFilter } from '@core/filters/http-exception/attendance-combined-validation.filter';
 import { StudentRosterQueryDto } from 'src/dtos/enrollments/student-roster-query.dto';
 import { StudentAttendanceResponseDto } from 'src/dtos/attendances/student-attendance-response.dto';
 import { AttendanceSessionUpdateDto } from 'src/dtos/attendances/attendance-session-update.dto';
@@ -62,7 +66,14 @@ export class AttendancesController {
       );
   }
 
-  private strictQrBody(request: Request, keys: string[]) {
+  private strictQrBody(
+    request: Request,
+    keys: string[],
+    code: Exclude<
+      AttendanceCheckInCode,
+      AttendanceCheckInCode.SUCCESS
+    > = AttendanceCheckInCode.QR_TOKEN_INVALID,
+  ) {
     const body: unknown = request.body;
     if (
       !body ||
@@ -70,10 +81,56 @@ export class AttendancesController {
       Array.isArray(body) ||
       Object.keys(body).some((key) => !keys.includes(key))
     )
-      throw new AttendanceCheckInException(
-        AttendanceCheckInCode.QR_TOKEN_INVALID,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new AttendanceCheckInException(code, HttpStatus.BAD_REQUEST);
+  }
+
+  @Permissions('attendance.qr.check-in')
+  @Post('sessions/:idSession/combined-challenge')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @UseFilters(AttendanceCombinedValidationFilter)
+  combinedChallenge(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+    @Body() dto: AttendanceQrTokenDto,
+    @Req() request: Request,
+  ) {
+    this.qrId(idSession);
+    this.strictQrBody(request, ['token']);
+    return this.attendancesService.combinedChallenge(user.idUser, idSession, dto);
+  }
+
+  @Permissions('attendance.qr.check-in')
+  @Post('sessions/:idSession/combined-check-in')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @UseFilters(AttendanceCombinedValidationFilter)
+  combinedCheckIn(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+    @Body() dto: AttendanceCombinedCheckInDto,
+    @Req() request: Request,
+  ) {
+    this.qrId(idSession);
+    this.strictQrBody(
+      request,
+      ['authorization', 'latitude', 'longitude', 'accuracy'],
+      AttendanceCheckInCode.COMBINED_AUTHORIZATION_INVALID,
+    );
+    return this.attendancesService.combinedCheckIn(user.idUser, idSession, dto);
+  }
+
+  @Permissions('attendance.session.get-one')
+  @Get('sessions/:idSession/audit')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  getAudit(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+    @Query() query: AttendanceHistoryQueryDto,
+  ) {
+    return this.attendancesService.getAttendanceAudit(user.idUser, idSession, query);
   }
 
   @Permissions('attendance.qr.get')
@@ -186,7 +243,13 @@ export class AttendancesController {
   @Permissions('attendance.session.create')
   @Post('sessions')
   @ApiCreatedResponse({ type: AttendanceSessionLifecycleResponseDto })
-  async createSession(@CurrentUser() user: JwtPayload, @Body() dto: AttendanceSessionCreateDto) {
+  async createSession(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: AttendanceSessionCreateDto,
+    @Req() request: Request,
+  ) {
+    if (dto.mode === AttendanceSessionMode.GEOLOCATION_QR)
+      this.strictQrBody(request, ['enrollmentId', 'date', 'mode']);
     const session = await this.attendancesService.createSession(user.idUser, dto);
     return { ...session, ...attendanceSessionResponse(session, new Date()) };
   }
@@ -238,8 +301,14 @@ export class AttendancesController {
   @Permissions('attendance.session.update')
   @Patch('sessions/:idSession/open-now')
   @ApiOkResponse({ type: AttendanceSessionLifecycleResponseDto })
-  openNow(@CurrentUser() user: JwtPayload, @Param('idSession', ParseIntPipe) idSession: number) {
-    return this.attendancesService.activateSession(user.idUser, idSession, true);
+  openNow(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+    @Body() dto: AttendanceOpenNowDto = {},
+  ) {
+    return dto.durationMinutes === undefined
+      ? this.attendancesService.activateSession(user.idUser, idSession, true)
+      : this.attendancesService.activateSession(user.idUser, idSession, true, dto);
   }
 
   @Permissions('attendance.session.update')
@@ -263,8 +332,9 @@ export class AttendancesController {
     @Param('idSession', ParseIntPipe)
     idSession: number,
     @Body() dto: AttendanceSaveDto,
+    @Req() request: Request,
   ) {
-    return this.attendancesService.saveAttendances(user.idUser, idSession, dto);
+    return this.attendancesService.saveAttendances(user.idUser, idSession, dto, request.body);
   }
 
   @Permissions('attendance.student.get')

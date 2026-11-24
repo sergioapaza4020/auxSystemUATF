@@ -3,12 +3,15 @@
 import { useState } from 'react';
 
 import { Alert, Avatar, Box, Button, Card, CardContent, LinearProgress, Stack, Typography } from '@mui/material';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import type { Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
+
+import { tableToolbarSx } from '@/components/table';
 
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 import type { IAssistantGradeScheme } from '@/interfaces/grade-schemes/assistant-grade-scheme.interface';
@@ -70,6 +73,7 @@ export function StudentAcademicRecord({
       <Card sx={academicSurfaceStyles}>
         <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
           <Stack
+            sx={{ ...tableToolbarSx, px: 0 }}
             direction={{ xs: 'column', md: 'row' }}
             spacing={3}
             alignItems={{ md: 'center' }}

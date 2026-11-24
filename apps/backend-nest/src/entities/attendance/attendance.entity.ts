@@ -1,3 +1,4 @@
+import { attendanceCombinedChecksV1 as checks } from '../../database/utils/attendance-combined-schema-v1';
 import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
 import {
   BaseEntity,
@@ -16,6 +17,7 @@ import { AttendanceRegistrationMethod } from '@common/enums/attendanceRegistrati
 import { User } from '../users/users.entity';
 
 @Entity('attendances')
+@Check('CHK_attendance_combined_evidence', checks.CHK_attendance_combined_evidence)
 @Check(
   'CHK_attendance_qr_evidence',
   `"registration_method" <> 'QR' OR (

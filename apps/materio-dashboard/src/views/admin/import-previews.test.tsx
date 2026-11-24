@@ -1,8 +1,9 @@
 import type * as React from 'react';
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { Alert, Button, Chip, Typography, TablePagination, TextField } from '@mui/material';
+import { Alert, Button, Chip, Typography, TextField } from '@mui/material';
 
+import { PaginationTable } from '@/components/table';
 import { hookHarness, elements } from '@/test-utils/hook-harness';
 import { EnrollmentImportPage } from './enrollments/import/EnrollmentImportPage';
 import { EnrollmentImportReviewTable } from './enrollments/import/EnrollmentImportReviewTable';
@@ -134,7 +135,7 @@ describe.each(['enrollment', 'career'] as const)('%s remote review', (kind) => {
     await vi.runAllTimersAsync();
     expect(getEnrollmentImportPreviewPage).not.toHaveBeenCalled();
     expect(getCareerStudentImportPreviewPage).not.toHaveBeenCalled();
-    const pagination = find<React.ComponentProps<typeof TablePagination>>(tree, TablePagination);
+    const pagination = find<React.ComponentProps<typeof PaginationTable>>(tree, PaginationTable);
 
     expect(pagination.count).toBe(60);
     expect(pagination.rowsPerPageOptions).toEqual([25, 50, 100]);
@@ -142,7 +143,7 @@ describe.each(['enrollment', 'career'] as const)('%s remote review', (kind) => {
     h.render();
     await vi.runAllTimersAsync();
     tree = h.render();
-    expect(find<React.ComponentProps<typeof TablePagination>>(tree, TablePagination).page).toBe(1);
+    expect(find<React.ComponentProps<typeof PaginationTable>>(tree, PaginationTable).page).toBe(1);
     const search = elements<React.ComponentProps<typeof TextField>>(tree, TextField)[0].props;
 
     search.onChange?.({ target: { value: 'Ana' } } as React.ChangeEvent<HTMLInputElement>);
@@ -164,12 +165,12 @@ describe.each(['enrollment', 'career'] as const)('%s remote review', (kind) => {
         ? ['operation-id', { page: 1, limit: 25, search: 'Ana', status: 'invalid' }, expect.any(AbortSignal)]
         : [10, 'operation-id', { page: 1, limit: 25, search: 'Ana', status: 'invalid' }, expect.any(AbortSignal)],
     );
-    find<React.ComponentProps<typeof TablePagination>>(tree, TablePagination).onRowsPerPageChange?.({
+    find<React.ComponentProps<typeof PaginationTable>>(tree, PaginationTable).onRowsPerPageChange?.({
       target: { value: '50' },
     } as React.ChangeEvent<HTMLInputElement>);
     h.render();
     await vi.runAllTimersAsync();
-    expect(find<React.ComponentProps<typeof TablePagination>>(h.render(), TablePagination).page).toBe(0);
+    expect(find<React.ComponentProps<typeof PaginationTable>>(h.render(), PaginationTable).page).toBe(0);
     expect(previewEnrollmentImport).not.toHaveBeenCalled();
     expect(previewCareerStudentImport).not.toHaveBeenCalled();
   });
@@ -178,7 +179,7 @@ describe.each(['enrollment', 'career'] as const)('%s remote review', (kind) => {
     else vi.mocked(getCareerStudentImportPreviewPage).mockRejectedValueOnce(new Error('Offline'));
     const h = mount(render);
 
-    find<React.ComponentProps<typeof TablePagination>>(h.render(), TablePagination).onPageChange(null, 1);
+    find<React.ComponentProps<typeof PaginationTable>>(h.render(), PaginationTable).onPageChange(null, 1);
     h.render();
     await vi.runAllTimersAsync();
     expect(elements(h.render(), Alert)).toHaveLength(1);
@@ -264,7 +265,7 @@ it('shows each enrollment action while retaining the paginated review', () => {
     'Usar cuenta existente y matricular',
     'Ya matriculado: se omitirá',
   ]);
-  expect(find<React.ComponentProps<typeof TablePagination>>(h.render(), TablePagination).count).toBe(3);
+  expect(find<React.ComponentProps<typeof PaginationTable>>(h.render(), PaginationTable).count).toBe(3);
 });
 
 it('shows mixed-account counters and submits only the reviewed operation ID', async () => {

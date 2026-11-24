@@ -35,7 +35,7 @@ import { useGradeMatrix } from '@/hooks/grades/useGradeMatrix';
 import { useDataTable } from '@/hooks/table/useDataTable';
 import { nextStudentCell } from '@/hooks/grades/grade-matrix-state';
 
-import { PaginationTable, type HeadCell } from '@/components/table';
+import { PaginationTable, TableToolbar, type HeadCell } from '@/components/table';
 
 import { hasPermission } from '@/utils/hasPermission';
 
@@ -417,57 +417,63 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
           </Box>
         )}
 
-        <Stack direction='row' spacing={2} alignItems='center' useFlexGap flexWrap='wrap' sx={{ mb: 2 }}>
-          <GradeViewToggle value={displayMode} onChange={setDisplayMode} />
+        <TableToolbar
+          sx={{ px: 0 }}
+          onRefresh={grades.reload}
+          refreshDisabled={!!dirtyCount || grades.loading || grades.saving || creatingActivity}
+          refreshReason={dirtyCount ? 'Guarda o cancela las calificaciones pendientes antes de actualizar.' : undefined}
+        >
+          <Stack direction='row' spacing={2} alignItems='center' useFlexGap flexWrap='wrap'>
+            <GradeViewToggle value={displayMode} onChange={setDisplayMode} />
 
-          <Typography variant='caption' color='text.secondary'>
-            Las actividades se registran siempre sobre 100.
-          </Typography>
-        </Stack>
-
-        {mode === 'activity' && !!matrix?.activities.length && (
-          <Stack spacing={0.5} sx={{ mb: 2 }}>
-            <TextField
-              select
-              size='small'
-              label='Actividad'
-              value={selectedActivity?.idActivity ?? ''}
-              onChange={(event) => setActivityId(Number(event.target.value))}
-              sx={{ maxWidth: 380 }}
-            >
-              {matrix.activities.map((activity) => (
-                <MenuItem key={activity.idActivity} value={activity.idActivity}>
-                  {activity.name}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            {selectedActivity && (
-              <Typography variant='caption' color='text.secondary'>
-                Fecha límite: {formatGradeDeadline(selectedActivity.dueDate)}
-              </Typography>
-            )}
+            <Typography variant='caption' color='text.secondary'>
+              Las actividades se registran siempre sobre 100.
+            </Typography>
           </Stack>
-        )}
 
-        <TextField
-          fullWidth
-          size='small'
-          placeholder='Buscar estudiante por nombre, CI o RU...'
-          value={search}
-          onChange={(event) => {
-            grades.changeQuery({ search: event.target.value });
-          }}
-          inputProps={{ 'aria-label': 'Buscar estudiante por nombre, CI o RU' }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <i className='ri-search-line' />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ mb: 2 }}
-        />
+          {mode === 'activity' && !!matrix?.activities.length && (
+            <Stack spacing={0.5} sx={{ mb: 2 }}>
+              <TextField
+                select
+                size='small'
+                label='Actividad'
+                value={selectedActivity?.idActivity ?? ''}
+                onChange={(event) => setActivityId(Number(event.target.value))}
+                sx={{ maxWidth: 380 }}
+              >
+                {matrix.activities.map((activity) => (
+                  <MenuItem key={activity.idActivity} value={activity.idActivity}>
+                    {activity.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              {selectedActivity && (
+                <Typography variant='caption' color='text.secondary'>
+                  Fecha límite: {formatGradeDeadline(selectedActivity.dueDate)}
+                </Typography>
+              )}
+            </Stack>
+          )}
+
+          <TextField
+            fullWidth
+            size='small'
+            placeholder='Buscar estudiante por nombre, CI o RU...'
+            value={search}
+            onChange={(event) => {
+              grades.changeQuery({ search: event.target.value });
+            }}
+            inputProps={{ 'aria-label': 'Buscar estudiante por nombre, CI o RU' }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position='start'>
+                  <i className='ri-search-line' />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </TableToolbar>
 
         {grades.error ? (
           <Alert severity='error' action={<Button onClick={grades.reload}>Reintentar</Button>}>

@@ -7,16 +7,15 @@ import {
   Menu,
   MenuItem,
   Card,
-  CircularProgress,
   IconButton,
   LinearProgress,
   Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -24,10 +23,12 @@ import {
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 
+import { DataTableContainer, PaginationTable, TableToolbar } from '@/components/table';
+import { PageLoading } from '@/components/feedback/PageLoading';
+
 import { attendanceStatusColor } from '@/utils/attendance-status';
 import { AttendanceStatus } from '@/enums/attendanceStatus';
 
-import { PaginationTable } from '@/components/table';
 import type { PaginationMeta } from '@/interfaces/apiResponse';
 import type { IAttendanceLifecycle } from '@/interfaces/attendances/attendance.interface';
 import { canDeleteAttendanceSession } from '@/utils/attendance-geolocation';
@@ -57,6 +58,8 @@ interface AttendanceHistoryProps {
   disabled?: boolean;
   onEditDate?: (id: number, date: string) => void;
   onDeleteSession?: (id: number) => void;
+  onRefresh?: () => void;
+  refreshDisabled?: boolean;
 }
 
 export function AttendanceHistory({
@@ -71,6 +74,8 @@ export function AttendanceHistory({
   disabled = false,
   onEditDate,
   onDeleteSession,
+  onRefresh,
+  refreshDisabled = false,
 }: AttendanceHistoryProps) {
   const [menu, setMenu] = useState<{ anchor: HTMLElement; sessionId: number; date: string } | null>(null);
   const menuSession = sessions.find((item) => item.idAttendanceSession === menu?.sessionId);
@@ -83,22 +88,32 @@ export function AttendanceHistory({
 
   return (
     <Card>
-      <Box sx={{ px: 3, pt: 2.5, pb: 2 }}>
-        <Typography variant='h6' fontWeight={700}>
-          Historial de asistencia
-        </Typography>
+      <TableToolbar
+        onRefresh={onRefresh}
+        refreshDisabled={loading || disabled || refreshDisabled}
+        refreshReason={refreshDisabled ? 'Guarda o cancela los cambios pendientes antes de actualizar.' : undefined}
+      >
+        <Box>
+          <Typography variant='h6' fontWeight={700}>
+            Historial de asistencia
+          </Typography>
 
-        <Typography variant='body2' color='text.secondary'>
-          Abre una sesión para revisar o ajustar su asistencia.
-        </Typography>
-      </Box>
+          <Typography variant='body2' color='text.secondary'>
+            Abre una sesión para revisar o ajustar su asistencia.
+          </Typography>
+        </Box>
+        <TextField
+          size='small'
+          label='Buscar sesión de asistencia'
+          disabled
+          helperText='El historial paginado no dispone de búsqueda global.'
+        />
+      </TableToolbar>
 
       <Box sx={{ p: 2 }}>
         {loading && <LinearProgress />}
         {loading && !sessions.length ? (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <CircularProgress size={24} />
-          </Box>
+          <PageLoading minHeight={0} sx={{ p: 4 }} />
         ) : sessions.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography color='text.secondary' sx={{ mb: 2 }}>
@@ -111,7 +126,7 @@ export function AttendanceHistory({
             )}
           </Box>
         ) : (
-          <TableContainer>
+          <DataTableContainer>
             <Table size='small' aria-label='Historial de asistencia' sx={{ minWidth: 720 }}>
               <TableHead>
                 <TableRow>
@@ -141,6 +156,7 @@ export function AttendanceHistory({
                           {formatDate(item.date)}
                         </Typography>
                         {selected && <Chip size='small' variant='outlined' label='En edición' sx={{ mt: 0.5 }} />}
+                        <Typography variant='caption'>Sesión #{item.idAttendanceSession}</Typography>
                         <AttendanceSessionBadge session={item} />
                       </TableCell>
 
@@ -158,8 +174,12 @@ export function AttendanceHistory({
                         />
                       </TableCell>
                       <TableCell>
-                        {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false ? (
-                          <Typography variant='body2'>{item.pendingCount ?? 0} pendientes</Typography>
+                        {(item.mode === 'GEOLOCATION' || item.mode === 'QR' || item.mode === 'GEOLOCATION_QR') &&
+                        item.isComputable === false ? (
+                          <Typography variant='body2'>
+                            {item.pendingCount ?? 0} pendientes
+                            {item.mode === 'GEOLOCATION_QR' ? ` · ${item.absentCount} ausentes explícitos` : ''}
+                          </Typography>
                         ) : (
                           <StatusCount
                             value={item.absentCount}
@@ -181,18 +201,20 @@ export function AttendanceHistory({
                           />
 
                           <Typography variant='body2' sx={{ minWidth: 50 }}>
-                            {(item.mode === 'GEOLOCATION' || item.mode === 'QR') && item.isComputable === false
+                            {(item.mode === 'GEOLOCATION' || item.mode === 'QR' || item.mode === 'GEOLOCATION_QR') &&
+                            item.isComputable === false
                               ? 'Sin consolidar'
                               : `${percentage.toFixed(1)}%`}
                           </Typography>
                         </Stack>
                       </TableCell>
 
-                      <TableCell align='right'>
+                      <TableCell align='right' sx={{ '& > span + span': { ml: 0.75 } }}>
                         <Tooltip title='Abrir sesión'>
                           <span>
                             <IconButton
                               size='small'
+                              color='info'
                               disabled={disabled}
                               aria-label={`Abrir sesión del ${formatDate(item.date)}`}
                               onClick={() => onSelectSession(item.idAttendanceSession)}
@@ -206,6 +228,7 @@ export function AttendanceHistory({
                           <span>
                             <IconButton
                               size='small'
+                              color='secondary'
                               disabled={disabled}
                               aria-label={`Más acciones de la sesión del ${formatDate(item.date)}`}
                               aria-haspopup='menu'
@@ -228,7 +251,7 @@ export function AttendanceHistory({
                 })}
               </TableBody>
             </Table>
-          </TableContainer>
+          </DataTableContainer>
         )}
       </Box>
       {!!meta.total && (
@@ -251,17 +274,21 @@ export function AttendanceHistory({
           <VisibilityOutlinedIcon fontSize='small' sx={{ mr: 1 }} />
           Abrir para editar
         </MenuItem>
-        {onEditDate && menuSession?.mode !== 'GEOLOCATION' && menuSession?.mode !== 'QR' && (
-          <MenuItem
-            disabled={disabled}
-            onClick={() => {
-              if (menu) onEditDate(menu.sessionId, menu.date.slice(0, 10));
-              setMenu(null);
-            }}
-          >
-            Editar fecha
-          </MenuItem>
-        )}
+        {onEditDate &&
+          menuSession?.mode !== 'GEOLOCATION' &&
+          menuSession?.mode !== 'QR' &&
+          menuSession?.mode !== 'GEOLOCATION_QR' && (
+            <MenuItem
+              sx={{ color: 'warning.main' }}
+              disabled={disabled}
+              onClick={() => {
+                if (menu) onEditDate(menu.sessionId, menu.date.slice(0, 10));
+                setMenu(null);
+              }}
+            >
+              Editar fecha
+            </MenuItem>
+          )}
         {onDeleteSession && menuSession && canDeleteAttendanceSession(menuSession) && (
           <MenuItem
             disabled={disabled}

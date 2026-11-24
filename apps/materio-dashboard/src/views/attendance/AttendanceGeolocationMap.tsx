@@ -57,14 +57,31 @@ export default function AttendanceGeolocationMap(props: AttendanceGeolocationMap
     if (latitude === null || longitude === null || !map.current || !layers.current) return;
     const center: L.LatLngTuple = [latitude, longitude];
 
-    L.circleMarker(center, { radius: 7, color: theme.palette.primary.main, fillOpacity: 1 }).addTo(layers.current);
+    const marker = L.marker(center, {
+      draggable: !props.disabled,
+      keyboard: true,
+      title: 'Ubicación del aula',
+      icon: L.divIcon({
+        className: '',
+        html: '<span style="display:block;width:16px;height:16px;background:#1976d2;border:2px solid white;border-radius:50%;box-shadow:0 0 2px black"></span>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      }),
+    }).addTo(layers.current);
+
+    marker.on('dragend', () => {
+      if (current.current.disabled) return;
+      const point = marker.getLatLng();
+
+      current.current.onLocationChange(point.lat, point.wrap().lng);
+    });
     if (Number.isFinite(radiusMeters) && radiusMeters > 0) {
       const circle = L.circle(center, { radius: radiusMeters, color: theme.palette.primary.main, fillOpacity: 0.12 });
 
       circle.addTo(layers.current);
       map.current.fitBounds(circle.getBounds(), { padding: [24, 24], maxZoom: 18 });
     } else map.current.setView(center, 17);
-  }, [latitude, longitude, radiusMeters, theme.palette.primary.main]);
+  }, [latitude, longitude, radiusMeters, props.disabled, theme.palette.primary.main]);
 
   return (
     <Box

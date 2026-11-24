@@ -1,4 +1,8 @@
-import { Button, MenuItem, Stack, TextField } from '@mui/material';
+import type { ReactNode } from 'react';
+
+import { MenuItem, TextField } from '@mui/material';
+
+import { TableToolbar } from '@/components/table';
 
 import type { RecordStatus } from '@/interfaces/status-query.interface';
 
@@ -10,14 +14,25 @@ interface Props {
   onStatus: (value: RecordStatus) => void;
   onReload: () => void;
   disabled: boolean;
+  children?: ReactNode;
 }
 
-export function CatalogToolbar({ search, searchLabel, onSearch, status, onStatus, onReload, disabled }: Props) {
+export function CatalogToolbar({
+  search,
+  searchLabel,
+  onSearch,
+  status,
+  onStatus,
+  onReload,
+  disabled,
+  children,
+}: Props) {
   return (
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ p: 3 }}>
+    <TableToolbar onRefresh={onReload} refreshDisabled={disabled}>
       <TextField
         size='small'
         label={searchLabel}
+        placeholder={`${searchLabel}...`}
         value={search}
         onChange={(event) => onSearch(event.target.value)}
         sx={{ flex: 1 }}
@@ -34,9 +49,7 @@ export function CatalogToolbar({ search, searchLabel, onSearch, status, onStatus
         <MenuItem value='active'>Activos</MenuItem>
         <MenuItem value='inactive'>Inactivos</MenuItem>
       </TextField>
-      <Button onClick={onReload} disabled={disabled} startIcon={<i className='ri-refresh-line' />}>
-        Actualizar
-      </Button>
-    </Stack>
+      {children}
+    </TableToolbar>
   );
 }

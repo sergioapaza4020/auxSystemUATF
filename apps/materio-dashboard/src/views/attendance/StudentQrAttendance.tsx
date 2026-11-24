@@ -2,16 +2,25 @@
 
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
 
+import { PageLoading } from '@/components/feedback/PageLoading';
+
 import { useStudentQrAttendance } from '@/hooks/attendances/useStudentQrAttendance';
 import { attendanceLocalTime } from '@/utils/attendance-geolocation';
 
 const statusLabels = { PRESENT: 'Presente', ABSENT: 'Ausente', EXCUSED: 'Permiso' };
-const methodLabels = { QR: 'Código QR', MANUAL: 'Registro manual', GEOLOCATION: 'Geolocalización' };
+
+const methodLabels = {
+  GEOLOCATION_QR: 'QR + ubicación',
+  QR: 'Código QR',
+  MANUAL: 'Registro manual',
+  GEOLOCATION: 'Geolocalización',
+};
+
 const local = (date: string) => attendanceLocalTime(date).replace('T', ' ');
 
 export function StudentQrAttendance() {
   const qr = useStudentQrAttendance();
-  const busy = ['INITIALIZING', 'LOADING_CONTEXT', 'SUBMITTING'].includes(qr.phase);
+  const busy = ['INITIALIZING', 'LOADING_CONTEXT', 'LOADING_CHALLENGE', 'LOCATING', 'SUBMITTING'].includes(qr.phase);
 
   return (
     <Container component='main' maxWidth='sm' sx={{ py: { xs: 4, sm: 8 }, px: { xs: 2, sm: 3 } }}>
@@ -25,17 +34,24 @@ export function StudentQrAttendance() {
                 ? 'Código QR no disponible'
                 : 'Registrar asistencia'}
           </Typography>
-          {busy && (
-            <Box role='status' sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <CircularProgress
-                size={24}
-                aria-label={qr.phase === 'SUBMITTING' ? 'Registrando asistencia' : 'Verificando sesión de asistencia'}
-              />
-              <Typography>
-                {qr.phase === 'SUBMITTING' ? 'Registrando asistencia...' : 'Verificando sesión de asistencia...'}
-              </Typography>
-            </Box>
-          )}
+          {busy &&
+            (['INITIALIZING', 'LOADING_CONTEXT'].includes(qr.phase) ? (
+              <PageLoading minHeight={0} />
+            ) : (
+              <Box role='status' sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <CircularProgress
+                  size={24}
+                  aria-label={qr.phase === 'SUBMITTING' ? 'Registrando asistencia' : 'Verificando sesión de asistencia'}
+                />
+                <Typography>
+                  {qr.phase === 'SUBMITTING'
+                    ? 'Registrando asistencia...'
+                    : qr.phase === 'LOCATING'
+                      ? 'Obteniendo ubicación...'
+                      : 'Verificando sesión de asistencia...'}
+                </Typography>
+              </Box>
+            ))}
           {qr.context && (
             <Stack spacing={1}>
               <Typography variant='h6'>{qr.context.course.name}</Typography>
@@ -45,7 +61,7 @@ export function StudentQrAttendance() {
               <Typography>Finalización: {local(qr.context.endsAt)}</Typography>
               <Typography variant='caption'>Horario de Bolivia · America/La_Paz</Typography>
               <Typography>
-                {['READY', 'SUBMITTING'].includes(qr.phase)
+                {['READY', 'READY_FOR_LOCATION', 'LOCATING', 'READY_TO_CONFIRM', 'SUBMITTING'].includes(qr.phase)
                   ? 'Sesión abierta'
                   : 'Estado y registro verificados por el servidor'}
               </Typography>
@@ -73,7 +89,28 @@ export function StudentQrAttendance() {
               Iniciar sesión
             </Button>
           )}
-          {qr.phase === 'READY' && !qr.mark && (
+          {qr.context?.mode === 'GEOLOCATION_QR' &&
+            ['READY_FOR_LOCATION', 'LOCATING', 'READY_TO_CONFIRM'].includes(qr.phase) && (
+              <>
+                <Typography>
+                  Necesitamos comprobar que estás dentro del área autorizada para esta clase. Tu ubicación se utiliza
+                  para validar el registro y no se guardan tus coordenadas exactas.
+                </Typography>
+                <Typography role='status'>
+                  Autorización: {qr.remaining} s restantes. El servidor determina la vigencia.
+                </Typography>
+                <Button
+                  size='large'
+                  variant='outlined'
+                  sx={{ minHeight: 52 }}
+                  onClick={qr.locate}
+                  disabled={qr.phase === 'LOCATING' || qr.rateLimited || qr.remaining <= 0}
+                >
+                  Obtener mi ubicación
+                </Button>
+              </>
+            )}
+          {['READY', 'READY_TO_CONFIRM'].includes(qr.phase) && !qr.mark && (
             <Button
               size='large'
               variant='contained'

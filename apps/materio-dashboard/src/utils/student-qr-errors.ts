@@ -3,6 +3,12 @@ import axios from 'axios';
 import { attendanceQrErrorCode } from './attendance-qr';
 
 const messages: Record<string, string> = {
+  COMBINED_AUTHORIZATION_EXPIRED: 'La autorización para registrar asistencia caducó. Escanea nuevamente el QR.',
+  COMBINED_AUTHORIZATION_INVALID: 'No se pudo validar tu autorización. Escanea nuevamente el QR.',
+  LOCATION_INVALID: 'No se pudo validar la ubicación obtenida. Intenta obtenerla nuevamente.',
+  LOW_ACCURACY: 'La precisión de tu ubicación es insuficiente. Intenta obtenerla nuevamente.',
+  OUTSIDE_AREA:
+    'Tu ubicación está fuera del área autorizada para esta clase. Puedes obtenerla nuevamente o solicitar apoyo al auxiliar.',
   QR_TOKEN_EXPIRED: 'El código QR caducó. Escanea nuevamente el código que muestra tu auxiliar.',
   QR_TOKEN_INVALID: 'El código QR no es válido. Vuelve a escanear el código mostrado durante la clase.',
   QR_NOT_AVAILABLE: 'No es posible registrar asistencia mediante QR en este momento.',
@@ -16,6 +22,19 @@ const messages: Record<string, string> = {
 };
 
 export function studentQrError(error: unknown): string {
+  const code = attendanceQrErrorCode(error) ?? '';
+
+  if (
+    [
+      'COMBINED_AUTHORIZATION_EXPIRED',
+      'COMBINED_AUTHORIZATION_INVALID',
+      'LOCATION_INVALID',
+      'LOW_ACCURACY',
+      'OUTSIDE_AREA',
+      'NOT_ENROLLED',
+    ].includes(code)
+  )
+    return messages[code];
   if (axios.isAxiosError(error) && error.response?.status === 403)
     return 'No tienes permiso para registrar asistencia mediante QR. Consulta al administrador e inicia sesión nuevamente si se actualizaron tus permisos.';
   if (axios.isAxiosError(error) && error.response?.status === 429)
@@ -28,10 +47,11 @@ export function studentQrError(error: unknown): string {
 }
 
 export function qrRetryAfter(error: unknown): number {
-  if (!axios.isAxiosError(error) || error.response?.status !== 429) return 0;
-  const value: unknown = error.response.headers?.['retry-after'];
+  if (!axios.isAxiosError(error) || ![429, 503].includes(error.response?.status ?? 0)) return 0;
+  const value: unknown = error.response?.headers?.['retry-after'];
 
-  if (typeof value !== 'string' && typeof value !== 'number') return Date.now() + 30000;
+  if (typeof value !== 'string' && typeof value !== 'number')
+    return error.response?.status === 429 ? Date.now() + 30000 : 0;
   const seconds = Number(value);
   const until = Number.isFinite(seconds) && seconds >= 0 ? Date.now() + seconds * 1000 : Date.parse(String(value));
 

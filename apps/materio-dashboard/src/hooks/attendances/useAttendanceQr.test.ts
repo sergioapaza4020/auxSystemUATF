@@ -198,3 +198,29 @@ describe('Auxiliary QR requests, rotation and privacy', () => {
     error.mockRestore();
   });
 });
+
+describe('combined QR emission', () => {
+  it('obtains and rotates combined codes using the same backend contract', async () => {
+    const h = hookHarness(() =>
+      useAttendanceQr({ idAttendanceSession: 7, mode: 'GEOLOCATION_QR', state: 'OPEN' }, true, vi.fn()),
+    );
+
+    cleanups.push(h.unmount);
+    h.render();
+    await flush();
+    expect(h.render().code?.token).toBe(code().token);
+    get.mockResolvedValue(code(7, 30000));
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(h.render().code?.token).toBe(code(7, 30000).token);
+  });
+  it.each(['DRAFT', 'SCHEDULED', 'CLOSED', 'CANCELLED'] as const)('never emits combined QR in %s', (state) => {
+    const h = hookHarness(() =>
+      useAttendanceQr({ idAttendanceSession: 7, mode: 'GEOLOCATION_QR', state }, true, vi.fn()),
+    );
+
+    cleanups.push(h.unmount);
+    h.render();
+    expect(get).not.toHaveBeenCalled();
+  });
+});

@@ -76,7 +76,7 @@ describePostgres('QR backend with signed JWT and verified disposable PostgreSQL'
       startsAt: starts.toISOString(),
       endsAt: ends.toISOString(),
     });
-    await api.activateSession(1, session.idAttendanceSession);
+    await api.activateSession(1, session.idAttendanceSession, starts <= new Date());
     return session.idAttendanceSession;
   }
   beforeAll(async () => {
@@ -142,6 +142,117 @@ describePostgres('QR backend with signed JWT and verified disposable PostgreSQL'
     jest.restoreAllMocks();
   }, 45000);
 
+  it('enables COMB creation while rejecting all historical self-registration bypasses', async () => {
+    await request(app.getHttpServer())
+      .post('/api/attendances/sessions')
+      .auth(assistantAuth(), { type: 'bearer' })
+      .send({ enrollmentId: 1, date: attendanceAcademicDate(new Date()), mode: 'GEOLOCATION_QR' })
+      .expect(201);
+    await expect(
+      api.createSession(1, {
+        enrollmentId: 1,
+        date: attendanceAcademicDate(new Date()),
+        mode: Mode.GEOLOCATION_QR,
+      }),
+    ).resolves.toMatchObject({ mode: Mode.GEOLOCATION_QR });
+    const session = await source.getRepository(AttendanceSession).save({
+      assistantEnrollment: { idEnrollment: 1 },
+      date: attendanceAcademicDate(new Date()) as unknown as Date,
+      mode: Mode.GEOLOCATION_QR,
+    });
+    const id = session.idAttendanceSession;
+    const tokenSession = Object.assign(new AttendanceSession(), session, {
+      mode: Mode.QR,
+      startsAt: new Date(Date.now() - 60000),
+      endsAt: new Date(Date.now() + 60000),
+      openedAt: new Date(Date.now() - 60000),
+    });
+    const token = tokens.issue(tokenSession, new Date()).token;
+    for (const operation of ['qr-context', 'qr-check-in']) {
+      await request(app.getHttpServer())
+        .post(path(id, operation))
+        .auth(auth(), { type: 'bearer' })
+        .send({ token })
+        .expect(409);
+    }
+    await request(app.getHttpServer())
+      .post(path(id, 'check-in'))
+      .auth(auth(2, ['attendance.check-in']), { type: 'bearer' })
+      .send({ latitude: -19.57, longitude: -65.75, accuracy: 10 })
+      .expect(409);
+    await request(app.getHttpServer())
+      .get(path(id, 'qr'))
+      .auth(assistantAuth(), { type: 'bearer' })
+      .expect(409);
+    await request(app.getHttpServer())
+      .post(`/api/attendances/sessions/${id}`)
+      .auth(assistantAuth(), { type: 'bearer' })
+      .send({
+        attendances: [{ enrollmentId: 2, status: 'PRESENT', observation: 'Verified in classroom' }],
+      })
+      .expect(409);
+    expect(await source.getRepository(Attendance).count()).toBe(0);
+    expect(await source.query('SELECT 1 FROM attendance_combined_authorizations')).toEqual([]);
+  });
+
+  it('enforces the Bolivia POST date and opens every self-registration mode for exactly the requested minute', async () => {
+    const past = attendanceAcademicDate(new Date(Date.now() - 86400000));
+    for (const mode of [Mode.MANUAL, Mode.GEOLOCATION, Mode.QR, Mode.GEOLOCATION_QR])
+      await request(app.getHttpServer())
+        .post('/api/attendances/sessions')
+        .auth(assistantAuth(), { type: 'bearer' })
+        .send({ enrollmentId: 1, date: past, mode })
+        .expect(400);
+    for (const mode of [Mode.GEOLOCATION, Mode.QR, Mode.GEOLOCATION_QR]) {
+      const draft = await api.createSession(1, {
+        enrollmentId: 1,
+        date: attendanceAcademicDate(new Date()),
+        mode,
+      });
+      const id = draft.idAttendanceSession;
+      if (mode !== Mode.QR)
+        await api.configureGeolocation(1, id, {
+          latitude: -19.57,
+          longitude: -65.75,
+          radiusMeters: 100,
+          maximumAcceptedAccuracy: 50,
+        });
+      for (const durationMinutes of [0, -1, 1.5, 'abc', null, Number.MAX_SAFE_INTEGER])
+        await request(app.getHttpServer())
+          .patch(path(id, 'open-now'))
+          .auth(assistantAuth(), { type: 'bearer' })
+          .send({ durationMinutes })
+          .expect(400);
+      const before = Date.now();
+      await request(app.getHttpServer())
+        .patch(path(id, 'open-now'))
+        .auth(assistantAuth(), { type: 'bearer' })
+        .send({
+          durationMinutes: 1,
+          startsAt: '2000-01-01T00:00:00Z',
+          endsAt: '2099-01-01T00:00:00Z',
+        })
+        .expect(200);
+      const saved = await loaded(id);
+      expect(saved.startsAt!.getTime()).toBeGreaterThanOrEqual(before);
+      expect(saved.startsAt!.getTime()).toBeLessThanOrEqual(Date.now());
+      expect(saved.openedAt).toEqual(saved.startsAt);
+      expect(saved.endsAt!.getTime() - saved.startsAt!.getTime()).toBe(60000);
+      expect(getAttendanceSessionState(saved, saved.endsAt!)).toBe('CLOSED');
+      if (mode === Mode.GEOLOCATION_QR) {
+        const issued = await api.getQr(1, id);
+        const authorization = await api.combinedChallenge(2, id, { token: issued.token });
+        expect(authorization.authorizationExpiresAt!.getTime()).toBeLessThanOrEqual(
+          saved.endsAt!.getTime(),
+        );
+        await source.query(
+          'DELETE FROM attendance_combined_authorizations WHERE id_attendance_session=$1',
+          [id],
+        );
+      }
+    }
+  });
+
   it('completes HTTP create/configure/activate/issue/context/confirm/own-mark/close without exposing others', async () => {
     const create = await request(app.getHttpServer())
       .post('/api/attendances/sessions')
@@ -162,7 +273,7 @@ describePostgres('QR backend with signed JWT and verified disposable PostgreSQL'
       })
       .expect(200);
     await request(app.getHttpServer())
-      .patch(path(id, 'activate'))
+      .patch(path(id, 'open-now'))
       .auth(assistantAuth(), { type: 'bearer' })
       .expect(200);
     const emitted = await request(app.getHttpServer())
@@ -666,7 +777,12 @@ describePostgres('QR backend with signed JWT and verified disposable PostgreSQL'
 
   it('rejects expiry after waiting under the session lock rather than using arrival time', async () => {
     // Force a short remaining session window. The signed code cannot outlive it.
-    const id = await open(new Date(Date.now() - 60000), new Date(Date.now() + 1800));
+    const id = await open();
+    const earlier = new Date(Date.now() - 60000);
+    await source.query(
+      'UPDATE attendance_sessions SET starts_at=$2,opened_at=$2,date=$3,ends_at=$4 WHERE id_attendance_session=$1',
+      [id, earlier, attendanceAcademicDate(earlier), new Date(Date.now() + 1800)],
+    );
     const { token } = await api.getQr(1, id);
     const runner = source.createQueryRunner();
     await runner.startTransaction();

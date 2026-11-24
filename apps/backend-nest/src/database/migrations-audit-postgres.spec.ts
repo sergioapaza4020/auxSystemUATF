@@ -117,9 +117,12 @@ describePostgres('Complete migration history on isolated PostgreSQL', () => {
       expect(await source.runMigrations({ transaction: 'each' })).toEqual([]);
       await revertReviewedMigration(source);
       await revertReviewedMigration(source);
+      await revertReviewedMigration(source);
+      await revertReviewedMigration(source);
+      await revertReviewedMigration(source);
       await expect(revertReviewedMigration(source)).rejects.toThrow('ROLLBACK_BLOCKED:');
-      expect(await source.query('SELECT name FROM migrations')).toHaveLength(applied.length - 2);
-      expect(await source.runMigrations({ transaction: 'each' })).toHaveLength(2);
+      expect(await source.query('SELECT name FROM migrations')).toHaveLength(applied.length - 5);
+      expect(await source.runMigrations({ transaction: 'each' })).toHaveLength(5);
     } finally {
       await database.close();
     }

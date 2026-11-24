@@ -2,19 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import {
-  Alert,
-  Box,
-  Button,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Stack, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
+
+import { DataTableContainer, DataTableSurface, EnhancedTableHead, PaginationTable } from '@/components/table';
 
 import {
   createGradeItem,
@@ -23,7 +13,6 @@ import {
   reactivateGradeItem,
   updateGradeItem,
 } from '@/api/grade-items.service';
-import { EnhancedTableHead, PaginationTable } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/utils/hasPermission';
@@ -128,7 +117,7 @@ export function GradeItemsTable() {
         están inactivos, puedes reactivarlos.
       </Alert>
       {!editorOpen && catalog.mutationError && <Alert severity='error'>{catalog.mutationError}</Alert>}
-      <Paper variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
+      <DataTableSurface variant='outlined' sx={{ overflow: 'hidden', borderRadius: 2 }}>
         <CatalogToolbar
           search={search}
           searchLabel='Buscar por nombre'
@@ -158,7 +147,7 @@ export function GradeItemsTable() {
           </Alert>
         ) : (
           <>
-            <TableContainer>
+            <DataTableContainer>
               <Table aria-label='Ítems de calificación' sx={{ minWidth: 480 }}>
                 <EnhancedTableHead<IGradeItem, typeof gradeItemHeadCells>
                   headCells={gradeItemHeadCells}
@@ -201,7 +190,7 @@ export function GradeItemsTable() {
                   )}
                 </TableBody>
               </Table>
-            </TableContainer>
+            </DataTableContainer>
             <PaginationTable
               count={filtered.length}
               page={page}
@@ -211,7 +200,7 @@ export function GradeItemsTable() {
             />
           </>
         )}
-      </Paper>
+      </DataTableSurface>
       {editorOpen && (
         <GradeItemEditDialog
           item={editing}

@@ -35,7 +35,7 @@ describe('browser access to QR rate-limit headers', () => {
       .get('/probe')
       .set('Origin', 'https://frontend.test.invalid')
       .expect(429);
-    expect(result.headers['access-control-expose-headers']).toBe('Retry-After');
+    expect(result.headers['access-control-expose-headers']).toBe('Retry-After,X-Request-ID');
     expect(result.headers['access-control-allow-origin']).toBe('https://frontend.test.invalid');
     expect(result.headers['retry-after']).toBe('60');
   });

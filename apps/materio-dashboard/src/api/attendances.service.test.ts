@@ -16,6 +16,9 @@ import {
   checkInAttendance,
   configureAttendanceQr,
   getAttendanceQrCode,
+  getAttendanceAudit,
+  getCombinedChallenge,
+  checkInCombined,
 } from './attendances.service';
 import { qrContext, qrMark, qrToken } from '@/test-utils/qr-fixtures';
 
@@ -179,4 +182,59 @@ it('uses token-only student QR bodies and token-free own-mark URLs', async () =>
   vi.mocked(instance.get).mockResolvedValueOnce({ data: { data: { ownMark: qrMark } } });
   expect(await getMyQrMark(7, signal)).toEqual({ ownMark: qrMark });
   expect(instance.get).toHaveBeenLastCalledWith('/attendances/sessions/7/qr-own-mark', { signal });
+});
+
+it('creates a combined draft and reads audit pages through the existing client', async () => {
+  const body = { enrollmentId: 20, date: '2026-11-20', mode: 'GEOLOCATION_QR' as const };
+
+  vi.mocked(instance.post).mockResolvedValueOnce({ data: { data: { ...body, state: 'DRAFT' } } });
+  expect(await createAttendanceSession(body)).toMatchObject({ state: 'DRAFT' });
+  expect(instance.post).toHaveBeenLastCalledWith('/attendances/sessions', body);
+  const signal = new AbortController().signal;
+  const response = { status: true, statusCode: 200, data: [], meta: { page: 2, limit: 10, total: 20, totalPages: 2 } };
+
+  vi.mocked(instance.get).mockResolvedValueOnce({ data: response });
+  expect(await getAttendanceAudit(7, { page: 2, limit: 10 }, signal)).toBe(response);
+  expect(instance.get).toHaveBeenLastCalledWith('/attendances/sessions/7/audit', {
+    params: { page: 2, limit: 10 },
+    signal,
+  });
+});
+
+it('uses exact combined bodies and never sends identity, timestamp or device metadata', async () => {
+  const signal = new AbortController().signal;
+
+  vi.mocked(instance.post).mockResolvedValue({ data: { data: {} } });
+  await getCombinedChallenge(7, 'q1.synthetic', signal);
+  expect(instance.post).toHaveBeenLastCalledWith(
+    '/attendances/sessions/7/combined-challenge',
+    { token: 'q1.synthetic' },
+    { signal },
+  );
+
+  const position = {
+    authorization: 'B'.repeat(43),
+    latitude: -19.57,
+    longitude: -65.75,
+    accuracy: 25,
+    userId: 99,
+    timestamp: 123,
+    distanceMeters: 0,
+  };
+
+  await checkInCombined(7, position, signal);
+  expect(instance.post).toHaveBeenLastCalledWith(
+    '/attendances/sessions/7/combined-check-in',
+    { authorization: position.authorization, latitude: -19.57, longitude: -65.75, accuracy: 25 },
+    { signal },
+  );
+});
+
+it('opens with duration only, preserving the legacy empty-body contract', async () => {
+  vi.mocked(instance.patch).mockResolvedValueOnce({ data: { data: { state: 'OPEN' } } });
+  await openSessionNow(7, 1);
+  expect(instance.patch).toHaveBeenLastCalledWith('/attendances/sessions/7/open-now', { durationMinutes: 1 });
+  vi.mocked(instance.patch).mockResolvedValueOnce({ data: { data: { state: 'OPEN' } } });
+  await openSessionNow(7);
+  expect(instance.patch).toHaveBeenLastCalledWith('/attendances/sessions/7/open-now');
 });

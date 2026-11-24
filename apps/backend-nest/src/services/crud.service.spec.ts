@@ -438,7 +438,7 @@ describe('CRUD service behavior', () => {
     expect(repo(AttendanceSession).manager.transaction).not.toHaveBeenCalled();
   });
 
-  it('rejects changing a session to a date already used by the same assistant', async () => {
+  it('changes only the selected session when its date is already used by the same assistant', async () => {
     repo(AttendanceSession)
       .findOne.mockResolvedValueOnce({
         idAttendanceSession: 1,
@@ -450,10 +450,14 @@ describe('CRUD service behavior', () => {
         },
       })
       .mockResolvedValueOnce({ idAttendanceSession: 2 });
-    await expect(attendances.updateSession(7, 1, { date: '2026-09-25' })).rejects.toThrow(
-      ConflictException,
+    await expect(attendances.updateSession(7, 1, { date: '2026-09-25' })).resolves.toMatchObject({
+      idAttendanceSession: 1,
+      date: '2026-09-25',
+    });
+    expect(repo(AttendanceSession).findOne).toHaveBeenCalledTimes(1);
+    expect(repo(AttendanceSession).save).toHaveBeenCalledWith(
+      expect.objectContaining({ idAttendanceSession: 1, date: '2026-09-25' }),
     );
-    expect(repo(AttendanceSession).save).not.toHaveBeenCalled();
   });
 
   it('deletes session attendance records and their parent inside one transaction', async () => {

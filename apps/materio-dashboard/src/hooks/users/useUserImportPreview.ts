@@ -51,6 +51,13 @@ export function useUserImportPreview(initial: IUserImportPreview, enabled: boole
       void getUserImportPreviewPage(initial.operationId, query, controller.signal)
         .then((response) => {
           if (controller.signal.aborted) return;
+
+          if (query.page > Math.max(1, response.meta.totalPages)) {
+            setQuery((previous) => ({ ...previous, page: Math.max(1, response.meta.totalPages) }));
+
+            return;
+          }
+
           setRows(response.data);
           setMeta(response.meta);
           setLoading(false);

@@ -17,7 +17,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -39,6 +38,9 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 
+import { DataTableContainer, TableToolbar } from '@/components/table';
+import { PageLoading } from '@/components/feedback/PageLoading';
+
 import type { PaginationMeta } from '@/interfaces/apiResponse';
 
 import type { StudentRosterQuery } from '@/api/enrollments.service';
@@ -55,6 +57,7 @@ import { useDataTable } from '@/hooks/table/useDataTable';
 
 import { PaginationTable, type HeadCell } from '@/components/table';
 
+import type { IAttendance, AttendanceSessionState } from '@/interfaces/attendances/attendance.interface';
 import { AttendanceStudentRow } from './AttendanceStudentRow';
 
 const columns = [
@@ -62,6 +65,11 @@ const columns = [
 ] as const satisfies readonly HeadCell<IEnrollmentStudent>[];
 
 interface AttendanceSheetProps {
+  combined?: boolean;
+  sessionState?: AttendanceSessionState | null;
+  records?: IAttendance[];
+  pendingCount?: number;
+  onContingency?: (student: IEnrollmentStudent) => void;
   students: IEnrollmentStudent[];
 
   pagination?: {
@@ -117,6 +125,7 @@ interface AttendanceSheetProps {
   permissionWeightError: boolean;
 
   onSearchChange: (value: string) => void;
+  onRefresh?: () => void;
 
   onChangeAttendance: (idEnrollment: number, status: AttendanceStatus) => void;
 
@@ -130,6 +139,11 @@ interface AttendanceSheetProps {
 }
 
 export function AttendanceSheet({
+  combined = false,
+  sessionState,
+  records = [],
+  pendingCount = 0,
+  onContingency,
   students,
 
   pagination,
@@ -187,6 +201,7 @@ export function AttendanceSheet({
   onMarkAllAbsent,
 
   onCancelChanges,
+  onRefresh,
 
   onSave,
 }: AttendanceSheetProps) {
@@ -214,7 +229,9 @@ export function AttendanceSheet({
             </Typography>
 
             <Typography variant='body2' color='text.secondary'>
-              Marca todos presentes y ajusta las excepciones antes de guardar.
+              {combined
+                ? 'Las verificaciones QR + ubicación y las contingencias justificadas comparten esta planilla.'
+                : 'Marca todos presentes y ajusta las excepciones antes de guardar.'}
             </Typography>
           </Box>
 
@@ -260,63 +277,80 @@ export function AttendanceSheet({
 
             <CountIndicator
               value={absentCount}
-              label={pending ? 'Pendientes' : 'Ausentes'}
+              label={pending && !combined ? 'Pendientes' : 'Ausentes'}
               color={attendanceStatusColor(AttendanceStatus.ABSENT)}
               icon={<CloseOutlinedIcon fontSize='small' />}
             />
+            {combined && (
+              <CountIndicator
+                value={pendingCount}
+                label='Pendientes'
+                icon={<ScheduleOutlinedIcon fontSize='small' />}
+              />
+            )}
           </Stack>
 
-          <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
-            <Button
-              size='small'
-              variant='outlined'
-              color='success'
-              startIcon={<CheckOutlinedIcon />}
-              disabled={disabled || markAllDisabled}
-              onClick={onMarkAllPresent}
-            >
-              Marcar todos presentes
-            </Button>
+          {!combined && (
+            <Stack direction='row' spacing={1} flexWrap='wrap' useFlexGap>
+              <Button
+                size='small'
+                variant='outlined'
+                color='success'
+                startIcon={<CheckOutlinedIcon />}
+                disabled={disabled || markAllDisabled}
+                onClick={onMarkAllPresent}
+              >
+                Marcar todos presentes
+              </Button>
 
-            <Button
-              size='small'
-              variant='text'
-              color='error'
-              startIcon={<CloseOutlinedIcon />}
-              disabled={disabled || markAllDisabled}
-              onClick={onMarkAllAbsent}
-            >
-              Marcar todos ausentes
-            </Button>
-          </Stack>
+              <Button
+                size='small'
+                variant='text'
+                color='error'
+                startIcon={<CloseOutlinedIcon />}
+                disabled={disabled || markAllDisabled}
+                onClick={onMarkAllAbsent}
+              >
+                Marcar todos ausentes
+              </Button>
+            </Stack>
+          )}
         </Stack>
 
-        <TextField
-          size='small'
-          value={search}
-          onChange={(event) => {
-            onSearchChange(event.target.value);
+        <TableToolbar
+          sx={{ px: 0, py: 2 }}
+          onRefresh={onRefresh}
+          refreshDisabled={loading || saving || hasChanges}
+          refreshReason={hasChanges ? 'Guarda o cancela las asistencias pendientes antes de actualizar.' : undefined}
+        >
+          <TextField
+            size='small'
+            value={search}
+            onChange={(event) => {
+              onSearchChange(event.target.value);
 
-            table.handleChangePage(null, 0);
-          }}
-          placeholder='Buscar estudiante por nombre, CI o RU…'
-          inputProps={{ 'aria-label': 'Buscar estudiante por nombre, CI o RU' }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <SearchOutlinedIcon fontSize='small' />
-              </InputAdornment>
-            ),
-          }}
-        />
-
+              table.handleChangePage(null, 0);
+            }}
+            placeholder='Buscar estudiante por nombre, CI o RU…'
+            inputProps={{ 'aria-label': 'Buscar estudiante por nombre, CI o RU' }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position='start'>
+                  <SearchOutlinedIcon fontSize='small' />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </TableToolbar>
         <Typography variant='caption' color='text.secondary'>
-          {pending
-            ? 'Los estudiantes sin marca permanecen pendientes hasta el cierre de la sesión.'
-            : 'Los estudiantes sin una marca explícita se consideran ausentes.'}
+          {combined && sessionState !== 'OPEN' && sessionState !== 'CLOSED'
+            ? 'La sesión no recibe registros. Los estudiantes sin registro se muestran sin marca.'
+            : pending
+              ? 'Los estudiantes sin marca permanecen pendientes hasta el cierre de la sesión.'
+              : 'Los estudiantes sin una marca explícita se consideran ausentes.'}
         </Typography>
 
-        {markAllDisabled && (
+        {markAllDisabled && !combined && (
           <Typography variant='caption' color='text.secondary'>
             No se puede usar Marcar todos porque existen registros protegidos por geolocalización o QR.
           </Typography>
@@ -324,16 +358,14 @@ export function AttendanceSheet({
       </Stack>
 
       {loading ? (
-        <Box sx={{ height: 200, display: 'grid', placeItems: 'center' }}>
-          <CircularProgress size={28} aria-label='Cargando planilla' />
-        </Box>
+        <PageLoading minHeight={200} />
       ) : totalStudents === 0 ? (
         <Box sx={{ px: 3, py: 6, textAlign: 'center' }}>
           <Typography color='text.secondary'>No hay estudiantes matriculados en esta materia.</Typography>
         </Box>
       ) : (
         <>
-          <TableContainer sx={{ maxHeight: 560, borderTop: 1, borderColor: 'divider' }}>
+          <DataTableContainer sx={{ maxHeight: 560, borderTop: 1, borderColor: 'divider' }}>
             <Table
               stickyHeader
               size='small'
@@ -372,6 +404,14 @@ export function AttendanceSheet({
                         index +
                         1
                       }
+                      combined={combined}
+                      sessionState={sessionState}
+                      record={records.find((record) => record.enrollment.idEnrollment === student.idEnrollment)}
+                      onContingency={
+                        combined && onContingency && !lockedStudentIds.includes(student.idEnrollment)
+                          ? () => onContingency(student)
+                          : undefined
+                      }
                       student={student}
                       status={attendance[student.idEnrollment] ?? AttendanceStatus.ABSENT}
                       modified={markAllActive || modifiedStudentIds.includes(student.idEnrollment)}
@@ -385,7 +425,7 @@ export function AttendanceSheet({
                 )}
               </TableBody>
             </Table>
-          </TableContainer>
+          </DataTableContainer>
 
           {students.length > 0 && (
             <PaginationTable
@@ -405,78 +445,80 @@ export function AttendanceSheet({
         </>
       )}
 
-      <Paper
-        variant='outlined'
-        role='region'
-        aria-label='Guardar asistencia'
-        sx={{
-          position: 'sticky',
+      {!combined && (
+        <Paper
+          variant='outlined'
+          role='region'
+          aria-label='Guardar asistencia'
+          sx={{
+            position: 'sticky',
 
-          bottom: 12,
+            bottom: 12,
 
-          zIndex: 5,
+            zIndex: 5,
 
-          mx: { xs: 1, sm: 2 },
+            mx: { xs: 1, sm: 2 },
 
-          mb: 2,
+            mb: 2,
 
-          px: 2,
+            px: 2,
 
-          py: 1.25,
+            py: 1.25,
 
-          borderRadius: 2,
+            borderRadius: 2,
 
-          borderColor: hasChanges ? 'primary.main' : 'divider',
+            borderColor: hasChanges ? 'primary.main' : 'divider',
 
-          bgcolor: 'background.paper',
+            bgcolor: 'background.paper',
 
-          boxShadow: hasChanges ? 2 : 0,
-        }}
-      >
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
-          justifyContent='space-between'
-          alignItems={{ xs: 'stretch', sm: 'center' }}
+            boxShadow: hasChanges ? 2 : 0,
+          }}
         >
-          <Stack direction='row' spacing={1} alignItems='center' role='status'>
-            {hasChanges ? (
-              <Box aria-hidden sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
-            ) : (
-              <CheckOutlinedIcon fontSize='small' color='disabled' />
-            )}
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            justifyContent='space-between'
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+          >
+            <Stack direction='row' spacing={1} alignItems='center' role='status'>
+              {hasChanges ? (
+                <Box aria-hidden sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+              ) : (
+                <CheckOutlinedIcon fontSize='small' color='disabled' />
+              )}
 
-            <Typography variant='body2' color='text.secondary'>
-              {hasChanges
-                ? `${markAllActive ? totalStudents : modifiedStudentIds.length} ${(markAllActive ? totalStudents : modifiedStudentIds.length) === 1 ? 'estudiante modificado' : 'estudiantes modificados'}`
-                : 'Sin cambios pendientes'}
-            </Typography>
+              <Typography variant='body2' color='text.secondary'>
+                {hasChanges
+                  ? `${markAllActive ? totalStudents : modifiedStudentIds.length} ${(markAllActive ? totalStudents : modifiedStudentIds.length) === 1 ? 'estudiante modificado' : 'estudiantes modificados'}`
+                  : 'Sin cambios pendientes'}
+              </Typography>
+            </Stack>
+
+            <Stack direction='row' spacing={1} justifyContent='flex-end'>
+              <Button
+                size='small'
+                variant='text'
+                color='inherit'
+                disabled={!hasChanges || saving || loading}
+                onClick={onCancelChanges}
+              >
+                Cancelar cambios
+              </Button>
+
+              <Button
+                size='small'
+                variant='contained'
+                aria-label='Guardar asistencia'
+                disabled={!hasChanges || disabled || saveDisabled}
+                onClick={onSave}
+                startIcon={saving ? <CircularProgress size={16} color='inherit' /> : <SaveOutlinedIcon />}
+              >
+                {saving ? 'Guardando…' : 'Guardar asistencia'}
+              </Button>
+            </Stack>
           </Stack>
-
-          <Stack direction='row' spacing={1} justifyContent='flex-end'>
-            <Button
-              size='small'
-              variant='text'
-              color='inherit'
-              disabled={!hasChanges || saving || loading}
-              onClick={onCancelChanges}
-            >
-              Cancelar cambios
-            </Button>
-
-            <Button
-              size='small'
-              variant='contained'
-              aria-label='Guardar asistencia'
-              disabled={!hasChanges || disabled || saveDisabled}
-              onClick={onSave}
-              startIcon={saving ? <CircularProgress size={16} color='inherit' /> : <SaveOutlinedIcon />}
-            >
-              {saving ? 'Guardando…' : 'Guardar asistencia'}
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+        </Paper>
+      )}
 
       <Dialog
         open={!!observationStudent && attendance[observationStudent.idEnrollment] === AttendanceStatus.EXCUSED}

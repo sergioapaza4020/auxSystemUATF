@@ -139,7 +139,8 @@ describe('Academic record page integration', () => {
   });
   it('shows loading and load errors', () => {
     mocks.record.mockReturnValue({ ...recordState(), loading: true });
-    expect(renderToStaticMarkup(<Page />)).toContain('Cargando ficha académica');
+    expect(renderToStaticMarkup(<Page />)).toContain('Cargando...');
+    expect(renderToStaticMarkup(<Page />)).toContain('role="status"');
     mocks.record.mockReturnValue({ ...recordState(), error: 'Fallo de carga' });
     expect(renderToStaticMarkup(<Page />)).toContain('Fallo de carga');
     expect(renderToStaticMarkup(<Page />)).toContain('Reintentar');

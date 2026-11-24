@@ -58,6 +58,8 @@ describe('Attendance sidebar', () => {
         </ThemeProvider>,
       );
 
+      expect(html.indexOf('Configuración de asistencia')).toBeLessThan(html.indexOf('Resumen de la sesión'));
+      expect(html.indexOf('Resumen de la sesión')).toBeLessThan(html.indexOf('Historial rápido'));
       expect(html).toContain('61.1%');
       expect(html).not.toContain('100.0%');
       expect(html).toContain('Guarda para actualizar el porcentaje.');

@@ -9,17 +9,16 @@ import {
   Box,
   Chip,
   MenuItem,
-  Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
-  TablePagination,
   TableRow,
   TableHead,
   TextField,
   Typography,
 } from '@mui/material';
+
+import { DataTableContainer, PaginationTable, TableToolbar } from '@/components/table';
 
 import { type HeadCell } from '@/components/table';
 import { useDataTable } from '@/hooks/table/useDataTable';
@@ -66,7 +65,7 @@ export function CareerStudentImportReviewTable({
 
   return (
     <>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+      <TableToolbar compact onRefresh={remote.reload} refreshDisabled={busy || remote.loading}>
         <TextField
           label='Buscar nombre, RU, username, email o carrera'
           size='small'
@@ -92,7 +91,7 @@ export function CareerStudentImportReviewTable({
           <MenuItem value='valid'>Válidos</MenuItem>
           <MenuItem value='invalid'>Con errores</MenuItem>
         </TextField>
-      </Stack>
+      </TableToolbar>
       {remote.loading && <LinearProgress aria-label='Cargando página del preview' />}
       {remote.error && (
         <Alert
@@ -106,7 +105,7 @@ export function CareerStudentImportReviewTable({
           {remote.error}
         </Alert>
       )}
-      <TableContainer aria-busy={remote.loading} sx={{ opacity: remote.loading || remote.error ? 0.6 : 1 }}>
+      <DataTableContainer aria-busy={remote.loading} sx={{ opacity: remote.loading || remote.error ? 0.6 : 1 }}>
         <Table size='small' aria-label='Revisión de estudiantes a asignar' sx={{ minWidth: 1100 }}>
           <TableHead>
             <TableRow>
@@ -158,22 +157,15 @@ export function CareerStudentImportReviewTable({
             )}
           </TableBody>
         </Table>
-      </TableContainer>
-      <TablePagination
-        component='div'
+      </DataTableContainer>
+      <PaginationTable
         count={remote.meta.total}
         page={table.page}
         rowsPerPage={table.rowsPerPage}
         rowsPerPageOptions={[25, 50, 100]}
-        labelRowsPerPage='Filas por página'
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-        onPageChange={(event, page) => {
-          if (!busy) table.handleChangePage(event, page);
-        }}
+        disabled={busy || remote.loading}
+        onPageChange={table.handleChangePage}
         onRowsPerPageChange={table.handleChangeRowsPerPage}
-        SelectProps={{ disabled: busy }}
-        backIconButtonProps={{ disabled: busy || table.page === 0 }}
-        nextIconButtonProps={{ disabled: busy || (table.page + 1) * table.rowsPerPage >= remote.meta.total }}
       />
     </>
   );

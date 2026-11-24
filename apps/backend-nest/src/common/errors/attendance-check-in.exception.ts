@@ -3,6 +3,13 @@ import { AttendanceCheckInCode as Code } from '@common/enums/attendanceCheckInCo
 
 type ErrorCode = Exclude<Code, Code.SUCCESS>;
 const messages: Record<ErrorCode, string> = {
+  COMBINED_AUTHORIZATION_INVALID: 'La autorización no es válida. Escanea nuevamente.',
+  COMBINED_AUTHORIZATION_EXPIRED: 'La autorización ha vencido. Escanea nuevamente.',
+  MANUAL_REASON_REQUIRED: 'Describe un motivo de entre 10 caracteres útiles y 500 caracteres.',
+  MANUAL_OVERRIDE_FORBIDDEN: 'Esta operación manual no está permitida.',
+  ATTENDANCE_EVIDENCE_PROTECTED:
+    'La evidencia de asistencia no puede sobrescribirse ni eliminarse.',
+
   QR_TOKEN_INVALID: 'El código QR no es válido.',
   QR_TOKEN_EXPIRED: 'El código QR ha vencido. Escanea el código actual.',
   QR_NOT_AVAILABLE: 'El registro QR no está disponible.',

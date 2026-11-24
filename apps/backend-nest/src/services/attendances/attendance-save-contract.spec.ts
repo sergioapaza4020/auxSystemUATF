@@ -45,7 +45,7 @@ describe('Attendance save HTTP contract (isolated, without database)', () => {
         .send(payload)
         .expect(201);
       expect(response.body).toEqual({ status: true, statusCode: 201, data: records });
-      expect(service.saveAttendances).toHaveBeenCalledWith(2, 1, payload);
+      expect(service.saveAttendances).toHaveBeenCalledWith(2, 1, payload, payload);
     } finally {
       await app.close();
     }

@@ -40,6 +40,12 @@ function html(extra: Partial<Parameters<typeof AttendanceSheet>[0]> = {}) {
 }
 
 describe('Attendance sheet UX', () => {
+  it('keeps refresh disabled while attendance changes are pending', () => {
+    const result = html({ hasChanges: true, onRefresh: () => {} });
+
+    expect(result).toMatch(/<button(?=[^>]*disabled)[^>]*>(?:(?!<\/button>)[\s\S])*Actualizar<\/button>/);
+    expect(result).toContain('Guarda o cancela las asistencias pendientes');
+  });
   it('shows pending instead of implicit absence while GEO is not consolidated', () => {
     const result = html({ pending: true, pendingStudentIds: [1], readOnly: true });
 
@@ -98,8 +104,80 @@ describe('Attendance sheet UX', () => {
       />,
     );
 
-    expect(result).toContain('Editando sesión del 28/09/2026');
+    expect(result).toContain('Editando sesión #1 del 28/09/2026');
     expect(result).toContain('Cambios sin guardar');
     expect(result).not.toContain('Sesión guardada');
   });
 });
+
+describe('combined unified sheet', () => {
+  it('keeps pending and explicit absent counts separate, without bulk or physical delete', () => {
+    const result = html({
+      combined: true,
+      pending: true,
+      pendingCount: 1,
+      pendingStudentIds: [1],
+      absentCount: 0,
+      onContingency: () => {},
+    });
+
+    expect(result).toContain('Pendiente');
+    expect(result).toContain('Ausentes');
+    expect(result).toContain('Registrar contingencia');
+    expect(result).not.toContain('Marcar todos');
+    expect(result).not.toContain('Guardar asistencia');
+    expect(result).not.toContain('Eliminar');
+  });
+  it.each([AttendanceStatus.PRESENT, AttendanceStatus.EXCUSED, AttendanceStatus.ABSENT])(
+    'preserves a manual %s record and reason',
+    (status) => {
+      const result = html({
+        combined: true,
+        records: [
+          {
+            idAttendance: 1,
+            enrollment: student,
+            status,
+            registrationMethod: 'MANUAL',
+            observation: 'Incidencia verificada en aula',
+          },
+        ],
+        onContingency: () => {},
+      });
+
+      expect(result).toContain('Manual');
+      expect(result).toContain('Incidencia verificada en aula');
+      expect(result).toContain('Corregir contingencia');
+      if (status === AttendanceStatus.ABSENT) expect(result).toContain('Ausente (explícito)');
+    },
+  );
+  it('distinguishes closed implicit absence and protects combined evidence', () => {
+    expect(html({ combined: true })).toContain('Ausente (implícito)');
+
+    const result = html({
+      combined: true,
+      records: [
+        {
+          idAttendance: 1,
+          enrollment: student,
+          status: AttendanceStatus.PRESENT,
+          registrationMethod: 'GEOLOCATION_QR',
+        },
+      ],
+      onContingency: () => {},
+    });
+
+    expect(result).toContain('QR + ubicación');
+    expect(result).not.toContain('Corregir contingencia');
+  });
+});
+
+it.each(['DRAFT', 'SCHEDULED', 'CANCELLED'] as const)(
+  'shows no mark, rather than implicit absence, in combined %s',
+  (sessionState) => {
+    const result = html({ combined: true, sessionState, pending: true, pendingStudentIds: [1], readOnly: true });
+
+    expect(result).toContain('Sin marca');
+    expect(result).not.toContain('Ausente (implícito)');
+  },
+);

@@ -14,6 +14,6 @@ export function httpCorsOptions(origin: string | undefined): CorsOptions {
       'x-custom-header',
     ],
     // Browsers otherwise hide Retry-After on cross-origin QR responses.
-    exposedHeaders: ['Retry-After'],
+    exposedHeaders: ['Retry-After', 'X-Request-ID'],
   };
 }

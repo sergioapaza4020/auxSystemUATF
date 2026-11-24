@@ -5,6 +5,8 @@ import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import { alpha, type Theme } from '@mui/material/styles';
 
+import { tableToolbarSx } from '@/components/table';
+
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
 import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IStudentAttendance } from '@/interfaces/attendances/attendance.interface';
@@ -79,12 +81,8 @@ export function AcademicCriteria({
                 justifyContent='space-between'
                 alignItems='flex-start'
                 sx={(theme) => ({
-                  mb: 2,
-                  mx: -3,
-                  mt: -3,
-                  px: 3,
-                  pt: 3,
-                  pb: 2,
+                  ...tableToolbarSx,
+                  px: 0,
                   bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.07 : 0.025),
                 })}
               >

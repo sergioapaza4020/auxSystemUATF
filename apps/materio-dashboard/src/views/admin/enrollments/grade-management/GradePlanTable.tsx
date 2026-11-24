@@ -10,13 +10,14 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
+
+import { DataTableContainer } from '@/components/table';
 
 import type { IGradeMatrix } from '@/interfaces/grades/grade-matrix.interface';
 import { DEFAULT_GRADE_DISPLAY_MODE, type GradeDisplayMode } from '../GradeViewToggle';
@@ -87,7 +88,7 @@ export function GradePlanTable(props: GradePlanTableProps) {
   }, [pendingFocus, onFocusHandled, students]);
 
   return (
-    <TableContainer sx={{ overflowX: 'auto', maxHeight: '65vh' }}>
+    <DataTableContainer sx={{ overflowX: 'auto', maxHeight: '65vh' }}>
       <Table stickyHeader size='small' aria-label='Planilla de calificaciones' sx={{ minWidth: 800 }}>
         <TableHead>
           <TableRow>
@@ -95,8 +96,8 @@ export function GradePlanTable(props: GradePlanTableProps) {
             <TableCell sx={{ position: 'sticky', left: 0, zIndex: 4, minWidth: 240, bgcolor: 'background.paper' }}>
               Estudiante
             </TableCell>
-            <TableCell sx={{ minWidth: 100, display: { xs: 'none', sm: 'table-cell' } }}>CI</TableCell>
-            <TableCell sx={{ minWidth: 100, display: { xs: 'none', sm: 'table-cell' } }}>RU</TableCell>
+            <TableCell sx={{ minWidth: 100 }}>CI</TableCell>
+            <TableCell sx={{ minWidth: 100 }}>RU</TableCell>
             {activities.map((activity) => (
               <TableCell key={activity.idActivity} align='center' sx={{ minWidth: 156, bgcolor: 'background.default' }}>
                 <Tooltip
@@ -167,12 +168,12 @@ export function GradePlanTable(props: GradePlanTableProps) {
                     </Stack>
                   </Tooltip>
                 </TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                <TableCell>
                   <Typography variant='body2' color='text.secondary'>
                     {student.ci ?? '--'}
                   </Typography>
                 </TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                <TableCell>
                   <Typography variant='body2' color='text.secondary'>
                     {student.ru ?? '--'}
                   </Typography>
@@ -259,6 +260,6 @@ export function GradePlanTable(props: GradePlanTableProps) {
           })}
         </TableBody>
       </Table>
-    </TableContainer>
+    </DataTableContainer>
   );
 }

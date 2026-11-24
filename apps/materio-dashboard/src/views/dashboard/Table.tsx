@@ -1,3 +1,9 @@
+'use client';
+
+import { useState } from 'react';
+
+import TextField from '@mui/material/TextField';
+
 // MUI Imports
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -5,6 +11,8 @@ import Chip from '@mui/material/Chip';
 
 // Third-party Imports
 import classnames from 'classnames';
+
+import { DataTableContainer, TableToolbar, TableMessageRow } from '@/components/table';
 
 // Components Imports
 import CustomAvatar from '@core/components/mui/Avatar';
@@ -108,9 +116,25 @@ const rowsData: TableBodyRowType[] = [
 ];
 
 const Table = () => {
+  const [search, setSearch] = useState('');
+
+  const filtered = rowsData.filter((row) =>
+    `${row.name} ${row.username} ${row.email} ${row.role} ${row.status}`
+      .toLocaleLowerCase()
+      .includes(search.trim().toLocaleLowerCase()),
+  );
+
   return (
     <Card>
-      <div className='overflow-x-auto'>
+      <TableToolbar description='Datos de ejemplo de la plantilla.'>
+        <TextField
+          size='small'
+          label='Buscar usuario de ejemplo'
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </TableToolbar>
+      <DataTableContainer>
         <table className={tableStyles.table}>
           <thead>
             <tr>
@@ -121,9 +145,10 @@ const Table = () => {
             </tr>
           </thead>
           <tbody>
-            {rowsData.map((row, index) => (
+            {!filtered.length && <TableMessageRow colSpan={4}>Sin resultados</TableMessageRow>}
+            {filtered.map((row, index) => (
               <tr key={index}>
-                <td className='!plb-1'>
+                <td>
                   <div className='flex items-center gap-3'>
                     <CustomAvatar src={row.avatarSrc} size={34} />
                     <div className='flex flex-col'>
@@ -134,10 +159,10 @@ const Table = () => {
                     </div>
                   </div>
                 </td>
-                <td className='!plb-1'>
+                <td>
                   <Typography>{row.email}</Typography>
                 </td>
-                <td className='!plb-1'>
+                <td>
                   <div className='flex gap-2'>
                     <i className={classnames(row.roleIcon, row.iconClass, 'text-[22px]')} />
                     <Typography color='text.primary'>{row.role}</Typography>
@@ -156,7 +181,7 @@ const Table = () => {
             ))}
           </tbody>
         </table>
-      </div>
+      </DataTableContainer>
     </Card>
   );
 };

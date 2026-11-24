@@ -25,7 +25,7 @@ export function useAttendanceQr(
 
   callback.current = onUnavailable;
   const id = session.idAttendanceSession;
-  const open = enabled && session.mode === 'QR' && session.state === 'OPEN';
+  const open = enabled && (session.mode === 'QR' || session.mode === 'GEOLOCATION_QR') && session.state === 'OPEN';
 
   useEffect(() => {
     let active = true;

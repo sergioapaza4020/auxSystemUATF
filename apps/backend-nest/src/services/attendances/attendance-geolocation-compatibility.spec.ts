@@ -1,3 +1,4 @@
+import { attendanceAcademicDate } from '@common/utils/attendance-session-policy';
 import { ForbiddenException } from '@nestjs/common';
 import { Repository, EntityManager } from 'typeorm';
 import type { DeepPartial } from 'typeorm';
@@ -99,10 +100,11 @@ describe('Attendance compatibility and protected mutation boundary', () => {
   it('creates sessions using only the old explicitly mapped contract', async () => {
     const f = fixture();
     f.sessions.findOne.mockResolvedValueOnce(null);
-    await f.service.createSession(2, { enrollmentId: 10, date: '2026-10-25' });
+    const date = attendanceAcademicDate(new Date());
+    await f.service.createSession(2, { enrollmentId: 10, date });
     expect(f.sessions.create).toHaveBeenCalledWith({
       assistantEnrollment: f.session.assistantEnrollment,
-      date: '2026-10-25',
+      date,
     });
   });
 

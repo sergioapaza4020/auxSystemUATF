@@ -72,13 +72,13 @@ function mount() {
 }
 
 describe('VerifyAccount', () => {
-  it('renders RU with visible label, autocomplete and login navigation', () => {
+  it('renders RU with visible label, autocomplete disabled and login navigation', () => {
     const html = mount().html();
 
     expect(html).toContain('Verifica tu cuenta');
     expect(html).toContain('for="ru"');
     expect(html).toContain('name="ru"');
-    expect(html).toContain('autoComplete="username"');
+    expect(html).toContain('autoComplete="off"');
     expect(html).toContain('href="/login"');
     expect(html).not.toContain('href="/register"');
     expect(html).not.toContain('href="/forgot-password"');

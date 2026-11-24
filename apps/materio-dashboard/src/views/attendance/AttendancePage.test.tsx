@@ -11,6 +11,9 @@ import { AttendanceSessionToolbar } from './AttendanceSessionToolbar';
 import { AttendanceSidebar } from './AttendanceSidebar';
 import { AttendanceCreateDialog } from './AttendanceCreateDialog';
 import { AttendanceQrConfigDialog } from './AttendanceQrConfigDialog';
+import { AttendanceManualContingencyDialog } from './AttendanceManualContingencyDialog';
+import { AttendanceAuditDialog } from './AttendanceAuditDialog';
+import { AttendanceQrPresentationDialog } from './AttendanceQrPresentationDialog';
 import { AttendanceGeolocationDialog } from './AttendanceGeolocationDialog';
 import { hookHarness, elements } from '@/test-utils/hook-harness';
 import { getAttendanceSessionPage } from '@/api/attendances.service';
@@ -136,6 +139,27 @@ async function open() {
 }
 
 describe('attendance paginated page integration', () => {
+  it.each(['MANUAL', 'GEOLOCATION', 'QR'] as const)(
+    'creates a new %s session for an already used date',
+    async (mode) => {
+      const h = await open();
+      const created = { ...data, idAttendanceSession: 2, mode };
+
+      mocks.create.mockResolvedValue(created);
+      mocks.load.mockResolvedValue(created);
+      vi.mocked(getAttendanceSessionPage).mockResolvedValue({ status: true, statusCode: 200, data: created, meta });
+      find<React.ComponentProps<typeof AttendanceSessionToolbar>>(
+        h.render(),
+        AttendanceSessionToolbar,
+      ).onCreateSession();
+      find<React.ComponentProps<typeof AttendanceCreateDialog>>(h.render(), AttendanceCreateDialog).onCreate(mode);
+      await vi.runAllTimersAsync();
+      h.render();
+      expect(mocks.create).toHaveBeenCalledTimes(1);
+      expect(mocks.load).toHaveBeenLastCalledWith(2);
+    },
+  );
+
   it.each(['update', 'delete'] as const)('preserves the manual %s action', async (kind) => {
     const h = await open();
     const history = find<History>(h.render(), AttendanceHistory);
@@ -324,4 +348,109 @@ describe('attendance paginated page integration', () => {
     discard?.props.onClick?.({} as React.MouseEvent<HTMLButtonElement>);
     expect(mocks.push).toHaveBeenCalledWith('/dashboard/enrollments/20');
   });
+});
+
+describe('combined auxiliary page integration', () => {
+  it.each(['DRAFT', 'SCHEDULED', 'OPEN', 'CLOSED', 'CANCELLED'] as const)(
+    'scopes combined actions in %s',
+    async (state) => {
+      vi.stubGlobal('document', { visibilityState: 'visible' });
+      vi.stubGlobal('window', {
+        setTimeout,
+        clearTimeout,
+        setInterval,
+        clearInterval,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      });
+
+      const combined = {
+        ...data,
+        mode: 'GEOLOCATION_QR' as const,
+        state,
+        isComputable: state === 'CLOSED',
+        pendingCount: state === 'OPEN' ? 30 : 0,
+      };
+
+      mocks.load.mockResolvedValue(combined);
+      vi.mocked(getAttendanceSessionPage).mockResolvedValue({ status: true, statusCode: 200, data: combined, meta });
+
+      // The live OPEN refresher is an interval; advance only queued roster work here.
+      const h = hookHarness(AttendancePage);
+
+      cleanups.push(h.unmount);
+      h.render();
+      await vi.advanceTimersByTimeAsync(1);
+      h.render();
+      find<History>(h.render(), AttendanceHistory).onSelectSession(1);
+      await vi.advanceTimersByTimeAsync(1);
+      h.render();
+      await vi.advanceTimersByTimeAsync(1);
+      let tree = h.render();
+      const sheet = find<Sheet>(tree, AttendanceSheet);
+
+      expect(sheet.combined).toBe(true);
+      expect(sheet.markAllDisabled).toBe(true);
+      expect(!!sheet.onContingency).toBe(state === 'OPEN' || state === 'CLOSED');
+      sheet.onMarkAllPresent();
+      sheet.onChangeAttendance(10, S.PRESENT);
+      await sheet.onSave();
+      expect(mocks.save).not.toHaveBeenCalled();
+
+      if (sheet.onContingency) {
+        sheet.onContingency(student);
+        tree = h.render();
+        expect(elements(tree, AttendanceManualContingencyDialog)).toHaveLength(1);
+      }
+
+      const audit = elements<React.ComponentProps<typeof Button>>(tree, Button).find(
+        (item) => item.props.children === 'Historial de cambios',
+      );
+
+      audit?.props.onClick?.({} as React.MouseEvent<HTMLButtonElement>);
+      expect(elements(h.render(), AttendanceAuditDialog)).toHaveLength(1);
+      find<React.ComponentProps<typeof AttendanceSessionToolbar>>(h.render(), AttendanceSessionToolbar).onShowQr?.();
+      if (state === 'OPEN') expect(elements(h.render(), AttendanceQrPresentationDialog)).toHaveLength(1);
+    },
+  );
+});
+
+it('creates exactly one combined draft on double click and opens the geographic configuration', async () => {
+  const h = await open();
+  const draft = { ...data, idAttendanceSession: 2, mode: 'GEOLOCATION_QR' as const, state: 'DRAFT' as const };
+
+  mocks.create.mockResolvedValue(draft);
+  mocks.load.mockResolvedValue(draft);
+  vi.mocked(getAttendanceSessionPage).mockResolvedValue({ status: true, statusCode: 200, data: draft, meta });
+  find<React.ComponentProps<typeof AttendanceSessionToolbar>>(h.render(), AttendanceSessionToolbar).onCreateSession();
+  const dialog = find<React.ComponentProps<typeof AttendanceCreateDialog>>(h.render(), AttendanceCreateDialog);
+
+  dialog.onCreate('GEOLOCATION_QR', '2026-10-20');
+  dialog.onCreate('GEOLOCATION_QR', '2026-10-20');
+  expect(find<React.ComponentProps<typeof AttendanceCreateDialog>>(h.render(), AttendanceCreateDialog).creating).toBe(
+    true,
+  );
+  await vi.runAllTimersAsync();
+  h.render();
+  await vi.runAllTimersAsync();
+  expect(mocks.create).toHaveBeenCalledExactlyOnceWith('2026-10-20', 'GEOLOCATION_QR');
+  expect(
+    find<React.ComponentProps<typeof AttendanceGeolocationDialog>>(h.render(), AttendanceGeolocationDialog).session
+      .state,
+  ).toBe('DRAFT');
+});
+it('keeps a created combined draft when opening its detail fails, without repeating creation', async () => {
+  const h = await open();
+
+  mocks.create.mockResolvedValue({ ...data, idAttendanceSession: 2, mode: 'GEOLOCATION_QR', state: 'DRAFT' });
+  mocks.load.mockRejectedValueOnce(new Error('offline'));
+  find<React.ComponentProps<typeof AttendanceSessionToolbar>>(h.render(), AttendanceSessionToolbar).onCreateSession();
+  find<React.ComponentProps<typeof AttendanceCreateDialog>>(h.render(), AttendanceCreateDialog).onCreate(
+    'GEOLOCATION_QR',
+  );
+  await vi.runAllTimersAsync();
+  h.render();
+  expect(mocks.create).toHaveBeenCalledOnce();
+  expect(mocks.remove).not.toHaveBeenCalled();
+  expect(mocks.warning).toHaveBeenCalledWith(expect.stringContaining('retómalo desde el historial'));
 });

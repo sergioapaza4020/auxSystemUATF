@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { Button, TextField } from '@mui/material';
 
-import { PaginationTable } from '@/components/table';
+import { PaginationTable, TableAction } from '@/components/table';
 import { GradeViewToggle } from './GradeViewToggle';
 
 import { EnrollmentStudentsCard } from './EnrollmentStudentsCard';
@@ -14,7 +14,12 @@ import type { IStudentGradeSummary } from '@/interfaces/enrollments/student-grad
 vi.mock('react', async () => {
   const actual = await vi.importActual<typeof React>('react');
 
-  return { ...actual, useState: vi.fn(actual.useState), useMemo: vi.fn(actual.useMemo) };
+  return {
+    ...actual,
+    useState: vi.fn(actual.useState),
+    useMemo: vi.fn(actual.useMemo),
+    useEffect: vi.fn(actual.useEffect),
+  };
 });
 const actualReact = await vi.importActual<typeof React>('react');
 
@@ -69,6 +74,11 @@ function harness(extra: Partial<Props> = {}) {
     }) as typeof React.useState);
 
     const useMemo = vi.mocked(React.useMemo).mockImplementation((factory) => factory());
+
+    const useEffect = vi.mocked(React.useEffect).mockImplementation((effect) => {
+      effect();
+    });
+
     let tree: React.ReactElement;
 
     try {
@@ -76,6 +86,7 @@ function harness(extra: Partial<Props> = {}) {
     } finally {
       useState.mockImplementation(actualReact.useState);
       useMemo.mockImplementation(actualReact.useMemo);
+      useEffect.mockImplementation(actualReact.useEffect);
     }
 
     return { tree, html: renderToStaticMarkup(tree) };
@@ -189,7 +200,7 @@ describe('Student grade table', () => {
     view = h.render();
     expect(view.html).toContain('Alumno12');
     expect(view.html).not.toContain('Alumno11');
-    const see = find(view.tree, (element) => element.type === Button && element.props.children === 'Ver')[0];
+    const see = find(view.tree, (element) => element.type === TableAction && element.props.label === 'Ver')[0];
 
     (see.props.onClick as (event: { stopPropagation: () => void }) => void)({ stopPropagation: vi.fn() });
     expect(h.props.onSelectStudent).toHaveBeenCalledWith(students[11]);

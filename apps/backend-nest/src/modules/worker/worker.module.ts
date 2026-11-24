@@ -1,3 +1,4 @@
+import { AttendanceAuthorizationMaintenance } from 'src/services/attendances/attendance-authorization-maintenance';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -16,6 +17,6 @@ import { UserImportWorker } from './user-import-worker';
     }),
     UserImportQueueModule,
   ],
-  providers: [UserImportProcessor, UserImportWorker],
+  providers: [UserImportProcessor, UserImportWorker, AttendanceAuthorizationMaintenance],
 })
 export class WorkerModule {}

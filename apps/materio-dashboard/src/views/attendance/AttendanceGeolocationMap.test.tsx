@@ -22,7 +22,11 @@ const mocks = vi.hoisted(() => {
     circle,
     create: vi.fn(() => map),
     tile: vi.fn(() => ({ addTo: vi.fn() })),
-    marker: vi.fn(() => ({ addTo: vi.fn() })),
+    marker: vi.fn(() => ({
+      addTo: vi.fn().mockReturnThis(),
+      on: vi.fn(),
+      getLatLng: () => ({ lat: -18, wrap: () => ({ lng: -64 }) }),
+    })),
     radius: vi.fn(() => circle),
     disconnect: vi.fn(),
   };
@@ -39,7 +43,8 @@ vi.mock('leaflet', () => ({
     map: mocks.create,
     tileLayer: mocks.tile,
     layerGroup: () => mocks.layers,
-    circleMarker: mocks.marker,
+    marker: mocks.marker,
+    divIcon: vi.fn(),
     circle: mocks.radius,
   },
 }));
@@ -118,4 +123,19 @@ describe('Leaflet adapter contract', () => {
     expect(mocks.radius).not.toHaveBeenCalled();
     h.unmount();
   });
+});
+
+it('forwards a dragged reference marker and disables dragging for frozen configuration', () => {
+  const h = mount(false);
+
+  expect(mocks.marker).toHaveBeenCalledWith([-19, -65], expect.objectContaining({ draggable: true }));
+  const marker = mocks.marker.mock.results[0].value;
+  const callbacks = marker.on.mock.calls as unknown as [string, () => void][];
+  const drag = callbacks.find(([event]) => event === 'dragend')?.[1] as (() => void) | undefined;
+
+  drag?.();
+  expect(h.onLocationChange).toHaveBeenCalledWith(-18, -64);
+  h.unmount();
+  mount(true).unmount();
+  expect(mocks.marker).toHaveBeenLastCalledWith([-19, -65], expect.objectContaining({ draggable: false }));
 });

@@ -1,6 +1,6 @@
 import type * as React from 'react';
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Button, RadioGroup } from '@mui/material';
 
 import { AttendanceCreateDialog } from './AttendanceCreateDialog';
@@ -17,14 +17,37 @@ vi.mock('react', async () => ({
 }));
 
 describe('attendance creation mode', () => {
-  it.each(['MANUAL', 'GEOLOCATION', 'QR'] as const)(
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-26T14:00:00Z'));
+  });
+  afterEach(() => vi.useRealTimers());
+  it('uses Bolivia today as minimum and blocks direct past-date confirmation', () => {
+    vi.setSystemTime(new Date('2026-10-27T03:59:59Z'));
+    const onCreate = vi.fn();
+    const h = hookHarness(() => AttendanceCreateDialog({ initialDate: '2026-10-25', onCreate, onClose: vi.fn() }));
+    const field = elements<React.ComponentProps<typeof DateField>>(h.render(), DateField)[0].props;
+
+    expect(field.minDate).toBe('2026-10-26');
+    expect(field.error).toBe(true);
+
+    const create = elements<React.ComponentProps<typeof Button>>(h.render(), Button).find(
+      (item) => item.props.children === 'Crear sesión',
+    )!.props;
+
+    expect(create.disabled).toBe(true);
+    create.onClick?.({} as React.MouseEvent<HTMLButtonElement>);
+    expect(onCreate).not.toHaveBeenCalled();
+    h.unmount();
+  });
+  it.each(['MANUAL', 'GEOLOCATION', 'QR', 'GEOLOCATION_QR'] as const)(
     'creates %s only on confirmation and lets a locked session start another date',
     (mode) => {
       const onCreate = vi.fn();
       const h = hookHarness(() => AttendanceCreateDialog({ initialDate: '2026-10-26', onCreate, onClose: vi.fn() }));
       let tree = h.render();
 
-      expect(elements<React.ComponentProps<typeof RadioGroup>>(tree, RadioGroup)[0].props.value).toBe('MANUAL');
+      expect(elements<React.ComponentProps<typeof RadioGroup>>(tree, RadioGroup)[0].props.value).toBe('GEOLOCATION_QR');
       elements<React.ComponentProps<typeof RadioGroup>>(tree, RadioGroup)[0].props.onChange?.(
         {} as React.ChangeEvent<HTMLInputElement>,
         mode,

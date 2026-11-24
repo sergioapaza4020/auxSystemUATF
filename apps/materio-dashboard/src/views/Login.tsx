@@ -260,7 +260,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
             </Box>
 
             {/* Formulario */}
-            <Box component='form' noValidate autoComplete='on' onSubmit={handleSubmit}>
+            <Box component='form' noValidate autoComplete='off' onSubmit={handleSubmit}>
               <Stack spacing={2.5}>
                 {/* Usuario */}
                 <TextField
@@ -270,7 +270,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                   id='username'
                   name='username'
                   type='text'
-                  autoComplete='username'
+                  autoComplete='off'
                   label='Usuario'
                   placeholder='Ingresa tu usuario'
                   disabled={isLoading}
@@ -294,7 +294,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                   required
                   id='password'
                   name='password'
-                  autoComplete='current-password'
+                  autoComplete='off'
                   label='Contraseña'
                   placeholder='Ingresa tu contraseña'
                   type={showPassword ? 'text' : 'password'}

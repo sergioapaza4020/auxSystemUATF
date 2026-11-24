@@ -23,6 +23,13 @@ import {
 } from '@/api/attendances.service';
 import type { IAttendanceSession, IAttendanceLifecycle } from '@/interfaces/attendances/attendance.interface';
 import { attendanceInstant, attendanceLocalTime } from '@/utils/attendance-geolocation';
+import {
+  attendanceDuration,
+  attendanceOpeningDuration,
+  attendanceEnd,
+  attendanceDurationHelp,
+  attendanceDurationError,
+} from '@/utils/attendance-time';
 import { attendanceQrError } from '@/utils/attendance-qr';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { AttendanceSessionBadge } from './AttendanceSessionBadge';
@@ -71,8 +78,8 @@ export function AttendanceQrConfigDialog({
 }) {
   const [current, setCurrent] = useState(session);
   const [start, setStart] = useState(attendanceLocalTime(session.startsAt));
-  const [end, setEnd] = useState(attendanceLocalTime(session.endsAt));
-  const [baseline, setBaseline] = useState(JSON.stringify([start, end]));
+  const [duration, setDuration] = useState(attendanceDuration(session.startsAt, session.endsAt));
+  const [baseline, setBaseline] = useState(JSON.stringify([start, duration]));
   const [busy, setBusy] = useState<Action | 'save' | 'refresh' | null>(null);
   const [confirmation, setConfirmation] = useState<Action | 'discard' | null>(null);
   const [validation, setValidation] = useState('');
@@ -84,9 +91,9 @@ export function AttendanceQrConfigDialog({
   refresh.current = onRefresh;
   const snackbar = useSnackbar();
   const draft = current.state === 'DRAFT';
-  const dirty = draft && baseline !== JSON.stringify([start, end]);
+  const dirty = draft && baseline !== JSON.stringify([start, duration]);
   const startsAt = attendanceInstant(start);
-  const endsAt = attendanceInstant(end);
+  const endsAt = attendanceEnd(start, duration);
   const complete = !!startsAt && !!endsAt && endsAt > startsAt;
 
   useEffect(() => {
@@ -101,7 +108,7 @@ export function AttendanceQrConfigDialog({
 
     if (session.state !== 'DRAFT') {
       setStart(attendanceLocalTime(session.startsAt));
-      setEnd(attendanceLocalTime(session.endsAt));
+      setDuration(attendanceDuration(session.startsAt, session.endsAt));
     }
   }, [session]);
   useEffect(() => {
@@ -171,7 +178,9 @@ export function AttendanceQrConfigDialog({
     if (lock.current || !draft || !canUpdate) return;
 
     if (!complete) {
-      setValidation('Completa inicio y fin válidos; el fin debe ser posterior al inicio.');
+      setValidation(
+        'Indica un inicio válido y una duración entera de al menos 1 minuto dentro del rango de fechas admitido.',
+      );
 
       return;
     }
@@ -183,7 +192,7 @@ export function AttendanceQrConfigDialog({
     try {
       apply(await configureAttendanceQr(current.idAttendanceSession, { startsAt: startsAt!, endsAt: endsAt! }));
       if (!alive.current) return;
-      setBaseline(JSON.stringify([start, end]));
+      setBaseline(JSON.stringify([start, duration]));
       snackbar.success('Configuración QR guardada correctamente.');
       await onRefresh().catch(() => snackbar.warning('Configuración guardada. Actualiza el detalle y el historial.'));
     } catch (error) {
@@ -207,7 +216,23 @@ export function AttendanceQrConfigDialog({
         await onDelete();
         if (alive.current) onClose();
       } else {
-        apply(await actions[action](current.idAttendanceSession));
+        if (action === 'activate' && (!startsAt || Date.parse(startsAt) <= Date.now())) {
+          setValidation('El inicio debe ser futuro. Corrige el horario o utiliza Abrir ahora.');
+
+          return;
+        }
+
+        if (action === 'openNow') {
+          const minutes = attendanceOpeningDuration(duration);
+
+          if (minutes === null) {
+            setValidation(attendanceDurationError);
+
+            return;
+          }
+
+          apply(await openSessionNow(current.idAttendanceSession, minutes));
+        } else apply(await actions[action](current.idAttendanceSession));
 
         try {
           await onRefresh();
@@ -244,18 +269,28 @@ export function AttendanceQrConfigDialog({
             <Typography>{course}</Typography>
             <Typography variant='body2'>Horario de Bolivia · America/La_Paz</Typography>
             <TextField
-              label='Inicio'
+              label='Fecha y hora de inicio'
               type='datetime-local'
               value={start}
+              inputProps={{ min: draft ? attendanceLocalTime(new Date().toISOString()) : undefined }}
               onChange={(event) => setStart(event.target.value)}
               disabled={!draft || !canUpdate || !!busy}
               InputLabelProps={{ shrink: true }}
             />
             <TextField
-              label='Finalización'
-              type='datetime-local'
-              value={end}
-              onChange={(event) => setEnd(event.target.value)}
+              label='Duración de la asistencia (minutos)'
+              type='number'
+              value={duration}
+              inputProps={{ min: 1, step: 1 }}
+              error={draft && !!duration && (attendanceOpeningDuration(duration) === null || (!!start && !endsAt))}
+              helperText={
+                draft &&
+                duration &&
+                (attendanceOpeningDuration(duration) === null || (!!start && !attendanceEnd(start, duration)))
+                  ? attendanceDurationError
+                  : attendanceDurationHelp
+              }
+              onChange={(event) => setDuration(event.target.value)}
               disabled={!draft || !canUpdate || !!busy}
               InputLabelProps={{ shrink: true }}
             />
@@ -300,11 +335,21 @@ export function AttendanceQrConfigDialog({
               </Button>
               <Button
                 onClick={() => setConfirmation('activate')}
-                disabled={!!busy || dirty || !current.startsAt || !current.endsAt}
+                disabled={
+                  !!busy ||
+                  dirty ||
+                  !complete ||
+                  !current.startsAt ||
+                  !current.endsAt ||
+                  Date.parse(startsAt!) <= Date.now()
+                }
               >
                 Activar sesión
               </Button>
-              <Button onClick={() => setConfirmation('openNow')} disabled={!!busy || dirty || !current.endsAt}>
+              <Button
+                onClick={() => setConfirmation('openNow')}
+                disabled={!!busy || attendanceOpeningDuration(duration) === null}
+              >
                 Abrir ahora
               </Button>
             </>
@@ -346,13 +391,14 @@ export function AttendanceQrConfigDialog({
             {confirmation === 'activate'
               ? 'Al activar, el horario y la configuración quedarán bloqueados.'
               : confirmation === 'openNow'
-                ? 'El inicio se establecerá con la hora actual del servidor y se mantendrá la hora de finalización.'
+                ? 'El servidor establecerá el inicio y calculará el fin con la duración indicada.'
                 : confirmation === 'discard'
                   ? 'Se perderán los cambios de horario sin guardar.'
                   : 'Confirma esta operación sobre la sesión.'}
           </Typography>
           <Typography variant='body2'>
-            Inicio: {start.replace('T', ' ')} · Fin: {end.replace('T', ' ')} (Bolivia)
+            Inicio: {confirmation === 'openNow' ? 'hora del servidor' : start.replace('T', ' ')} · Duración: {duration}{' '}
+            minutos (Bolivia)
           </Typography>
         </DialogContent>
         <DialogActions>

@@ -103,8 +103,9 @@ export function AttendanceQrPresentationDialog({
               El tiempo es orientativo. El servidor determina la vigencia.
             </Typography>
             <Alert severity='info'>
-              Los estudiantes deben iniciar sesión y pulsar Confirmar asistencia después de escanear. Abrir el enlace no
-              registra asistencia.
+              {session.mode === 'GEOLOCATION_QR'
+                ? 'Escanea el código, inicia sesión si es necesario y valida tu ubicación para confirmar asistencia.'
+                : 'Los estudiantes deben iniciar sesión y pulsar Confirmar asistencia después de escanear. Abrir el enlace no registra asistencia.'}
             </Alert>
             {fullscreenError && <Alert severity='info'>{fullscreenError}</Alert>}
           </Stack>

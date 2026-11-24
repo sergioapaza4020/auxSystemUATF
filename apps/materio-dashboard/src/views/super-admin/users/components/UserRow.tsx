@@ -1,6 +1,6 @@
-import { Chip, IconButton, Stack, TableCell, TableRow, Tooltip, Typography } from '@mui/material';
+import { Chip, Stack, TableCell, TableRow, Typography } from '@mui/material';
 
-import { StatusChip, TableActions } from '@/components/table';
+import { StatusChip, TableActions, TableAction } from '@/components/table';
 import type { IUser } from '@/interfaces/users/user.interface';
 
 interface Props {
@@ -42,22 +42,22 @@ export function UserRow({ user, busy, onView, onEdit, onDeactivate, onReactivate
         <StatusChip active={user.isActive} />
       </TableCell>
       <TableCell>
-        <Stack direction='row' alignItems='center' justifyContent='center'>
-          <Tooltip title='Ver usuario'>
-            <span>
-              <IconButton aria-label={`Ver usuario ${user.username}`} disabled={busy} onClick={onView}>
-                <i className='ri-eye-line' />
-              </IconButton>
-            </span>
-          </Tooltip>
+        <Stack direction='row' alignItems='center' justifyContent='center' spacing={0.75}>
+          <TableAction
+            intent='view'
+            label='Ver usuario'
+            aria-label={`Ver usuario ${user.username}`}
+            disabled={busy}
+            onClick={onView}
+          />
           {user.isActive && onAddRoles && (
-            <Tooltip title='Añadir roles'>
-              <span>
-                <IconButton aria-label={`Añadir roles a ${user.username}`} disabled={busy} onClick={onAddRoles}>
-                  <i className='ri-user-settings-line' />
-                </IconButton>
-              </span>
-            </Tooltip>
+            <TableAction
+              intent='assign'
+              label='Añadir roles'
+              aria-label={`Añadir roles a ${user.username}`}
+              disabled={busy}
+              onClick={onAddRoles}
+            />
           )}
           <TableActions
             active={user.isActive}

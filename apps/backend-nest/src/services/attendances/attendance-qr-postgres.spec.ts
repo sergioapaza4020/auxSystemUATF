@@ -84,7 +84,13 @@ describePostgres('QR-2B persistence on verified disposable PostgreSQL', () => {
     // Helper creates and verifies its own data_directory/port. No app URL or seeds.
     database = await createSeedTestDatabase(pgBin!);
     source = database.source;
-    const migrations = [...source.migrations];
+    // Keep this historical QR-2B fixture before the later COMB migrations.
+    const migrations = source.migrations.filter(
+      (migration) =>
+        !migration.constructor.name.startsWith('AttendanceCombined') &&
+        !migration.constructor.name.startsWith('AttendanceMultipleDailySessions'),
+    );
+    source.migrations.splice(0, source.migrations.length, ...migrations);
     source.migrations.splice(
       0,
       source.migrations.length,

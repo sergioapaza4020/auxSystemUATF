@@ -1,5 +1,7 @@
 import { TableCell, TableHead, TableRow, TableSortLabel } from '@mui/material';
 
+import { dataTableHeadCellSx } from './DataTableContainer';
+
 import type { Order } from '../types/order';
 import type { HeadCell } from '../types/headCell';
 import type { SortableIds } from '@/components/table/types/sortableIds';
@@ -33,23 +35,7 @@ export function EnhancedTableHead<T, const TColumns extends readonly HeadCell<T>
             align={headCell.align}
             padding={headCell.disablePadding ? 'none' : 'normal'}
             width={headCell.width}
-            sx={{
-              py: 2,
-
-              bgcolor: 'action.hover',
-
-              color: 'text.secondary',
-
-              fontSize: '0.75rem',
-
-              fontWeight: 700,
-
-              letterSpacing: '0.02em',
-
-              whiteSpace: 'nowrap',
-
-              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-            }}
+            sx={dataTableHeadCellSx}
           >
             {headCell.sortable ? (
               <TableSortLabel

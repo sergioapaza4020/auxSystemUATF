@@ -151,6 +151,7 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
               : undefined
           }
           pagination={studentGrades}
+          onRefresh={studentGrades.reload}
           summary={studentGrades.summary}
           summaryLoading={studentGrades.loading}
           summaryError={studentGrades.error}

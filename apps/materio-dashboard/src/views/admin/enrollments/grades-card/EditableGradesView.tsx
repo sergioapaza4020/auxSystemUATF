@@ -1,9 +1,11 @@
 'use client';
 import { activeCriteria } from '@repo/grade-calculations';
 
-import { Box, Card, CardContent, CircularProgress, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 
 import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
+
+import { PageLoading } from '@/components/feedback/PageLoading';
 
 import type { IGrade } from '@/interfaces/grades/grade.interface';
 import type { IGradeScheme } from '@/interfaces/grade-schemes/grade-scheme.interface';
@@ -85,13 +87,7 @@ export function EditableGradesView({
           </Stack>
 
           {loading ? (
-            <Stack alignItems='center' spacing={2} py={8}>
-              <CircularProgress size={32} />
-
-              <Typography variant='body2' color='text.secondary'>
-                Cargando calificaciones...
-              </Typography>
-            </Stack>
+            <PageLoading sx={{ py: 8 }} />
           ) : (
             <Stack spacing={3}>
               {details.map((detail) => {

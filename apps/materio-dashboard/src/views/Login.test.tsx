@@ -168,21 +168,20 @@ describe('Login credential autocomplete', () => {
     expect(html).not.toContain('href="/register"');
   });
 
-  it('renders standard autocomplete attributes on the native form and inputs', () => {
+  it('disables autocomplete on the native form and inputs', () => {
     const html = renderToStaticMarkup(<Login mode='light' />);
     const form = html.match(/<form\b[^>]*>/)?.[0];
     const inputs = html.match(/<input\b[^>]*>/g) ?? [];
     const username = inputs.find((input) => input.includes('name="username"'));
     const password = inputs.find((input) => input.includes('name="password"'));
 
-    expect(form).toContain('autoComplete="on"');
-    expect(form).not.toContain('autoComplete="off"');
+    expect(form).toContain('autoComplete="off"');
     expect(username).toContain('id="username"');
     expect(username).toContain('type="text"');
-    expect(username).toContain('autoComplete="username"');
+    expect(username).toContain('autoComplete="off"');
     expect(password).toContain('id="password"');
     expect(password).toContain('type="password"');
-    expect(password).toContain('autoComplete="current-password"');
+    expect(password).toContain('autoComplete="off"');
     expect(html).toContain('for="username"');
     expect(html).toContain('for="password"');
     expect(html).toContain('type="submit"');

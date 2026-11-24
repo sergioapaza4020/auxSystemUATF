@@ -2,8 +2,6 @@ import type * as React from 'react';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Alert, Button, Dialog, TextField } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import dayjs from 'dayjs';
 
 import { AttendanceGeolocationDialog, AttendanceMap } from './AttendanceGeolocationDialog';
 import type { AttendanceGeolocationMapProps } from './AttendanceGeolocationMap';
@@ -71,6 +69,8 @@ const cleanups: (() => void)[] = [];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-10-26T13:30:00Z'));
   for (const action of [mocks.configure, mocks.activate, mocks.openNow, mocks.close, mocks.cancel, mocks.refresh])
     action.mockResolvedValue(undefined);
   vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
@@ -78,6 +78,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanups.splice(0).forEach((clean) => clean());
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -113,6 +114,23 @@ const click = async (props: React.ComponentProps<typeof Button>) => {
 };
 
 describe('assistant GEO configuration', () => {
+  it('uses the saved map point and duration without editable coordinate or end fields', () => {
+    const h = setup();
+    const tree = h.render();
+    const fields = elements<React.ComponentProps<typeof TextField>>(tree, TextField);
+
+    expect(fields.some((item) => /Latitud|Longitud|Fin/.test(String(item.props.label)))).toBe(false);
+    expect(fields.find((item) => item.props.label === 'Duración de la asistencia (minutos)')?.props.value).toBe('60');
+    const map = elements<AttendanceGeolocationMapProps>(tree, AttendanceMap)[0].props;
+
+    expect(map).toMatchObject({ latitude: -19, longitude: -65, radiusMeters: 50, disabled: false });
+    map.onLocationChange(-18, -64);
+    expect(elements<AttendanceGeolocationMapProps>(h.render(), AttendanceMap)[0].props).toMatchObject({
+      latitude: -18,
+      longitude: -64,
+    });
+  });
+
   it('uses complete local form, converts Bolivia times, and saves without activating', async () => {
     const h = setup();
     let tree = h.render();
@@ -143,11 +161,6 @@ describe('assistant GEO configuration', () => {
       elements<React.ComponentProps<typeof TextField>>(tree, TextField).every((field) => field.props.disabled),
     ).toBe(true);
     expect(
-      elements<React.ComponentProps<typeof DateTimePicker>>(tree, DateTimePicker).every(
-        (field) => field.props.disabled,
-      ),
-    ).toBe(true);
-    expect(
       elements<React.ComponentProps<typeof Button>>(tree, Button).some((item) => item.props.children === 'Abrir ahora'),
     ).toBe(false);
     expect(
@@ -155,6 +168,41 @@ describe('assistant GEO configuration', () => {
         (item) => item.props.children === 'Cancelar sesión',
       ),
     ).toBe(state === 'SCHEDULED');
+  });
+  it('keeps the requested opening duration when the server retains an omitted draft schedule', async () => {
+    const h = setup();
+
+    const field = (label: string) =>
+      elements<React.ComponentProps<typeof TextField>>(h.render(), TextField).find(
+        (item) => item.props.label === label,
+      )!.props;
+
+    field('Fecha y hora de inicio').onChange?.({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+    field('Duración de la asistencia (minutos)').onChange?.({
+      target: { value: '1' },
+    } as React.ChangeEvent<HTMLInputElement>);
+    mocks.configure.mockResolvedValueOnce(session());
+    await click(button(h.render(), 'Guardar configuración'));
+    expect(mocks.configure).toHaveBeenLastCalledWith(7, {
+      latitude: -19,
+      longitude: -65,
+      radiusMeters: 50,
+      maximumAcceptedAccuracy: 50,
+    });
+    expect(field('Duración de la asistencia (minutos)').value).toBe('1');
+    expect(field('Fecha y hora de inicio').value).toBe('');
+    expect(button(h.render(), 'Abrir ahora').disabled).toBe(false);
+  });
+  it('reads a historical short window without applying new-draft validation errors', () => {
+    const h = setup({ ...session(), state: 'CLOSED', endsAt: '2026-10-26T14:00:30Z' });
+
+    const field = elements<React.ComponentProps<typeof TextField>>(h.render(), TextField).find(
+      (item) => item.props.label === 'Duración de la asistencia (minutos)',
+    )!.props;
+
+    expect(field.value).toBe('0.5');
+    expect(field.disabled).toBe(true);
+    expect(field.error).toBe(false);
   });
   it('requires update permission even for a draft', () => {
     const tree = setup(session(), false).render();
@@ -183,7 +231,7 @@ describe('assistant GEO configuration', () => {
     expect(elements<AttendanceGeolocationMapProps>(tree, AttendanceMap)[0].props.latitude).toBe(-18);
     expect(
       elements<React.ComponentProps<typeof TextField>>(tree, TextField).find(
-        (field) => field.props.label === 'Precisión máxima aceptada (metros)',
+        (field) => field.props.label === 'Precisión máxima del GPS (metros)',
       )?.props.value,
     ).toBe('50');
   });
@@ -204,11 +252,11 @@ describe('assistant GEO configuration', () => {
     const h = setup();
     const tree = h.render();
 
-    const picker = elements<React.ComponentProps<typeof DateTimePicker>>(tree, DateTimePicker).find(
-      (field) => field.props.label === 'Fin',
+    const field = elements<React.ComponentProps<typeof TextField>>(tree, TextField).find(
+      (item) => item.props.label === 'Duración de la asistencia (minutos)',
     );
 
-    picker?.props.onChange?.(dayjs('2026-10-26T09:00'));
+    field?.props.onChange?.({ target: { value: '0' } } as React.ChangeEvent<HTMLInputElement>);
     await click(button(h.render(), 'Guardar configuración'));
     expect(mocks.configure).not.toHaveBeenCalled();
     expect(button(h.render(), 'Activar sesión').disabled).toBe(true);
@@ -233,7 +281,8 @@ describe('assistant GEO configuration', () => {
 
       if (!confirmation) throw new Error('Missing confirmation');
       await click(button(confirmation.props.children, label));
-      expect(mocks[method]).toHaveBeenCalledWith(7);
+      if (method === 'openNow') expect(mocks[method]).toHaveBeenCalledWith(7, 60);
+      else expect(mocks[method]).toHaveBeenCalledWith(7);
       expect(mocks.refresh).toHaveBeenCalledTimes(1);
       h.update({ ...session(), state: target });
       h.render();
@@ -251,5 +300,54 @@ describe('assistant GEO configuration', () => {
     expect(mocks.onClose).not.toHaveBeenCalled();
     await click(button(h.render(), 'Descartar cambios'));
     expect(mocks.onClose).toHaveBeenCalledOnce();
+  });
+});
+
+describe('combined progressive configuration', () => {
+  it('saves an incomplete draft without nulls or activation', async () => {
+    const h = setup({
+      ...session(),
+      mode: 'GEOLOCATION_QR',
+      latitude: null,
+      longitude: null,
+      startsAt: null,
+      endsAt: null,
+    });
+
+    const tree = h.render();
+
+    expect(button(tree, 'Activar sesión').disabled).toBe(true);
+    await click(button(tree, 'Guardar configuración'));
+    expect(mocks.configure).toHaveBeenCalledWith(7, { radiusMeters: 50, maximumAcceptedAccuracy: 50 });
+    expect(mocks.activate).not.toHaveBeenCalled();
+  });
+  it('permits open-now with saved geofence and end, leaving authoritative start to server', async () => {
+    const h = setup({ ...session(), mode: 'GEOLOCATION_QR', startsAt: null });
+
+    expect(button(h.render(), 'Activar sesión').disabled).toBe(true);
+
+    const durationField = elements<React.ComponentProps<typeof TextField>>(h.render(), TextField).find(
+      (item) => item.props.label === 'Duración de la asistencia (minutos)',
+    );
+
+    durationField?.props.onChange?.({ target: { value: '1' } } as React.ChangeEvent<HTMLInputElement>);
+    await click(button(h.render(), 'Guardar configuración'));
+    expect(button(h.render(), 'Abrir ahora').disabled).toBe(false);
+    await click(button(h.render(), 'Abrir ahora'));
+
+    const confirmation = elements<React.ComponentProps<typeof Dialog>>(h.render(), Dialog).find(
+      (item) => item.props['aria-labelledby'] === 'attendance-geo-confirm-title',
+    );
+
+    await click(button(confirmation?.props.children, 'Abrir ahora'));
+    expect(mocks.openNow).toHaveBeenCalledWith(7, 1);
+  });
+  it.each(['SCHEDULED', 'OPEN', 'CLOSED', 'CANCELLED'] as const)('locks combined configuration in %s', (state) => {
+    const h = setup({ ...session(), mode: 'GEOLOCATION_QR', state });
+
+    expect(elements<AttendanceGeolocationMapProps>(h.render(), AttendanceMap)[0].props.disabled).toBe(true);
+    expect(
+      elements<React.ComponentProps<typeof TextField>>(h.render(), TextField).every((item) => item.props.disabled),
+    ).toBe(true);
   });
 });
