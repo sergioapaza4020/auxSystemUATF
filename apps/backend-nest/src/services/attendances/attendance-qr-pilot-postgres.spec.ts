@@ -70,10 +70,12 @@ isolated('QR-6 real HTTP login, persisted sessions and disposable PostgreSQL', (
   let assistant: string;
   const students: string[] = [];
   const metrics: LoadResult[] = [];
+  const transportKey = 'a'.repeat(64);
   const password = 'synthetic-qr6-fixture-password';
   const login = async (username: string) => {
     const result = await request(app.getHttpServer())
-      .post('/api/auth/login')
+      .post('/api/auth/session/login')
+      .set('x-uatf-auth-transport', transportKey)
       .send({ username, password })
       .expect(201);
     return data(result) as { accessToken: string; refreshToken: string };
@@ -104,6 +106,7 @@ isolated('QR-6 real HTTP login, persisted sessions and disposable PostgreSQL', (
   beforeAll(async () => {
     jest.replaceProperty(process, 'env', {
       ...process.env,
+      AUTH_TRANSPORT_KEY: transportKey,
       JWT_ACCESS_SECRET: 'qr6-synthetic-access-signing-key',
       JWT_ACCESS_REFRESH: 'qr6-synthetic-refresh-signing-key',
       JWT_ACCESS_SECRET_EXPIRES_IN: '15m',
@@ -235,7 +238,8 @@ isolated('QR-6 real HTTP login, persisted sessions and disposable PostgreSQL', (
   it('completes login/refresh/create/context/check-in/roster/close/academic summary with real sessions', async () => {
     const account = await login('qr6-2');
     const refresh = await request(app.getHttpServer())
-      .post('/api/auth/refresh-access-token')
+      .post('/api/auth/session/refresh')
+      .set('x-uatf-auth-transport', transportKey)
       .send({ refreshToken: account.refreshToken })
       .expect(201);
     const student = String(data(refresh).accessToken);

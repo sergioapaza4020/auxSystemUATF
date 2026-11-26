@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
+import { matchesRefresh } from '@common/utils/refresh-digest';
 import { UserSession } from 'src/entities/user-sessions/user-sessions.entity';
 import { User } from 'src/entities/users/users.entity';
 import { SessionsService } from './sessions.service';
@@ -18,9 +18,17 @@ describe('Transactional session issuance', () => {
         return Promise.resolve(session);
       }),
     };
+    const accountRepository = {
+      findOne: jest.fn(({ where }: { where: { idUser: number } }) =>
+        Promise.resolve(Object.assign(new User(), { idUser: where.idUser, isActive: true })),
+      ),
+    };
     const transaction = jest.fn(
       async <R>(work: (manager: { getRepository: () => typeof repository }) => Promise<R>) => {
-        const result = await work({ getRepository: () => repository });
+        const result = await work({
+          getRepository: (entity?: unknown) =>
+            (entity === User ? accountRepository : repository) as typeof repository,
+        });
         committed = true;
         return result;
       },
@@ -51,7 +59,8 @@ describe('Transactional session issuance', () => {
     expect(f.transaction).toHaveBeenCalledTimes(1);
     expect(f.committed()).toBe(true);
     expect(result.userSession.isActive).toBe(true);
-    expect(await bcrypt.compare('refresh-test', result.userSession.refreshToken)).toBe(true);
+    expect(result.userSession.refreshToken).toMatch(/^sha256:v1:/);
+    expect(await matchesRefresh('refresh-test', result.userSession.refreshToken)).toBe(true);
     expect(f.writes).toHaveLength(2);
   });
 

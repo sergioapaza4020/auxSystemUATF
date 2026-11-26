@@ -100,7 +100,7 @@ export class CareerStudentImportService {
       operation.type !== BulkOperationType.CAREER_STUDENT_IMPORT ||
       operation.metadata?.careerId !== careerId
     )
-      throw new NotFoundException('Career student import not found');
+      throw new NotFoundException('No encontramos la importación de estudiantes a la carrera.');
     return operation;
   }
 
@@ -138,7 +138,9 @@ export class CareerStudentImportService {
   ): Promise<CareerStudentImportPreviewDto> {
     const operation = await this.operation(operationId, careerId, ownerId);
     if (operation.status !== BulkOperationStatus.READY)
-      throw new BadRequestException('Career student import preview is not ready');
+      throw new BadRequestException(
+        'La vista previa de estudiantes de la carrera aún no está lista.',
+      );
     await this.validateCareer(this.repository.manager, this.target(operation));
     const rows = await this.bulk.findRows(
       operationId,
@@ -191,7 +193,9 @@ export class CareerStudentImportService {
         async (manager, persisted, rows) => {
           const careerId = this.target(persisted);
           if (careerId !== routeCareerId)
-            throw new NotFoundException('Career student import not found');
+            throw new NotFoundException(
+              'No encontramos la importación de estudiantes a la carrera.',
+            );
           await this.validateCareer(manager, careerId);
           const inputs = rows.map((row) => ({
             row: row.rowNumber,
@@ -209,7 +213,8 @@ export class CareerStudentImportService {
           // The conditional update is a second line of protection against concurrent reassignment.
           for (let offset = 0; offset < preview.rows.length; offset += BATCH_SIZE) {
             const ids = preview.rows.slice(offset, offset + BATCH_SIZE).map((row) => {
-              if (row.studentId === null) throw new BadRequestException('Estudiante no resuelto');
+              if (row.studentId === null)
+                throw new BadRequestException('No pudimos identificar al estudiante de esta fila.');
               return row.studentId;
             });
             const updated = await manager

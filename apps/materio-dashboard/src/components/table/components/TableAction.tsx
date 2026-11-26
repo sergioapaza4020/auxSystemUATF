@@ -13,6 +13,7 @@ const actions = {
   export: ['primary', 'ri-file-download-line'],
   configure: ['secondary', 'ri-settings-3-line'],
   assign: ['primary', 'ri-user-settings-line'],
+  resetPassword: ['warning', 'ri-key-2-line'],
   import: ['primary', 'ri-upload-line'],
   close: ['warning', 'ri-logout-box-r-line'],
   other: ['secondary', 'ri-more-2-fill'],

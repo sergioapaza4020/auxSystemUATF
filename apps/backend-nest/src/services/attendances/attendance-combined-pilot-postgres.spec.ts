@@ -76,10 +76,13 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
   const metrics: LoadResult[] = [];
   let current: number | null = null;
   let done = false;
+  const frontendOrigin = process.env.COMB6_NEXT_ORIGIN ?? 'http://127.0.0.1:4300';
+  const transportKey = process.env.COMB6_AUTH_TRANSPORT_KEY ?? 'a'.repeat(64);
   const password = 'synthetic-comb6-fixture-password';
   const login = async (username: string) => {
     const result = await request(app.getHttpServer())
-      .post('/api/auth/login')
+      .post('/api/auth/session/login')
+      .set('x-uatf-auth-transport', transportKey)
       .send({ username, password })
       .expect(201);
     return data(result) as { accessToken: string; refreshToken: string };
@@ -133,6 +136,8 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
   beforeAll(async () => {
     jest.replaceProperty(process, 'env', {
       ...process.env,
+      AUTH_TRANSPORT_KEY: transportKey,
+      AUTH_LEGACY_TRANSPORT_KEY: '',
       JWT_ACCESS_SECRET: 'comb6-synthetic-access-signing-key',
       JWT_ACCESS_REFRESH: 'comb6-synthetic-refresh-signing-key',
       JWT_ACCESS_SECRET_EXPIRES_IN: '15m',
@@ -142,7 +147,7 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
         fixture: Buffer.alloc(32, 0x17).toString('base64'),
       }),
     });
-    database = await createSeedTestDatabase(pgBin!);
+    database = await createSeedTestDatabase(pgBin!, Boolean(process.env.COMB6_AUTH_TRANSPORT_KEY));
     source = database.source;
     await source.runMigrations({ transaction: 'each' });
     const hash = await bcrypt.hash(password, 10);
@@ -244,6 +249,24 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
     app.useGlobalInterceptors(new AttendanceRateLimitInterceptor(quota), new ResponseInterceptor());
     if (process.env.COMB6_BROWSER_E2E === '1') {
       const adapter = app.getHttpAdapter();
+      if (process.env.COMB6_AUTH_TRANSPORT_KEY) {
+        adapter.post('/__comb6/session/:operation/:id', async (req: Request, res: Response) => {
+          if (req.headers['x-uatf-auth-transport'] !== transportKey) {
+            res.sendStatus(403);
+            return;
+          }
+          const { operation, id } = req.params;
+          if (operation === 'short-access' || operation === 'default-access') {
+            process.env.JWT_ACCESS_SECRET_EXPIRES_IN = operation === 'short-access' ? '2s' : '15m';
+          } else if (operation === 'expire' && typeof id === 'string' && /^\d+$/.test(id)) {
+            await source.getRepository(UserSession).update(Number(id), { expiresAt: new Date(0) });
+          } else {
+            res.sendStatus(400);
+            return;
+          }
+          res.sendStatus(204);
+        });
+      }
       adapter.get('/__comb6/scan', async (_req: Request, res: Response) => {
         current = await create();
         const emitted = await request(app.getHttpServer())
@@ -254,7 +277,7 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
         res
           .type('html')
           .send(
-            `<h1>COMB6 · ensayo aislado</h1><a href="http://127.0.0.1:4300/attendance/qr#t=${encodeURIComponent(token)}">Escanear QR de prueba</a>`,
+            `<h1>COMB6 · ensayo aislado</h1><a href="${frontendOrigin}/attendance/qr#t=${encodeURIComponent(token)}">Escanear QR de prueba</a>`,
           );
       });
       adapter.get('/__comb6/status', async (_req: Request, res: Response) => {
@@ -276,7 +299,7 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
         res.json({ fixture: 'COMB6_ISOLATED', closed: true });
       });
     }
-    app.enableCors(httpCorsOptions('http://127.0.0.1:4300'));
+    app.enableCors(httpCorsOptions(frontendOrigin));
     await app.listen(0, '127.0.0.1');
     assistant = (await login('comb6-1')).accessToken;
     for (let id = 2; id <= 51; id++) students.push((await login(`comb6-${id}`)).accessToken);
@@ -306,7 +329,8 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
   it('completes login/refresh/create/context/check-in/roster/close/academic summary with real sessions', async () => {
     const account = await login('comb6-2');
     const refresh = await request(app.getHttpServer())
-      .post('/api/auth/refresh-access-token')
+      .post('/api/auth/session/refresh')
+      .set('x-uatf-auth-transport', transportKey)
       .send({ refreshToken: account.refreshToken })
       .expect(201);
     const student = String(data(refresh).accessToken);
@@ -467,15 +491,17 @@ isolated('COMB-6 real HTTP login, combined flow and disposable PostgreSQL', () =
       const address = app.getHttpServer().address();
       if (!address || typeof address === 'string') throw new Error('No isolated API port');
       writeFileSync(
-        resolve('node_modules/.cache/comb6-browser-ready.json'),
+        process.env.COMB6_BROWSER_READY_FILE ??
+          resolve('node_modules/.cache/comb6-browser-ready.json'),
         JSON.stringify({ port: address.port, pid: process.pid }),
       );
       for (let n = 0; !done && n < 2400; n++) await delay(500);
       expect(done).toBe(true);
+      if (current === null) throw new Error('Browser did not scan a fixture QR');
       expect(
         await source
           .getRepository(Attendance)
-          .countBy({ attendanceSession: { idAttendanceSession: current! } }),
+          .countBy({ attendanceSession: { idAttendanceSession: current } }),
       ).toBe(1);
     },
     1250000,

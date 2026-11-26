@@ -40,6 +40,7 @@ import { useAttendanceRoster } from '@/hooks/attendances/useAttendanceRoster';
 
 import { AttendanceStatus } from '@/enums/attendanceStatus';
 import { AttendancePageHeader } from '@/views/attendance/AttendancePageHeader';
+import { AttendanceImportDialog } from '@/views/attendance/AttendanceImportDialog';
 import { AttendanceSessionToolbar } from '@/views/attendance/AttendanceSessionToolbar';
 import { AttendanceSheet } from '@/views/attendance/AttendanceSheet';
 import { AttendanceHistory } from '@/views/attendance/AttendanceHistory';
@@ -74,6 +75,13 @@ export default function AttendancePage() {
   const canSave = hasPermission(user, 'attendance.save');
   const canCreate = hasPermission(user, 'attendance.session.create');
   const canOpen = hasPermission(user, 'attendance.session.get-one');
+
+  const canImport =
+    canSave &&
+    hasPermission(user, 'attendance.session.get-by-enrollment') &&
+    hasPermission(user, 'enrollment.get-students-by-enrollment');
+
+  const [importOpen, setImportOpen] = useState(false);
 
   const canEditConfig =
     hasPermission(user, 'assistant-grade-scheme.update') && hasPermission(user, 'assistant-grade-scheme.get-one');
@@ -479,6 +487,29 @@ export default function AttendancePage() {
         studentCount={roster.total}
         onBack={() => requestAction({ kind: 'back' })}
       />
+      {canImport && (
+        <Box>
+          <Button
+            variant='outlined'
+            disabled={saving || openingSession || hasChanges}
+            onClick={() => setImportOpen(true)}
+          >
+            Importar asistencia desde Excel
+          </Button>
+        </Box>
+      )}
+      {importOpen && (
+        <AttendanceImportDialog
+          enrollmentId={idEnrollment}
+          onClose={() => setImportOpen(false)}
+          onImported={() => {
+            roster.refresh();
+            void loadSessions().catch((error) => snackbar.error(getApiErrorMessage(error)));
+            if (selectedSessionId !== null)
+              void loadSession(selectedSessionId).catch((error) => snackbar.error(getApiErrorMessage(error)));
+          }}
+        />
+      )}
 
       <Paper variant='outlined' sx={{ borderRadius: 2 }}>
         <Tabs

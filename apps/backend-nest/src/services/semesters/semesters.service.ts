@@ -30,7 +30,7 @@ export class SemestersService {
       where: { period: semesterCreateDto.period, year: semesterCreateDto.year },
     });
 
-    if (semester) throw new ConflictException('Semestre ya registrado');
+    if (semester) throw new ConflictException('El semestre ya está registrado.');
 
     this.validateDates(semesterCreateDto.startDate, semesterCreateDto.endDate);
     const semesterCreated = this.semesterRepository.create(semesterCreateDto);
@@ -72,7 +72,7 @@ export class SemestersService {
     const semester = await this.semesterRepository.findOne({
       where: { idSemester, isActive: true },
     });
-    if (!semester) throw new BadRequestException('Semester not found');
+    if (!semester) throw new BadRequestException('No encontramos el semestre solicitado.');
     semester.isActive = false;
 
     return this.semesterRepository.save(semester);
@@ -82,7 +82,7 @@ export class SemestersService {
     const semester = await this.semesterRepository.findOne({
       where: { idSemester, isActive: false },
     });
-    if (!semester) throw new BadRequestException('Semester not found');
+    if (!semester) throw new BadRequestException('No encontramos el semestre solicitado.');
     semester.isActive = true;
 
     return this.semesterRepository.save(semester);
@@ -96,14 +96,14 @@ export class SemestersService {
 
   async update(idSemester: number, dto: SemesterUpdateDto) {
     const semester = await this.getOneById(idSemester);
-    if (!semester) throw new NotFoundException('Semester not found');
+    if (!semester) throw new NotFoundException('No encontramos el semestre solicitado.');
     this.semesterRepository.merge(semester, dto);
     this.validateDates(semester.startDate, semester.endDate);
     const duplicate = await this.semesterRepository.findOne({
       where: { period: semester.period, year: semester.year },
     });
     if (duplicate && duplicate.idSemester !== idSemester)
-      throw new ConflictException('Semestre ya registrado');
+      throw new ConflictException('El semestre ya está registrado.');
     return this.semesterRepository.save(semester);
   }
 }

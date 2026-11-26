@@ -1,0 +1,55 @@
+64adae7226229de6ed62455b6da34002
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Semester = void 0;
+const base_entity_1 = require("@common/entities/base.entity");
+const typeorm_1 = require("typeorm");
+const enrollments_entity_1 = require("../enrollments/enrollments.entity");
+const semesterNumber_1 = require("@common/enums/semesterNumber");
+let Semester = class Semester extends base_entity_1.BaseEntity {
+    idSemester;
+    year;
+    period;
+    startDate;
+    endDate;
+    enrollments;
+};
+exports.Semester = Semester;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_semester' }),
+    __metadata("design:type", Number)
+], Semester.prototype, "idSemester", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'year' }),
+    __metadata("design:type", Number)
+], Semester.prototype, "year", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'semester_number', type: 'varchar' }),
+    __metadata("design:type", typeof (_a = typeof semesterNumber_1.SemesterNumber !== "undefined" && semesterNumber_1.SemesterNumber) === "function" ? _a : Object)
+], Semester.prototype, "period", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'start_date', type: 'timestamp' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], Semester.prototype, "startDate", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'end_date', type: 'timestamp' }),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], Semester.prototype, "endDate", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => enrollments_entity_1.Enrollment, (enrollment) => enrollment.semester),
+    __metadata("design:type", Array)
+], Semester.prototype, "enrollments", void 0);
+exports.Semester = Semester = __decorate([
+    (0, typeorm_1.Entity)('semesters')
+], Semester);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXHNlbWVzdGVyc1xcc2VtZXN0ZXIuZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSw4REFBMEQ7QUFDMUQscUNBQTRFO0FBQzVFLDBFQUErRDtBQUMvRCxpRUFBOEQ7QUFHdkQsSUFBTSxRQUFRLEdBQWQsTUFBTSxRQUFTLFNBQVEsd0JBQVU7SUFFdEMsVUFBVSxDQUFTO0lBR25CLElBQUksQ0FBUztJQUdiLE1BQU0sQ0FBaUI7SUFHdkIsU0FBUyxDQUFPO0lBR2hCLE9BQU8sQ0FBTztJQUdkLFdBQVcsQ0FBZTtDQUMzQixDQUFBO0FBbEJZLDRCQUFRO0FBRW5CO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxFQUFFLElBQUksRUFBRSxhQUFhLEVBQUUsQ0FBQzs7NENBQzdCO0FBR25CO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxDQUFDOztzQ0FDWjtBQUdiO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLGlCQUFpQixFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsQ0FBQztrREFDN0MsK0JBQWMsb0JBQWQsK0JBQWM7d0NBQUM7QUFHdkI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLElBQUksRUFBRSxXQUFXLEVBQUUsQ0FBQztrREFDdkMsSUFBSSxvQkFBSixJQUFJOzJDQUFDO0FBR2hCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLFVBQVUsRUFBRSxJQUFJLEVBQUUsV0FBVyxFQUFFLENBQUM7a0RBQ3ZDLElBQUksb0JBQUosSUFBSTt5Q0FBQztBQUdkO0lBREMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLCtCQUFVLEVBQUUsQ0FBQyxVQUFVLEVBQUUsRUFBRSxDQUFDLFVBQVUsQ0FBQyxRQUFRLENBQUM7OzZDQUN2QzttQkFqQmYsUUFBUTtJQURwQixJQUFBLGdCQUFNLEVBQUMsV0FBVyxDQUFDO0dBQ1AsUUFBUSxDQWtCcEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXHNlbWVzdGVyc1xcc2VtZXN0ZXIuZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEJhc2VFbnRpdHkgfSBmcm9tICdAY29tbW9uL2VudGl0aWVzL2Jhc2UuZW50aXR5JztcbmltcG9ydCB7IENvbHVtbiwgRW50aXR5LCBPbmVUb01hbnksIFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4gfSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7IEVucm9sbG1lbnQgfSBmcm9tICcuLi9lbnJvbGxtZW50cy9lbnJvbGxtZW50cy5lbnRpdHknO1xuaW1wb3J0IHsgU2VtZXN0ZXJOdW1iZXIgfSBmcm9tICdAY29tbW9uL2VudW1zL3NlbWVzdGVyTnVtYmVyJztcblxuQEVudGl0eSgnc2VtZXN0ZXJzJylcbmV4cG9ydCBjbGFzcyBTZW1lc3RlciBleHRlbmRzIEJhc2VFbnRpdHkge1xuICBAUHJpbWFyeUdlbmVyYXRlZENvbHVtbih7IG5hbWU6ICdpZF9zZW1lc3RlcicgfSlcbiAgaWRTZW1lc3RlcjogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAneWVhcicgfSlcbiAgeWVhcjogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnc2VtZXN0ZXJfbnVtYmVyJywgdHlwZTogJ3ZhcmNoYXInIH0pXG4gIHBlcmlvZDogU2VtZXN0ZXJOdW1iZXI7XG5cbiAgQENvbHVtbih7IG5hbWU6ICdzdGFydF9kYXRlJywgdHlwZTogJ3RpbWVzdGFtcCcgfSlcbiAgc3RhcnREYXRlOiBEYXRlO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnZW5kX2RhdGUnLCB0eXBlOiAndGltZXN0YW1wJyB9KVxuICBlbmREYXRlOiBEYXRlO1xuXG4gIEBPbmVUb01hbnkoKCkgPT4gRW5yb2xsbWVudCwgKGVucm9sbG1lbnQpID0+IGVucm9sbG1lbnQuc2VtZXN0ZXIpXG4gIGVucm9sbG1lbnRzOiBFbnJvbGxtZW50W107XG59XG4iXSwidmVyc2lvbiI6M30=

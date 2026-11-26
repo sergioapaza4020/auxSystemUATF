@@ -103,6 +103,6 @@ export async function createEnrollmentImportTemplate(): Promise<Buffer> {
   });
   sheet.getRow(1).font = { bold: true };
   sheet.getCell('A1').note =
-    'Complete todos los campos para cuentas nuevas. Para estudiantes existentes basta RU. No incluya materia, semestre ni rol. Conserve CI y RU como texto.';
+    'Completa todos los campos para cuentas nuevas. Para estudiantes con cuenta, basta el RU. Omite la materia, el semestre y el rol. Escribe el CI y el RU como texto.';
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }

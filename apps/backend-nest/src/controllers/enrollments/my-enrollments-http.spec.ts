@@ -79,6 +79,7 @@ describe('Own enrollments with signed persona JWTs and real guards', () => {
             semester: { idSemester: 20 },
             isActive: true,
             role: In([CourseRelations.STUDENT, CourseRelations.ASSISTANT]),
+            course: { isActive: true },
           },
         }),
       );

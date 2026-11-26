@@ -1,0 +1,14 @@
+a179049783d93f48867417b0f2572833
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SessionRevokeReasons = void 0;
+var SessionRevokeReasons;
+(function (SessionRevokeReasons) {
+    SessionRevokeReasons["LOGOUT"] = "Session closed by user";
+    SessionRevokeReasons["LOGOUT_ALL"] = "Session closed on all devices";
+    SessionRevokeReasons["PASSWORD_CHANGED"] = "Password changed";
+    SessionRevokeReasons["SUSPICIOUS_ACTIVITY"] = "Suspicious activity detected";
+    SessionRevokeReasons["ADMIN_ACTION"] = "Session revoked by an administrator";
+    SessionRevokeReasons["EXPIRED"] = "Session expired";
+})(SessionRevokeReasons || (exports.SessionRevokeReasons = SessionRevokeReasons = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcY29tbW9uXFxlbnVtc1xcc2Vzc2lvblJldm9rZVJlYXNvbnMudHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsSUFBWSxvQkFPWDtBQVBELFdBQVksb0JBQW9CO0lBQzlCLHlEQUFpQyxDQUFBO0lBQ2pDLG9FQUE0QyxDQUFBO0lBQzVDLDZEQUFxQyxDQUFBO0lBQ3JDLDRFQUFvRCxDQUFBO0lBQ3BELDRFQUFvRCxDQUFBO0lBQ3BELG1EQUEyQixDQUFBO0FBQzdCLENBQUMsRUFQVyxvQkFBb0Isb0NBQXBCLG9CQUFvQixRQU8vQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxjb21tb25cXGVudW1zXFxzZXNzaW9uUmV2b2tlUmVhc29ucy50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZW51bSBTZXNzaW9uUmV2b2tlUmVhc29ucyB7XG4gIExPR09VVCA9ICdTZXNzaW9uIGNsb3NlZCBieSB1c2VyJyxcbiAgTE9HT1VUX0FMTCA9ICdTZXNzaW9uIGNsb3NlZCBvbiBhbGwgZGV2aWNlcycsXG4gIFBBU1NXT1JEX0NIQU5HRUQgPSAnUGFzc3dvcmQgY2hhbmdlZCcsXG4gIFNVU1BJQ0lPVVNfQUNUSVZJVFkgPSAnU3VzcGljaW91cyBhY3Rpdml0eSBkZXRlY3RlZCcsXG4gIEFETUlOX0FDVElPTiA9ICdTZXNzaW9uIHJldm9rZWQgYnkgYW4gYWRtaW5pc3RyYXRvcicsXG4gIEVYUElSRUQgPSAnU2Vzc2lvbiBleHBpcmVkJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -1,0 +1,38 @@
+072e1dfb43006042843af0ed948113d3
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GradeItem = void 0;
+const base_entity_1 = require("@common/entities/base.entity");
+const typeorm_1 = require("typeorm");
+const grade_scheme_detail_entity_1 = require("../grade-scheme-detail/grade-scheme-detail.entity");
+let GradeItem = class GradeItem extends base_entity_1.BaseEntity {
+    idGradeItem;
+    gradeSchemes;
+    name;
+};
+exports.GradeItem = GradeItem;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_grade_item' }),
+    __metadata("design:type", Number)
+], GradeItem.prototype, "idGradeItem", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => grade_scheme_detail_entity_1.GradeSchemeDetail, (detail) => detail.gradeItem),
+    __metadata("design:type", Array)
+], GradeItem.prototype, "gradeSchemes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'name', unique: true }),
+    __metadata("design:type", String)
+], GradeItem.prototype, "name", void 0);
+exports.GradeItem = GradeItem = __decorate([
+    (0, typeorm_1.Entity)('grade_items')
+], GradeItem);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGdyYWRlLWl0ZW1zXFxncmFkZS1pdGVtcy5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7O0FBQUEsOERBQTBEO0FBQzFELHFDQUE0RTtBQUM1RSxrR0FBc0Y7QUFHL0UsSUFBTSxTQUFTLEdBQWYsTUFBTSxTQUFVLFNBQVEsd0JBQVU7SUFFdkMsV0FBVyxDQUFTO0lBR3BCLFlBQVksQ0FBc0I7SUFHbEMsSUFBSSxDQUFTO0NBQ2QsQ0FBQTtBQVRZLDhCQUFTO0FBRXBCO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxFQUFFLElBQUksRUFBRSxlQUFlLEVBQUUsQ0FBQzs7OENBQzlCO0FBR3BCO0lBREMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLDhDQUFpQixFQUFFLENBQUMsTUFBTSxFQUFFLEVBQUUsQ0FBQyxNQUFNLENBQUMsU0FBUyxDQUFDOzsrQ0FDL0I7QUFHbEM7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLE1BQU0sRUFBRSxJQUFJLEVBQUUsQ0FBQzs7dUNBQzFCO29CQVJGLFNBQVM7SUFEckIsSUFBQSxnQkFBTSxFQUFDLGFBQWEsQ0FBQztHQUNULFNBQVMsQ0FTckIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGdyYWRlLWl0ZW1zXFxncmFkZS1pdGVtcy5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQmFzZUVudGl0eSB9IGZyb20gJ0Bjb21tb24vZW50aXRpZXMvYmFzZS5lbnRpdHknO1xuaW1wb3J0IHsgQ29sdW1uLCBFbnRpdHksIE9uZVRvTWFueSwgUHJpbWFyeUdlbmVyYXRlZENvbHVtbiB9IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgR3JhZGVTY2hlbWVEZXRhaWwgfSBmcm9tICcuLi9ncmFkZS1zY2hlbWUtZGV0YWlsL2dyYWRlLXNjaGVtZS1kZXRhaWwuZW50aXR5JztcblxuQEVudGl0eSgnZ3JhZGVfaXRlbXMnKVxuZXhwb3J0IGNsYXNzIEdyYWRlSXRlbSBleHRlbmRzIEJhc2VFbnRpdHkge1xuICBAUHJpbWFyeUdlbmVyYXRlZENvbHVtbih7IG5hbWU6ICdpZF9ncmFkZV9pdGVtJyB9KVxuICBpZEdyYWRlSXRlbTogbnVtYmVyO1xuXG4gIEBPbmVUb01hbnkoKCkgPT4gR3JhZGVTY2hlbWVEZXRhaWwsIChkZXRhaWwpID0+IGRldGFpbC5ncmFkZUl0ZW0pXG4gIGdyYWRlU2NoZW1lczogR3JhZGVTY2hlbWVEZXRhaWxbXTtcblxuICBAQ29sdW1uKHsgbmFtZTogJ25hbWUnLCB1bmlxdWU6IHRydWUgfSlcbiAgbmFtZTogc3RyaW5nO1xufVxuIl0sInZlcnNpb24iOjN9

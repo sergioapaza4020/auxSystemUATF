@@ -16,11 +16,17 @@ import { PermissionsGuard } from '@core/guards/permissions/permissions.guard';
 import { SessionRevokeReasons } from '@common/enums/sessionRevokeReasons';
 import { ResponseInterceptor } from '@core/interceptors/response/response.interceptor';
 import { HttpExceptionFilter } from '@core/filters/http-exception/http-exception.filter';
+import { AUTH_TRANSPORT_HEADER } from '@core/guards/auth/auth-transport.guard';
+import { createValidationPipe } from '@core/pipes/validation.pipe';
+import { refreshDigest } from '@common/utils/refresh-digest';
+import { withSessionTransaction } from '@common/test-mocks/session-transaction.mock';
 import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 
 describe('Refresh authentication flow', () => {
+  const nextKey = 'a'.repeat(64);
+  const legacyKey = 'b'.repeat(64);
   let app: INestApplication<Server>;
   let auth: AuthService;
   let sessions: SessionsService;
@@ -37,6 +43,9 @@ describe('Refresh authentication flow', () => {
     createQueryBuilder: jest.fn(() => {
       let query = { idSession: 0, idUser: 0, now: new Date() };
       return {
+        innerJoin(this: { getExists: () => Promise<boolean> }) {
+          return this;
+        },
         where(this: { getExists: () => Promise<boolean> }, _sql: string, parameters: typeof query) {
           query = parameters;
           return this;
@@ -56,6 +65,8 @@ describe('Refresh authentication flow', () => {
     }),
     find: jest.fn<Promise<UserSession[]>, [unknown]>(),
     findOne: jest.fn<Promise<UserSession | null>, [unknown]>(),
+    create: (value: Partial<UserSession>) =>
+      Object.assign(new UserSession(), value, { idSession: 8 }),
     save: jest.fn((value: UserSession) => Promise.resolve(value)),
     update: jest.fn<Promise<{ affected: number }>, [unknown, unknown]>(() =>
       Promise.resolve({ affected: 1 }),
@@ -63,9 +74,27 @@ describe('Refresh authentication flow', () => {
     delete: jest.fn(),
     remove: jest.fn(),
   };
-  const users = { getOneById: jest.fn(() => Promise.resolve(user)) };
+  const users = {
+    getOneById: jest.fn(() => Promise.resolve(user)),
+    getForAuthentication: jest.fn<Promise<User | null>, [string]>(),
+  };
 
   beforeEach(async () => {
+    jest.useFakeTimers({
+      now: new Date('2026-11-25T12:00:00Z'),
+      doNotFake: [
+        'hrtime',
+        'nextTick',
+        'performance',
+        'queueMicrotask',
+        'setImmediate',
+        'clearImmediate',
+        'setInterval',
+        'clearInterval',
+        'setTimeout',
+        'clearTimeout',
+      ],
+    });
     jest.clearAllMocks();
     repository.find.mockReset();
     repository.findOne.mockReset();
@@ -76,6 +105,9 @@ describe('Refresh authentication flow', () => {
       JWT_ACCESS_REFRESH: 'refresh-test-only',
       JWT_ACCESS_SECRET_EXPIRES_IN: '15m',
       JWT_ACCESS_REFRESH_EXPIRES_IN: '7d',
+      AUTH_TRANSPORT_KEY: nextKey,
+      AUTH_LEGACY_TRANSPORT_KEY: legacyKey,
+      AUTH_LEGACY_TRANSPORT_UNTIL: '2026-12-08T00:00:00Z',
     });
     jwt = new JwtService();
     token = jwt.sign(
@@ -118,13 +150,14 @@ describe('Refresh authentication flow', () => {
         PermissionsGuard,
         { provide: JwtService, useValue: jwt },
         { provide: UsersService, useValue: users },
-        { provide: getRepositoryToken(UserSession), useValue: repository },
+        { provide: getRepositoryToken(UserSession), useValue: withSessionTransaction(repository) },
       ],
     }).compile();
     auth = module.get(AuthService);
     sessions = module.get(SessionsService);
     app = module.createNestApplication<INestApplication<Server>>();
     app.setGlobalPrefix('api');
+    app.useGlobalPipes(createValidationPipe());
     app.useGlobalGuards(module.get(JwtAuthGuard), module.get(PermissionsGuard));
     app.useGlobalInterceptors(new ResponseInterceptor());
     app.useGlobalFilters(new HttpExceptionFilter());
@@ -133,7 +166,164 @@ describe('Refresh authentication flow', () => {
 
   afterEach(async () => {
     await app?.close();
+    jest.useRealTimers();
     jest.restoreAllMocks();
+  });
+
+  it('returns identity fields only for the authenticated profile and rejects protected fields', async () => {
+    users.getOneById.mockResolvedValueOnce(
+      Object.assign(new User(), user, {
+        ci: '0012345-1A',
+        ru: '0006789',
+        password: 'private-test-hash',
+      }),
+    );
+    const access = jwt.sign({ idUser: 1, idSession: 7 }, { secret: process.env.JWT_ACCESS_SECRET });
+    const http = () => request(app.getHttpServer());
+    await http().get('/api/auth/me').expect(401);
+    const profile = await http()
+      .get('/api/auth/me')
+      .query({ idUser: 99 })
+      .auth(access, { type: 'bearer' })
+      .expect(200)
+      .expect('Cache-Control', 'no-store');
+    expect(users.getOneById).toHaveBeenCalledTimes(1);
+    expect(users.getOneById).toHaveBeenCalledWith(1);
+    expect(profile.body).toMatchObject({
+      data: { idUser: 1, username: 'test', ci: '0012345-1A', ru: '0006789', roles: ['SUPERADMIN'] },
+    });
+    expect(profile.text).not.toMatch(/private-test-hash|refreshToken/);
+    await http()
+      .patch('/api/auth/me')
+      .query({ expectedSession: 7 })
+      .auth(access, { type: 'bearer' })
+      .send({ username: 'changed', ci: 'changed', ru: 'changed', roles: [] })
+      .expect(400);
+  });
+
+  it('serializes missing CI and RU without adding identity fields to access claims', async () => {
+    const profile = await auth.getProfile(1, 7);
+    expect(profile).toMatchObject({ ci: null, ru: null });
+
+    users.getOneById.mockResolvedValueOnce(
+      Object.assign(new User(), user, { ci: '0012345-1A', ru: '0006789' }),
+    );
+    const refreshed = await auth.refreshToken(token);
+    expect(jwt.decode<object>(refreshed.accessToken)).not.toHaveProperty('ci');
+    expect(jwt.decode<object>(refreshed.accessToken)).not.toHaveProperty('ru');
+  });
+
+  it.each(['session/login', 'session/refresh', 'session/logout', 'login', 'refresh-access-token'])(
+    'blocks direct calls to %s despite a forged trusted Origin',
+    async (path) => {
+      for (const key of ['', 'c'.repeat(64)]) {
+        const call = request(app.getHttpServer())
+          .post(`/api/auth/${path}`)
+          .set('Origin', 'https://frontend.test')
+          .send({ username: 'test', password: 'valid-password', refreshToken: token });
+        if (key) call.set(AUTH_TRANSPORT_HEADER, key);
+        const response = await call.expect(403);
+        expect(response.text).not.toContain(token);
+      }
+      expect(users.getForAuthentication).not.toHaveBeenCalled();
+      expect(repository.find).not.toHaveBeenCalled();
+      expect(repository.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it('authenticates the Next login and returns only the internal credential fields', async () => {
+    const password = 'valid-password';
+    const hash = await bcrypt.hash(password, 4);
+    users.getForAuthentication.mockImplementation(() =>
+      Promise.resolve(Object.assign(new User(), user, { password: hash })),
+    );
+    const login = () =>
+      request(app.getHttpServer())
+        .post('/api/auth/session/login')
+        .set(AUTH_TRANSPORT_HEADER, nextKey);
+    await login().send({ username: 'test', password: 'wrong' }).expect(401);
+    const response = await login()
+      .send({ username: 'test', password, rememberMe: true })
+      .expect(201);
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.body).toMatchObject({
+      data: {
+        accessToken: expect.any(String) as unknown,
+        refreshToken: expect.any(String) as unknown,
+        sessionExpiresAt: expect.any(String) as unknown,
+        rememberMe: true,
+      },
+    });
+    expect(response.text).not.toMatch(/userSession|sha256:v1:|password/);
+    expect(response.text).not.toContain(hash);
+
+    const legacy = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .set(AUTH_TRANSPORT_HEADER, legacyKey)
+      .send({ username: 'test', password, rememberMe: true })
+      .expect(201);
+    expect(legacy.body).toMatchObject({
+      data: {
+        accessToken: expect.any(String) as unknown,
+        refreshToken: expect.any(String) as unknown,
+        userSession: { rememberMe: false },
+      },
+    });
+    expect(legacy.text).not.toMatch(/sha256:v1:|password/);
+    expect(legacy.text).not.toContain(hash);
+  });
+
+  it('fails closed with missing keys and separates both authorized transports', async () => {
+    const call = (path: string, key: string) =>
+      request(app.getHttpServer())
+        .post(`/api/auth/${path}`)
+        .set(AUTH_TRANSPORT_HEADER, key)
+        .send({ refreshToken: token });
+    await call('refresh-access-token', nextKey).expect(403);
+    await call('session/refresh', legacyKey).expect(403);
+    delete process.env.AUTH_TRANSPORT_KEY;
+    delete process.env.AUTH_LEGACY_TRANSPORT_KEY;
+    await call('session/refresh', nextKey).expect(403);
+    await call('refresh-access-token', legacyKey).expect(403);
+  });
+
+  it('enforces the legacy cutoff even when configured with a later date', async () => {
+    process.env.AUTH_LEGACY_TRANSPORT_UNTIL = '2027-01-01T00:00:00Z';
+    jest.setSystemTime(new Date('2026-12-08T00:00:00Z'));
+    for (const path of ['login', 'refresh-access-token']) {
+      await request(app.getHttpServer())
+        .post(`/api/auth/${path}`)
+        .set(AUTH_TRANSPORT_HEADER, legacyKey)
+        .expect(410);
+    }
+  });
+
+  it('migrates historical refresh, blocks legacy downgrade and revokes via Next transport', async () => {
+    repository.update.mockImplementation((_where, fields) => {
+      Object.assign(session, fields);
+      return Promise.resolve({ affected: 1 });
+    });
+    const post = (path: string, refreshToken: string, key = nextKey) =>
+      request(app.getHttpServer())
+        .post(`/api/auth/${path}`)
+        .set(AUTH_TRANSPORT_HEADER, key)
+        .send({ refreshToken });
+    const response = await post('session/refresh', token).expect(201);
+    const {
+      data: { refreshToken: rotated, rememberMe },
+    } = response.body as {
+      data: { refreshToken: string; rememberMe: boolean | null };
+    };
+    expect(rememberMe).toBeNull();
+    expect(rotated).not.toBe(token);
+    expect(session.refreshToken).toBe(refreshDigest(rotated));
+    expect(response.text).not.toContain(session.refreshToken);
+    await post('refresh-access-token', rotated, legacyKey).expect(401);
+    await post('session/refresh', token).expect(401);
+    const logout = await post('session/logout', rotated).expect(201);
+    expect(logout.text).not.toContain(rotated);
+    expect(session.isActive).toBe(false);
+    await post('session/refresh', rotated).expect(401);
   });
 
   it('rejects expired access, refreshes through the real HTTP envelope and accepts the new access', async () => {
@@ -150,9 +340,11 @@ describe('Refresh authentication flow', () => {
       .expect(401);
     const response = await request(app.getHttpServer())
       .post('/api/auth/refresh-access-token')
+      .set(AUTH_TRANSPORT_HEADER, legacyKey)
       .send({ refreshToken: token })
       .expect(201);
     const body = response.body as { data: { accessToken: string } };
+    expect(Object.keys(body.data)).toEqual(['accessToken']);
     const newAccess = body.data.accessToken;
     expect(newAccess).not.toBe(oldAccess);
     const payload = jwt.verify<{
@@ -210,6 +402,7 @@ describe('Refresh authentication flow', () => {
       );
     await request(app.getHttpServer())
       .post('/api/auth/refresh-access-token')
+      .set(AUTH_TRANSPORT_HEADER, legacyKey)
       .send({ refreshToken: supplied })
       .expect(401);
     expect(repository.save).not.toHaveBeenCalled();
@@ -219,6 +412,7 @@ describe('Refresh authentication flow', () => {
     repository.find.mockRejectedValueOnce(new Error('database unavailable'));
     await request(app.getHttpServer())
       .post('/api/auth/refresh-access-token')
+      .set(AUTH_TRANSPORT_HEADER, legacyKey)
       .send({ refreshToken: token })
       .expect(500);
   });
@@ -269,6 +463,7 @@ describe('Refresh authentication flow', () => {
       .expect(401);
     const response = await request(app.getHttpServer())
       .post('/api/auth/refresh-access-token')
+      .set(AUTH_TRANSPORT_HEADER, legacyKey)
       .send({ refreshToken: token })
       .expect(201);
     const body = response.body as { data: { accessToken: string } };
@@ -358,6 +553,7 @@ describe('Refresh authentication flow', () => {
       expect(repository.remove).not.toHaveBeenCalled();
       await request(app.getHttpServer())
         .post('/api/auth/refresh-access-token')
+        .set(AUTH_TRANSPORT_HEADER, legacyKey)
         .send({ refreshToken: token })
         .expect(401);
       await request(app.getHttpServer())

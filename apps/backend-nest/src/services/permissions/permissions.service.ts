@@ -1,3 +1,4 @@
+import { revokePrivilegeSessions } from '@common/utils/revoke-privilege-sessions';
 import { RecordStatus } from 'src/dtos/common/status-query.dto';
 import { statusFilter } from '@common/utils/status-filter';
 import { PermissionUpdateDto } from 'src/dtos/permissions/permissions-update.dto';
@@ -19,7 +20,7 @@ export class PermissionsService {
     const permission = await this.permissionRepository.findOne({
       where: { name: permissionCreateDto.name },
     });
-    if (permission) throw new BadRequestException('Permission already exists');
+    if (permission) throw new BadRequestException('Ya existe un permiso con estos datos.');
 
     const permissionCreated = this.permissionRepository.create(permissionCreateDto);
     permissionCreated.createdBy = authorId;
@@ -47,16 +48,20 @@ export class PermissionsService {
     const permission = await this.permissionRepository.findOne({
       where: { idPermission, isActive: true },
     });
-    if (!permission) throw new BadRequestException('Permission not found');
+    if (!permission) throw new BadRequestException('No encontramos el permiso solicitado.');
     permission.isActive = false;
-    return this.permissionRepository.save(permission);
+    return this.permissionRepository.manager.transaction(async (manager) => {
+      const saved = await manager.getRepository(Permission).save(permission);
+      await revokePrivilegeSessions(manager, 'permission', idPermission);
+      return saved;
+    });
   }
 
   async reactivate(idPermission: number) {
     const permission = await this.permissionRepository.findOne({
       where: { idPermission, isActive: false },
     });
-    if (!permission) throw new BadRequestException('Permission not found');
+    if (!permission) throw new BadRequestException('No encontramos el permiso solicitado.');
     permission.isActive = true;
     return this.permissionRepository.save(permission);
   }
@@ -65,16 +70,20 @@ export class PermissionsService {
     const record = await this.permissionRepository.findOne({
       where: { idPermission, isActive: true },
     });
-    if (!record) throw new BadRequestException('Permission not found');
+    if (!record) throw new BadRequestException('No encontramos el permiso solicitado.');
     const name =
       dto.name === undefined ? undefined : dto.name.toLowerCase().trim().replace(/\s+/g, '.');
     if (name !== undefined) {
       const duplicate = await this.permissionRepository.findOne({ where: { name } });
       if (duplicate && duplicate.idPermission !== idPermission)
-        throw new BadRequestException('Permission already exists');
+        throw new BadRequestException('Ya existe un permiso con estos datos.');
     }
 
     this.permissionRepository.merge(record, dto, name === undefined ? {} : { name });
-    return this.permissionRepository.save(record);
+    return this.permissionRepository.manager.transaction(async (manager) => {
+      const saved = await manager.getRepository(Permission).save(record);
+      await revokePrivilegeSessions(manager, 'permission', idPermission);
+      return saved;
+    });
   }
 }

@@ -149,7 +149,7 @@ describe('Persisted USER_IMPORT preview', () => {
     expect(stored[60]).toMatchObject({
       rowNumber: 62,
       valid: false,
-      errors: ['El email no es válido'],
+      errors: ['Ingresa un correo electrónico válido.'],
     });
     expect(stored[0].data).toEqual({
       name: 'Carlos 0',
@@ -200,7 +200,7 @@ describe('Persisted USER_IMPORT preview', () => {
     expect(invalid.data[0]).toMatchObject({
       row: 62,
       valid: false,
-      errors: ['El email no es válido'],
+      errors: ['Ingresa un correo electrónico válido.'],
     });
     const valid = await service.getImportPreview(operationId, ownerId, {
       page: 1,
@@ -273,17 +273,17 @@ describe('Persisted USER_IMPORT preview', () => {
         'Los apellidos son obligatorios',
         'El CI está duplicado dentro del archivo',
         'El RU está duplicado dentro del archivo',
-        'El email está duplicado dentro del archivo',
+        'El correo electrónico se repite en el archivo.',
         'Ya existe un usuario con este CI',
         'Ya existe un usuario con este RU',
-        'Ya existe un usuario con este email',
-        'Ya existe un usuario con este username',
+        'Ya existe un usuario con este correo electrónico.',
+        'Ya existe un usuario con este nombre de usuario.',
       ]),
     );
     expect(preview.data[2].errors).toEqual(
       expect.arrayContaining([
         'El CI es obligatorio',
-        'El email no es válido',
+        'Ingresa un correo electrónico válido.',
         'El RU es obligatorio para usuarios con rol STUDENT',
       ]),
     );

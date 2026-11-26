@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserSession } from 'src/entities/user-sessions/user-sessions.entity';
 import { User } from 'src/entities/users/users.entity';
-import { MoreThan, Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import { MoreThan, Not, Repository } from 'typeorm';
+import { matchesRefresh, refreshDigest } from '@common/utils/refresh-digest';
+import { sessionDeadline } from '@common/utils/session-policy';
+import { ConflictException } from '@nestjs/common';
 import { SessionRevokeReasons } from '@common/enums/sessionRevokeReasons';
 import { SessionQueryDto } from 'src/dtos/sessions/session-query.dto';
 import { normalizeIp } from '@common/utils/normalize-ip';
@@ -24,11 +31,23 @@ export class SessionsService {
     os?: string;
     device?: string;
     lastUsedAt: Date;
+    rememberMe?: boolean;
+    expiresAt?: Date;
   }) {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    const expiresAt =
+      params.expiresAt ?? sessionDeadline(params.rememberMe ?? false, params.lastUsedAt);
 
     return this.sessionRepository.manager.transaction(async (manager) => {
+      const account = await manager.getRepository(User).findOne({
+        where: { idUser: params.user.idUser, isActive: true },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (
+        !account ||
+        (params.user.updatedAt !== undefined &&
+          account.updatedAt?.getTime() !== params.user.updatedAt.getTime())
+      )
+        throw new UnauthorizedException('Tu cuenta cambió. Inicia sesión nuevamente.');
       const repository = manager.getRepository(UserSession);
       const session = await repository.save(
         repository.create({
@@ -43,10 +62,11 @@ export class SessionsService {
           device: params.device,
           lastUsedAt: params.lastUsedAt,
           expiresAt,
+          rememberMe: params.rememberMe ?? false,
         }),
       );
       const tokens = params.issueTokens(session.idSession);
-      session.refreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+      session.refreshToken = refreshDigest(tokens.refreshToken);
       session.isActive = true;
       const userSession = await repository.save(session);
       return { ...tokens, userSession };
@@ -56,13 +76,15 @@ export class SessionsService {
   async assertActiveSession(idSession: number, idUser: number): Promise<void> {
     const active = await this.sessionRepository
       .createQueryBuilder('session')
+      .innerJoin('session.user', 'account', 'account.isActive = true AND account.deletedAt IS NULL')
       .where(
         'session.id_session = :idSession AND session.id_user = :idUser ' +
           'AND session.is_active = true AND session.expires_at > :now',
         { idSession, idUser, now: new Date() },
       )
       .getExists();
-    if (!active) throw new UnauthorizedException('Session is no longer active');
+    if (!active)
+      throw new UnauthorizedException('Tu sesión ya no está activa. Inicia sesión nuevamente.');
   }
 
   async getAllSessions(query: SessionQueryDto) {
@@ -78,6 +100,72 @@ export class SessionsService {
       .getManyAndCount();
 
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+
+  async getOwnActiveSessions(idUser: number, currentSession: number, query: SessionQueryDto) {
+    const { page = 1, limit = 20 } = query;
+    const [sessions, total] = await this.sessionRepository
+      .createQueryBuilder('session')
+      .select([
+        'session.idSession',
+        'session.browser',
+        'session.os',
+        'session.device',
+        'session.createdAt',
+        'session.lastUsedAt',
+      ])
+      .where(
+        'session.id_user = :idUser AND session.is_active = true AND session.expires_at > :now',
+        {
+          idUser,
+          now: new Date(),
+        },
+      )
+      .orderBy('CASE WHEN session.id_session = :currentSession THEN 0 ELSE 1 END', 'ASC')
+      .setParameter('currentSession', currentSession)
+      .addOrderBy('session.lastUsedAt', 'DESC', 'NULLS LAST')
+      .addOrderBy('session.idSession', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data: sessions.map(({ idSession, browser, os, device, createdAt, lastUsedAt }) => ({
+        idSession,
+        browser,
+        os,
+        device,
+        createdAt,
+        lastUsedAt,
+        current: idSession === currentSession,
+      })),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async revokeOwnOtherSessions(idUser: number, currentSession: number, target?: number) {
+    if (target === currentSession) {
+      throw new BadRequestException('Usa la opción de salir para cerrar tu sesión actual.');
+    }
+    const now = new Date();
+    const result = await this.sessionRepository.update(
+      {
+        user: { idUser },
+        idSession: target ?? Not(currentSession),
+        isActive: true,
+        expiresAt: MoreThan(now),
+      },
+      {
+        isActive: false,
+        revokedAt: now,
+        revokedReason:
+          target === undefined ? SessionRevokeReasons.LOGOUT_ALL : SessionRevokeReasons.LOGOUT,
+        revokedBy: { idUser },
+      },
+    );
+    if (target !== undefined && !result.affected) {
+      throw new NotFoundException('No encontramos esa sesión activa.');
+    }
   }
 
   async getUserSessions(idUser: number): Promise<UserSession[]> {
@@ -134,13 +222,28 @@ export class SessionsService {
       ) {
         continue;
       }
-      const isMatch = await bcrypt.compare(refreshToken, session.refreshToken);
+      const isMatch = await matchesRefresh(refreshToken, session.refreshToken);
       if (isMatch) {
         return session;
       }
     }
 
-    throw new UnauthorizedException('Invalid token refresh');
+    throw new UnauthorizedException('No pudimos renovar tu sesión. Inicia sesión nuevamente.');
+  }
+
+  /** Compare-and-swap is shared by every API instance; only one successor can commit. */
+  async rotateRefresh(session: UserSession, previous: string, next: string): Promise<void> {
+    const result = await this.sessionRepository.update(
+      {
+        idSession: session.idSession,
+        isActive: true,
+        refreshToken: previous,
+        expiresAt: MoreThan(new Date()),
+      },
+      { refreshToken: refreshDigest(next), lastUsedAt: new Date() },
+    );
+    if (!result.affected)
+      throw new ConflictException('Tu sesión ya se renovó. Vuelve a intentar la operación.');
   }
 
   async updateLastSessionUsed(session: UserSession): Promise<UserSession> {
@@ -150,7 +253,8 @@ export class SessionsService {
       { idSession: session.idSession, isActive: true, expiresAt: MoreThan(now) },
       { lastUsedAt: now },
     );
-    if (!result.affected) throw new UnauthorizedException('Session is no longer active');
+    if (!result.affected)
+      throw new UnauthorizedException('Tu sesión ya no está activa. Inicia sesión nuevamente.');
 
     session.lastUsedAt = now;
     return session;
@@ -175,7 +279,7 @@ export class SessionsService {
       where: { idSession },
       relations: ['user'],
     });
-    if (!session) throw new NotFoundException('Session not found');
+    if (!session) throw new NotFoundException('No encontramos la sesión solicitada.');
     if (!session.isActive) return session;
 
     session.isActive = false;
@@ -205,6 +309,13 @@ export class SessionsService {
 
       await this.sessionRepository.save(session);
     }
+  }
+
+  async logoutByIdentity(idSession: number, idUser: number): Promise<void> {
+    await this.sessionRepository.update(
+      { idSession, user: { idUser }, isActive: true },
+      { isActive: false, revokedAt: new Date(), revokedReason: SessionRevokeReasons.LOGOUT },
+    );
   }
 
   async logout(refreshToken: string, revokedBy?: Pick<User, 'idUser'> & { idSession?: number }) {

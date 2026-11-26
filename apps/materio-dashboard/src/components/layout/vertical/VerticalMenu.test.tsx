@@ -9,6 +9,7 @@ import type { ICurrentUser } from '@/interfaces/auth/current-user.interface';
 import VerticalMenu from './VerticalMenu';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
+vi.mock('./MySubjectsMenu', () => ({ default: () => null }));
 vi.mock('@menu/hooks/useVerticalNav', () => ({
   default: () => ({ isBreakpointReached: true, transitionDuration: 0 }),
 }));

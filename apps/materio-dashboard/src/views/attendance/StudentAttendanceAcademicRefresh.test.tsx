@@ -2,6 +2,9 @@ import type * as React from 'react';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { Box, Card, Typography } from '@mui/material';
+
+import SectionNavigation from '@/components/SectionNavigation';
 import { StudentEnrollmentView } from '@/views/admin/enrollments/grades-card/StudentEnrollmentView';
 import { StudentGradesView } from '@/views/admin/enrollments/grades-card/StudentGradesView';
 import { AcademicCriteria } from '@/views/admin/enrollments/student-record/AcademicCriteria';
@@ -110,6 +113,51 @@ describe('check-in academic refresh integration', () => {
     expect(elements<React.ComponentProps<typeof AcademicCriteria>>(tree, AcademicCriteria)[0].props.attendance).toEqual(
       closed,
     );
+    academic.unmount();
+    parent.unmount();
+  });
+});
+
+describe('student enrollment section destinations', () => {
+  it('keeps all four destinations available while grades load or fail', () => {
+    const parent = hookHarness(() => StudentEnrollmentView({ enrollment, grades: [], loading: true }));
+    const tree = parent.render();
+    const [navigation] = elements<React.ComponentProps<typeof SectionNavigation>>(tree, SectionNavigation);
+    const [gradesView] = elements<React.ComponentProps<typeof StudentGradesView>>(tree, StudentGradesView);
+    const academic = hookHarness(() => StudentGradesView({ ...gradesView.props, studentEnrollmentId: undefined }));
+    const loadingTree = academic.render();
+    const feedback = 'No se pudieron cargar las calificaciones.';
+
+    const failed = hookHarness(() =>
+      StudentGradesView({
+        ...gradesView.props,
+        studentEnrollmentId: undefined,
+        loading: false,
+        gradesFeedback: feedback,
+      }),
+    );
+
+    expect(navigation.props.items.map(({ label }) => label)).toEqual([
+      'Registro de asistencia',
+      'Esquema de la materia',
+      'Mi rendimiento académico',
+      'Mis calificaciones',
+    ]);
+
+    for (const academicTree of [loadingTree, failed.render()]) {
+      const destinations = [
+        ...elements<{ id?: string; tabIndex?: number }>(tree, Box),
+        ...elements<{ id?: string; tabIndex?: number }>(academicTree, Box),
+        ...elements<{ id?: string; tabIndex?: number }>(academicTree, Card),
+        ...elements<{ id?: string; tabIndex?: number }>(academicTree, Typography),
+      ];
+
+      for (const { id } of navigation.props.items) {
+        expect(destinations.filter(({ props }) => props.id === id && props.tabIndex === -1)).toHaveLength(1);
+      }
+    }
+
+    failed.unmount();
     academic.unmount();
     parent.unmount();
   });

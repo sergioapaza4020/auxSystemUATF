@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { Box, Button, Table, TableBody, TextField, MenuItem } from '@mui/material';
+import { Box, Button, Table, TableBody, TextField, MenuItem, InputAdornment } from '@mui/material';
 
 import AddIcon from '@mui/icons-material/Add';
 
@@ -188,6 +188,13 @@ export const RolesTable = () => {
             onChange={(event) => {
               setSearch(event.target.value);
               handleChangePage(null, 0);
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position='start'>
+                  <i className='ri-search-line' />
+                </InputAdornment>
+              ),
             }}
           />
           <TextField

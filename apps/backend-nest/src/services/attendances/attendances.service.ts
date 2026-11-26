@@ -898,7 +898,7 @@ export class AttendancesService {
     return { data, meta: { limit, hasMore: sessions.length > limit, upcomingUntil } };
   }
 
-  private async getAssistantEnrollment(
+  async getAssistantEnrollment(
     idUser: number,
     idEnrollment: number,
     manager?: EntityManager,
@@ -952,6 +952,19 @@ export class AttendancesService {
       });
     }
     return this.createSessionRecord(idUser, dto);
+  }
+
+  createImportedManualSession(
+    idUser: number,
+    enrollmentId: number,
+    date: string,
+    manager: EntityManager,
+  ) {
+    return this.createSessionRecord(
+      idUser,
+      { enrollmentId, date, mode: AttendanceSessionMode.MANUAL },
+      manager,
+    );
   }
 
   private async createSessionRecord(
@@ -1453,12 +1466,20 @@ export class AttendancesService {
     idSession: number,
     dto: AttendanceSaveDto,
     originalBody?: unknown,
+    importManager?: EntityManager,
   ): Promise<Attendance[]> {
-    const session = await this.getSession(idUser, idSession, false, true);
+    const session = await this.getSession(idUser, idSession, false, true, importManager);
+    if (
+      importManager &&
+      (session.mode !== AttendanceSessionMode.MANUAL || session.closedAt || session.cancelledAt)
+    )
+      throw new ForbiddenException('Solo se pueden importar marcas en sesiones manuales editables');
     if (session.mode === AttendanceSessionMode.GEOLOCATION_QR)
       return this.saveCombinedAttendances(idUser, idSession, dto, originalBody);
 
-    const studentEnrollments = await this.enrollmentRepository.find({
+    const studentEnrollments = await (
+      importManager?.getRepository(Enrollment) ?? this.enrollmentRepository
+    ).find({
       where: {
         course: {
           idCourse: session.assistantEnrollment.course.idCourse,
@@ -1494,12 +1515,19 @@ export class AttendancesService {
       }
     }
 
-    return this.attendanceRepository.manager.transaction(async (manager) => {
+    const write = async (manager: EntityManager) => {
       // Serialize writes to a session, including insertion of previously unmarked students.
       const locked = await manager.getRepository(AttendanceSession).findOneOrFail({
         where: { idAttendanceSession: idSession },
         lock: { mode: 'pessimistic_write' },
       });
+      if (
+        importManager &&
+        (locked.mode !== AttendanceSessionMode.MANUAL || locked.closedAt || locked.cancelledAt)
+      )
+        throw new ForbiddenException(
+          'Solo se pueden importar marcas en sesiones manuales editables',
+        );
       if (locked.mode === AttendanceSessionMode.GEOLOCATION_QR)
         throw new AttendanceCheckInException(
           CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
@@ -1533,7 +1561,9 @@ export class AttendancesService {
       });
       const previous = new Map(existing.map((record) => [record.enrollment.idEnrollment, record]));
       if (existing.some((record) => isProtectedAttendanceEvidence(record.registrationMethod))) {
-        throw new ForbiddenException('No se puede sobrescribir evidencia GEOLOCATION o QR');
+        throw new ForbiddenException(
+          'La evidencia de ubicación o código QR no se puede reemplazar.',
+        );
       }
       const overrides = new Map(dto.attendances.map((record) => [record.enrollmentId, record]));
       const values = ids
@@ -1559,6 +1589,7 @@ export class AttendancesService {
         })
         .filter(
           (record) =>
+            importManager ||
             record.status !== AttendanceStatus.ABSENT ||
             previous.has(record.enrollment.idEnrollment),
         );
@@ -1580,7 +1611,10 @@ export class AttendancesService {
             relations: { enrollment: true },
           })
         : [];
-    });
+    };
+    return importManager
+      ? write(importManager)
+      : this.attendanceRepository.manager.transaction(write);
   }
 
   async getStudentAttendance(
@@ -1689,7 +1723,7 @@ export class AttendancesService {
     if (isSelfRegistrationMode(owned.mode))
       throw new ConflictException('SESSION_USE_GEO_CONFIGURATION');
     if (owned.attendances?.some((mark) => isProtectedAttendanceEvidence(mark.registrationMethod)))
-      throw new ForbiddenException('No se puede sobrescribir evidencia GEOLOCATION o QR');
+      throw new ForbiddenException('La evidencia de ubicación o código QR no se puede reemplazar.');
     const session = owned;
     session.date = dto.date as unknown as Date;
     return this.attendanceSessionRepository.save(session);
@@ -1718,18 +1752,18 @@ export class AttendancesService {
         )
           throw new ConflictException('SESSION_HAS_ATTENDANCE');
         await manager.getRepository(AttendanceSession).delete({ idAttendanceSession: idSession });
-        return { message: 'Sesión de asistencia eliminada' };
+        return { message: 'La sesión de asistencia se eliminó.' };
       });
     }
     if (owned.attendances?.some((mark) => isProtectedAttendanceEvidence(mark.registrationMethod)))
-      throw new ForbiddenException('No se puede eliminar evidencia GEOLOCATION o QR');
+      throw new ForbiddenException('La evidencia de ubicación o código QR no se puede eliminar.');
     await this.attendanceSessionRepository.manager.transaction(async (manager) => {
       await manager
         .getRepository(Attendance)
         .delete({ attendanceSession: { idAttendanceSession: idSession } });
       await manager.getRepository(AttendanceSession).delete({ idAttendanceSession: idSession });
     });
-    return { message: 'Sesión de asistencia eliminada' };
+    return { message: 'La sesión de asistencia se eliminó.' };
   }
 
   async deleteAttendance(idUser: number, idSession: number, idEnrollment: number) {
@@ -1740,6 +1774,6 @@ export class AttendancesService {
       registrationMethod: AttendanceRegistrationMethod.MANUAL,
     });
     if (!result.affected) throw new NotFoundException('Asistencia no encontrada');
-    return { message: 'Asistencia eliminada' };
+    return { message: 'La asistencia se eliminó.' };
   }
 }

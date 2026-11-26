@@ -56,7 +56,7 @@ export class AttendanceRateLimitService {
       }
       // Fail closed before invoking the handler. Never log Redis config or request bodies.
       throw new ServiceUnavailableException(
-        'El control de frecuencia no está disponible. Espera antes de reintentar.',
+        'El registro de asistencia no está disponible en este momento. Espera un momento antes de volver a intentarlo.',
       );
     } finally {
       if (timer) clearTimeout(timer);

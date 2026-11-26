@@ -5,9 +5,13 @@ import { isPublicRoute, QR_ENTRY_ROUTE } from './configs/publicRoutes';
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
 
+  // Access tokens now live in memory. This cookie only lets the app load so
+  // AuthProvider/Axios can ask the server to validate and restore the session.
+  const refresh = request.cookies.get('uatf_refresh')?.value ?? request.cookies.get('refreshToken')?.value;
+
   const publicRoute = isPublicRoute(request.nextUrl.pathname);
 
-  if (!token && !publicRoute) return NextResponse.redirect(new URL('/login', request.url));
+  if (!token && !refresh && !publicRoute) return NextResponse.redirect(new URL('/login', request.url));
 
   const response = NextResponse.next();
 

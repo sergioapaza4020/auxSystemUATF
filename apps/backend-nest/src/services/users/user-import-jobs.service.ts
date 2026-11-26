@@ -34,18 +34,22 @@ export class UserImportJobsService {
         .setLock('pessimistic_write')
         .getOne();
       if (!operation || operation.type !== BulkOperationType.USER_IMPORT)
-        throw new NotFoundException('User import not found');
+        throw new NotFoundException('No encontramos la importación de usuarios.');
       if (operation.status === BulkOperationStatus.IMPORTING) return operation; // Repeated request repairs delivery, never resets progress.
       if (operation.status !== BulkOperationStatus.READY)
-        throw new ConflictException('User import is not READY');
+        throw new ConflictException('La importación de usuarios aún no está lista.');
       if (operation.expiresAt && operation.expiresAt <= new Date())
-        throw new ConflictException('User import has expired');
+        throw new ConflictException(
+          'La importación de usuarios venció. Vuelve a revisar el archivo.',
+        );
       if (
         operation.invalidRows > 0 ||
         operation.validRows !== operation.totalRows ||
         operation.totalRows < 1
       )
-        throw new BadRequestException('El preview debe contener únicamente filas válidas');
+        throw new BadRequestException(
+          'Corrige las filas inválidas antes de confirmar la importación.',
+        );
       operation.status = BulkOperationStatus.IMPORTING;
       operation.startedAt = new Date();
       operation.completedAt = null;
@@ -62,7 +66,7 @@ export class UserImportJobsService {
     } catch {
       // Redis acknowledgement can be ambiguous: never roll back IMPORTING to READY.
       throw new ServiceUnavailableException(
-        'La operación quedó registrada. Consulta su estado; el worker recuperará el encolado.',
+        'La operación quedó registrada. Consulta su estado para ver el avance.',
       );
     } finally {
       if (deadline) clearTimeout(deadline);
@@ -73,7 +77,7 @@ export class UserImportJobsService {
   async status(id: string, ownerId: number) {
     const operation = await this.bulk.getById(id, ownerId);
     if (operation.type !== BulkOperationType.USER_IMPORT)
-      throw new NotFoundException('User import not found');
+      throw new NotFoundException('No encontramos la importación de usuarios.');
     return userImportStatus(operation);
   }
 }

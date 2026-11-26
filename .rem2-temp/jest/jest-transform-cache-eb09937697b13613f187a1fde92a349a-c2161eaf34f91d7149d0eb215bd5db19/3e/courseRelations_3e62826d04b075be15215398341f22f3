@@ -1,0 +1,13 @@
+5e83dee386cf455c0d7b98f4ddefc914
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CourseRelations = void 0;
+var CourseRelations;
+(function (CourseRelations) {
+    CourseRelations["STUDENT"] = "STUDENT";
+    CourseRelations["ASSISTANT"] = "ASSISTANT";
+    CourseRelations["TEACHER"] = "TEACHER";
+    CourseRelations["DIRECTOR"] = "DIRECTOR";
+    CourseRelations["DEAN"] = "DEAN";
+})(CourseRelations || (exports.CourseRelations = CourseRelations = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcY29tbW9uXFxlbnVtc1xcY291cnNlUmVsYXRpb25zLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLElBQVksZUFNWDtBQU5ELFdBQVksZUFBZTtJQUN6QixzQ0FBbUIsQ0FBQTtJQUNuQiwwQ0FBdUIsQ0FBQTtJQUN2QixzQ0FBbUIsQ0FBQTtJQUNuQix3Q0FBcUIsQ0FBQTtJQUNyQixnQ0FBYSxDQUFBO0FBQ2YsQ0FBQyxFQU5XLGVBQWUsK0JBQWYsZUFBZSxRQU0xQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxjb21tb25cXGVudW1zXFxjb3Vyc2VSZWxhdGlvbnMudHMiXSwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGVudW0gQ291cnNlUmVsYXRpb25zIHtcbiAgU1RVREVOVCA9ICdTVFVERU5UJyxcbiAgQVNTSVNUQU5UID0gJ0FTU0lTVEFOVCcsXG4gIFRFQUNIRVIgPSAnVEVBQ0hFUicsXG4gIERJUkVDVE9SID0gJ0RJUkVDVE9SJyxcbiAgREVBTiA9ICdERUFOJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

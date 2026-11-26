@@ -35,8 +35,10 @@ describe('Current own enrollments', () => {
           semester: { idSemester: 20 },
           isActive: true,
           role: In([CourseRelations.STUDENT, CourseRelations.ASSISTANT]),
+          course: { isActive: true },
         },
         relations: { course: true, semester: true },
+        order: { course: { name: 'ASC', code: 'ASC' }, idEnrollment: 'ASC' },
       }),
     );
     const options: unknown = f.repository.find.mock.calls[0];

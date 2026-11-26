@@ -1,4 +1,14 @@
-import { Controller, Get, Patch, Param, ParseIntPipe, Post, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Patch,
+  Param,
+  ParseIntPipe,
+  Post,
+  Body,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@core/decorators/current-user/current-user.decorator';
 import { SessionsService } from 'src/services/sessions/sessions.service';
@@ -7,6 +17,8 @@ import { LogoutDto } from 'src/dtos/sessions/logout.dto';
 import { SessionQueryDto } from 'src/dtos/sessions/session-query.dto';
 import { Permissions } from '@core/decorators/permissions/permissions.decorator';
 import type { JwtPayload } from '@common/types/jwt-payload.type';
+import { sessionResponse } from 'src/dtos/sessions/session-response.dto';
+import { assertSameSession } from '@common/utils/assert-same-session';
 
 @ApiBearerAuth('access-token')
 @Controller('sessions')
@@ -14,14 +26,47 @@ import type { JwtPayload } from '@common/types/jwt-payload.type';
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
+  @Get('me')
+  @Header('Cache-Control', 'no-store')
+  getOwnSessions(
+    @CurrentUser() user: JwtPayload,
+    @Query('expectedSession') expectedSession: string | undefined,
+    @Query() query: SessionQueryDto,
+  ) {
+    assertSameSession(expectedSession, user.idSession);
+    return this.sessionsService.getOwnActiveSessions(user.idUser, user.idSession, query);
+  }
+
+  @Patch('me/others')
+  async revokeOtherSessions(
+    @CurrentUser() user: JwtPayload,
+    @Query('expectedSession') expectedSession: string | undefined,
+  ) {
+    assertSameSession(expectedSession, user.idSession);
+    await this.sessionsService.revokeOwnOtherSessions(user.idUser, user.idSession);
+    return { message: 'Las demás sesiones se cerraron.' };
+  }
+
+  @Patch('me/others/:idSession')
+  async revokeOwnSession(
+    @CurrentUser() user: JwtPayload,
+    @Query('expectedSession') expectedSession: string | undefined,
+    @Param('idSession', ParseIntPipe) idSession: number,
+  ) {
+    assertSameSession(expectedSession, user.idSession);
+    await this.sessionsService.revokeOwnOtherSessions(user.idUser, user.idSession, idSession);
+    return { message: 'La sesión se cerró.' };
+  }
+
   @Permissions('sessions.get-all')
   @Get()
   async getAllSessions(@Query() query: SessionQueryDto) {
     const sessions = await this.sessionsService.getAllSessions(query);
 
     return {
-      message: 'Sesiones recuperadas con éxito',
+      message: 'Las sesiones se consultaron correctamente.',
       ...sessions,
+      data: sessions.data.map(sessionResponse),
     };
   }
 
@@ -29,7 +74,7 @@ export class SessionsController {
   async logout(@Body() logoutDto: LogoutDto, @CurrentUser() user: JwtPayload) {
     await this.sessionsService.logout(logoutDto.refreshToken, user);
 
-    return { message: 'Logout successful' };
+    return { message: 'Cerraste sesión correctamente.' };
   }
 
   @Permissions('sessions.revoke-one')
@@ -43,8 +88,8 @@ export class SessionsController {
     });
 
     return {
-      message: 'Session revoked successfully',
-      data: session,
+      message: 'La sesión se cerró correctamente.',
+      data: sessionResponse(session),
     };
   }
 
@@ -54,7 +99,7 @@ export class SessionsController {
     await this.sessionsService.revokeAllSessions(user.idUser);
 
     return {
-      message: 'All sessions revoked successfully',
+      message: 'Se cerraron todas las sesiones.',
     };
   }
 }

@@ -23,7 +23,7 @@ export class FacultiesService {
 
   async create(facultyCreateDto: FacultyCreateDto, authorId: number) {
     const faculty = await this.getOneByName(facultyCreateDto.name);
-    if (faculty) throw new BadRequestException('Faculty already exists');
+    if (faculty) throw new BadRequestException('Ya existe una facultad con estos datos.');
 
     const facultyCreated = this.facultyRepository.create({
       name: facultyCreateDto.name,
@@ -53,7 +53,7 @@ export class FacultiesService {
         where: { idFaculty, isActive: true },
       });
 
-      if (!faculty) throw new BadRequestException('Faculty not found');
+      if (!faculty) throw new BadRequestException('No encontramos la facultad solicitada.');
 
       const updated = await facultyRepository.update(idFaculty, facultyUpdateDto);
 
@@ -65,7 +65,7 @@ export class FacultiesService {
     const faculty = await this.facultyRepository.findOne({
       where: { idFaculty, isActive: true },
     });
-    if (!faculty) throw new BadRequestException('Faculty not found');
+    if (!faculty) throw new BadRequestException('No encontramos la facultad solicitada.');
     faculty.isActive = false;
     return this.facultyRepository.save(faculty);
   }
@@ -74,7 +74,7 @@ export class FacultiesService {
     const faculty = await this.facultyRepository.findOne({
       where: { idFaculty, isActive: false },
     });
-    if (!faculty) throw new BadRequestException('Faculty not found');
+    if (!faculty) throw new BadRequestException('No encontramos la facultad solicitada.');
     faculty.isActive = true;
     return this.facultyRepository.save(faculty);
   }

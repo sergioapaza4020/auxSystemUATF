@@ -2,8 +2,9 @@ import type * as React from 'react';
 
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Grid } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 
+import SectionNavigation from '@/components/SectionNavigation';
 import { UserRole } from '@/enums/userRole';
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 import type { IAssistantGradeScheme } from '@/interfaces/grade-schemes/assistant-grade-scheme.interface';
@@ -97,6 +98,23 @@ const one = <P,>(tree: React.ReactNode, type: unknown) => elements<P>(tree, type
 
 beforeEach(() => vi.clearAllMocks());
 describe('Assistant subject detail', () => {
+  it('links to the mounted evaluation and roster in order', () => {
+    const h = fixture();
+    const tree = h.render();
+    const navigation = one<React.ComponentProps<typeof SectionNavigation>>(tree, SectionNavigation);
+    const destinations = elements<{ id?: string; tabIndex?: number; children: React.ReactNode }>(tree, Box);
+
+    expect(navigation.items.map(({ label }) => label)).toEqual(['Datos generales', 'Estudiantes']);
+
+    [AssistantGradeSchemeCard, EnrollmentStudentsCard].forEach((card, index) => {
+      const section = destinations.find(({ props }) => props.id === navigation.items[index].id)?.props;
+
+      expect(section?.tabIndex).toBe(-1);
+      expect(elements(section?.children, card)).toHaveLength(1);
+    });
+    h.unmount();
+  });
+
   it('does not read or render the general scheme, including its missing state, and uses the full row', () => {
     const h = fixture();
 
@@ -114,6 +132,10 @@ describe('Assistant subject detail', () => {
     expect(html).not.toContain('Esta materia todavía no tiene un esquema');
     expect(html).toContain('Configuración de evaluación del auxiliar');
     expect(html).toContain('Estudiantes');
+    const grids = elements<React.ComponentProps<typeof Grid>>(tree, Grid);
+
+    expect(grids.find((item) => item.props.container)?.props.spacing).toBe(0);
+    expect(grids.find((item) => item.props.item)?.props.xs).toBe(12);
     expect(
       elements<React.ComponentProps<typeof Grid>>(tree, Grid)
         .filter((item) => item.props.item)

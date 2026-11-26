@@ -22,7 +22,7 @@ export class CareersService {
 
   async create(careerCreateDto: CareerCreateDto, authorId: number): Promise<Career> {
     const career = await this.careerRepository.findOne({ where: { name: careerCreateDto.name } });
-    if (career) throw new BadRequestException('Career already exists');
+    if (career) throw new BadRequestException('Ya existe una carrera con estos datos.');
 
     const careerCreated = this.careerRepository.create(await this.resolveData(careerCreateDto));
     careerCreated.createdBy = authorId;
@@ -45,7 +45,7 @@ export class CareersService {
     const career = await this.careerRepository.findOne({
       where: { idCareer, isActive: true },
     });
-    if (!career) throw new BadRequestException('Career not found');
+    if (!career) throw new BadRequestException('No encontramos la carrera solicitada.');
     career.isActive = false;
     return this.careerRepository.save(career);
   }
@@ -54,7 +54,7 @@ export class CareersService {
     const career = await this.careerRepository.findOne({
       where: { idCareer, isActive: false },
     });
-    if (!career) throw new BadRequestException('Career not found');
+    if (!career) throw new BadRequestException('No encontramos la carrera solicitada.');
     career.isActive = true;
     return this.careerRepository.save(career);
   }
@@ -66,14 +66,14 @@ export class CareersService {
       const faculty = await this.careerRepository.manager
         .getRepository(Faculty)
         .findOne({ where: { idFaculty: dto.idFaculty, isActive: true } });
-      if (!faculty) throw new BadRequestException('Faculty not found');
+      if (!faculty) throw new BadRequestException('No encontramos la facultad solicitada.');
       data.faculty = faculty;
     }
     if (dto.idDirector !== undefined) {
       const director = await this.careerRepository.manager
         .getRepository(User)
         .findOne({ where: { idUser: dto.idDirector, isActive: true } });
-      if (!director) throw new BadRequestException('Director not found');
+      if (!director) throw new BadRequestException('No encontramos al director seleccionado.');
       data.director = director;
     }
     if (dto.idMembers !== undefined) {
@@ -81,7 +81,7 @@ export class CareersService {
         .getRepository(User)
         .find({ where: { idUser: In(dto.idMembers), isActive: true } });
       if (members.length !== new Set(dto.idMembers).size)
-        throw new BadRequestException('Career member not found');
+        throw new BadRequestException('No encontramos al integrante de la carrera.');
       data.members = members;
     }
     return data;
@@ -89,11 +89,11 @@ export class CareersService {
 
   async update(idCareer: number, dto: CareerUpdateDto) {
     const career = await this.getOneById(idCareer);
-    if (!career) throw new BadRequestException('Career not found');
+    if (!career) throw new BadRequestException('No encontramos la carrera solicitada.');
     if (dto.name !== undefined) {
       const duplicate = await this.careerRepository.findOne({ where: { name: dto.name } });
       if (duplicate && duplicate.idCareer !== idCareer)
-        throw new BadRequestException('Career already exists');
+        throw new BadRequestException('Ya existe una carrera con estos datos.');
     }
     this.careerRepository.merge(career, await this.resolveData(dto));
     return this.careerRepository.save(career);

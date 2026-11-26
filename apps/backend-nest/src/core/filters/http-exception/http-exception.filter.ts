@@ -1,5 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { toPublicHttpMessage, unexpectedHttpMessage } from './http-message';
 
 @Catch()
 export class HttpExceptionFilter<T> implements ExceptionFilter {
@@ -20,10 +21,10 @@ export class HttpExceptionFilter<T> implements ExceptionFilter {
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const exceptionResponse =
-      exception instanceof HttpException ? exception.getResponse() : 'Internal server error';
+      exception instanceof HttpException ? exception.getResponse() : unexpectedHttpMessage;
 
-    const message =
-      typeof exceptionResponse == 'object'
+    const rawMessage =
+      typeof exceptionResponse === 'object' && exceptionResponse !== null
         ? (exceptionResponse as { message?: string | string[] }).message
         : exceptionResponse;
     const code =
@@ -33,6 +34,14 @@ export class HttpExceptionFilter<T> implements ExceptionFilter {
       typeof exceptionResponse.code === 'string'
         ? exceptionResponse.code
         : undefined;
+    const message =
+      typeof rawMessage === 'string'
+        ? toPublicHttpMessage(rawMessage, status)
+        : Array.isArray(rawMessage)
+          ? rawMessage.map((item: unknown) =>
+              typeof item === 'string' ? toPublicHttpMessage(item, status) : item,
+            )
+          : rawMessage;
 
     response.status(status).json({
       status: false,

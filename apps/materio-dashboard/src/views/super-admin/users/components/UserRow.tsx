@@ -11,9 +11,19 @@ interface Props {
   onDeactivate?: () => void;
   onReactivate?: () => void;
   onAddRoles?: () => void;
+  onResetPassword?: () => void;
 }
 
-export function UserRow({ user, busy, onView, onEdit, onDeactivate, onReactivate, onAddRoles }: Props) {
+export function UserRow({
+  user,
+  busy,
+  onView,
+  onEdit,
+  onDeactivate,
+  onReactivate,
+  onAddRoles,
+  onResetPassword,
+}: Props) {
   return (
     <TableRow hover>
       <TableCell>
@@ -57,6 +67,15 @@ export function UserRow({ user, busy, onView, onEdit, onDeactivate, onReactivate
               aria-label={`Añadir roles a ${user.username}`}
               disabled={busy}
               onClick={onAddRoles}
+            />
+          )}
+          {onResetPassword && (
+            <TableAction
+              intent='resetPassword'
+              label='Restablecer contraseña'
+              aria-label={`Restablecer contraseña de ${user.username}`}
+              disabled={busy}
+              onClick={onResetPassword}
             />
           )}
           <TableActions

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 
 import axios from 'axios';
 
+import { hasAuthSessionCookie } from '@/api/auth.service';
+
 import {
   checkInCombined,
   getCombinedChallenge,
@@ -212,7 +214,9 @@ export function useStudentQrAttendance() {
     let active = true;
 
     const verify = async () => {
-      if (getAccessToken() || getRefreshToken()) await refreshAuth.current();
+      const hasSession = getAccessToken() || getRefreshToken() || (await hasAuthSessionCookie());
+
+      if (hasSession) await refreshAuth.current();
       if (active && alive.current) setVerified(entry.sequence);
     };
 

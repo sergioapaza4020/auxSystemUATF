@@ -24,7 +24,8 @@ export class GradeItemsService {
     const GradeItem = await this.gradeItemRepository.findOne({
       where: { name: gradeItemCreateDto.name },
     });
-    if (GradeItem) throw new BadRequestException('Grade item already exists');
+    if (GradeItem)
+      throw new BadRequestException('Ya existe un criterio de calificación con estos datos.');
 
     const GradeItemCreated = this.gradeItemRepository.create({
       name: gradeItemCreateDto.name,
@@ -50,7 +51,7 @@ export class GradeItemsService {
     const GradeItem = await this.gradeItemRepository.findOne({
       where: { idGradeItem, isActive: true },
     });
-    if (!GradeItem) throw new BadRequestException('Grade item not found');
+    if (!GradeItem) throw new BadRequestException('No encontramos el criterio de calificación.');
     GradeItem.isActive = false;
     return this.gradeItemRepository.save(GradeItem);
   }
@@ -59,7 +60,7 @@ export class GradeItemsService {
     const GradeItem = await this.gradeItemRepository.findOne({
       where: { idGradeItem, isActive: false },
     });
-    if (!GradeItem) throw new BadRequestException('Grade item not found');
+    if (!GradeItem) throw new BadRequestException('No encontramos el criterio de calificación.');
     GradeItem.isActive = true;
     return await this.gradeItemRepository.save(GradeItem);
   }
@@ -68,12 +69,12 @@ export class GradeItemsService {
     const record = await this.gradeItemRepository.findOne({
       where: { idGradeItem, isActive: true },
     });
-    if (!record) throw new BadRequestException('GradeItem not found');
+    if (!record) throw new BadRequestException('No encontramos el criterio de calificación.');
     const name = dto.name;
     if (name !== undefined) {
       const duplicate = await this.gradeItemRepository.findOne({ where: { name } });
       if (duplicate && duplicate.idGradeItem !== idGradeItem)
-        throw new BadRequestException('GradeItem already exists');
+        throw new BadRequestException('Ya existe un criterio de calificación con estos datos.');
     }
 
     this.gradeItemRepository.merge(record, dto, name === undefined ? {} : { name });

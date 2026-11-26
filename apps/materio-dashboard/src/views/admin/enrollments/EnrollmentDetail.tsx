@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import { Grid, Stack } from '@mui/material';
+import { Box, Grid, Stack } from '@mui/material';
+
+import SectionNavigation from '@/components/SectionNavigation';
 
 import type { IEnrollment } from '@/interfaces/enrollments/enrollment.interface';
 import type { IEnrollmentStudent } from '@/interfaces/enrollments/enrollment-student.interface';
@@ -32,12 +35,22 @@ import { AssistantGradeSchemeDialog } from './AssistantGradeSchemeDialog';
 import { ActivityManagementDialog } from './ActivityManagementDialog';
 import { StudentEnrollmentView } from './grades-card/StudentEnrollmentView';
 
+const assistantSections = [
+  {
+    id: 'assistant-enrollment-overview',
+    label: 'Datos generales',
+    icon: <i className='ri-file-list-3-line' aria-hidden />,
+  },
+  { id: 'assistant-enrollment-students', label: 'Estudiantes', icon: <i className='ri-group-line' aria-hidden /> },
+] as const;
+
 interface EnrollmentDetailProps {
   enrollment: IEnrollment;
   grades: IGrade[];
   students: IEnrollmentStudent[];
   loadingGrades: boolean;
   loadingStudents: boolean;
+  gradesFeedback?: ReactNode;
 
   assistantGradeScheme: IAssistantGradeScheme | null;
   loadingAssistantGradeScheme: boolean;
@@ -54,7 +67,14 @@ interface EnrollmentDetailProps {
 
 export function EnrollmentDetail(props: EnrollmentDetailProps) {
   if (props.enrollment.role === UserRole.STUDENT) {
-    return <StudentEnrollmentView enrollment={props.enrollment} grades={props.grades} loading={props.loadingGrades} />;
+    return (
+      <StudentEnrollmentView
+        enrollment={props.enrollment}
+        grades={props.grades}
+        loading={props.loadingGrades}
+        gradesFeedback={props.gradesFeedback}
+      />
+    );
   }
 
   return <ManagedEnrollmentDetail {...props} />;
@@ -107,8 +127,9 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
   return (
     <Stack spacing={3}>
       <EnrollmentHeader enrollment={enrollment} />
+      {isAssistant && <SectionNavigation label='Secciones de la matrícula' items={assistantSections} scrollable />}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={isAssistant ? 0 : 3}>
         {!isAssistant && (
           <Grid item xs={12} lg={5}>
             <GradeSchemeCard enrollment={enrollment} />
@@ -117,21 +138,28 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
 
         <Grid item xs={12} lg={isAssistant ? 12 : 7}>
           {isAssistant ? (
-            <AssistantGradeSchemeCard
-              scheme={assistantGradeScheme}
-              loading={loadingAssistantGradeScheme}
-              onConfigure={() => setAssistantDialogOpen(true)}
-              onManageActivities={(idGradeSchemeDetail, gradeItemName) => {
-                setSelectedGradeSchemeDetailId(idGradeSchemeDetail);
+            <Box
+              component='section'
+              id={assistantSections[0].id}
+              aria-label='Mi evaluación como auxiliar'
+              tabIndex={-1}
+            >
+              <AssistantGradeSchemeCard
+                scheme={assistantGradeScheme}
+                loading={loadingAssistantGradeScheme}
+                onConfigure={() => setAssistantDialogOpen(true)}
+                onManageActivities={(idGradeSchemeDetail, gradeItemName) => {
+                  setSelectedGradeSchemeDetailId(idGradeSchemeDetail);
 
-                setSelectedGradeItemName(gradeItemName);
+                  setSelectedGradeItemName(gradeItemName);
 
-                setActivityDialogOpen(true);
-              }}
-              onManageAttendance={() => {
-                router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
-              }}
-            />
+                  setActivityDialogOpen(true);
+                }}
+                onManageAttendance={() => {
+                  router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
+                }}
+              />
+            </Box>
           ) : (
             <GradesCard enrollment={enrollment} grades={grades} loading={loadingGrades} />
           )}
@@ -139,33 +167,35 @@ function ManagedEnrollmentDetail(props: EnrollmentDetailProps) {
       </Grid>
 
       {isAssistant && (
-        <EnrollmentStudentsCard
-          onManageGrades={
-            canReadGrades && hasPermission(user, 'grade.create') && hasPermission(user, 'grade.update')
-              ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/grades`)
-              : undefined
-          }
-          onImportStudents={
-            canImportEnrollmentStudents(user, enrollment)
-              ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/import`)
-              : undefined
-          }
-          pagination={studentGrades}
-          onRefresh={studentGrades.reload}
-          summary={studentGrades.summary}
-          summaryLoading={studentGrades.loading}
-          summaryError={studentGrades.error}
-          onRetrySummary={studentGrades.reload}
-          showGrades={canReadGrades}
-          students={studentGrades.students}
-          loading={studentGrades.loading}
-          onSelectStudent={(student) => {
-            router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/${student.idEnrollment}`);
-          }}
-          onManageAttendance={() => {
-            router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
-          }}
-        />
+        <Box component='section' id={assistantSections[1].id} aria-label='Estudiantes' tabIndex={-1}>
+          <EnrollmentStudentsCard
+            onManageGrades={
+              canReadGrades && hasPermission(user, 'grade.create') && hasPermission(user, 'grade.update')
+                ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/grades`)
+                : undefined
+            }
+            onImportStudents={
+              canImportEnrollmentStudents(user, enrollment)
+                ? () => router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/import`)
+                : undefined
+            }
+            pagination={studentGrades}
+            onRefresh={studentGrades.reload}
+            summary={studentGrades.summary}
+            summaryLoading={studentGrades.loading}
+            summaryError={studentGrades.error}
+            onRetrySummary={studentGrades.reload}
+            showGrades={canReadGrades}
+            students={studentGrades.students}
+            loading={studentGrades.loading}
+            onSelectStudent={(student) => {
+              router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/students/${student.idEnrollment}`);
+            }}
+            onManageAttendance={() => {
+              router.push(`/dashboard/enrollments/${enrollment.idEnrollment}/attendance`);
+            }}
+          />
+        </Box>
       )}
 
       {isAssistant && (

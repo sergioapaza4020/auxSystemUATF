@@ -45,7 +45,7 @@ export class CoursesService {
     const course = await this.courseRepository.findOne({
       where: [{ name: courseCreateDto.name }, { code: courseCreateDto.code }],
     });
-    if (course) throw new BadRequestException('Course already exists');
+    if (course) throw new BadRequestException('Ya existe una materia con estos datos.');
 
     const courseCreated = this.courseRepository.create(courseCreateDto);
     courseCreated.createdBy = authorId;
@@ -74,7 +74,7 @@ export class CoursesService {
     const course = await this.courseRepository.findOne({
       where: { idCourse, isActive: true },
     });
-    if (!course) throw new BadRequestException('Course not found');
+    if (!course) throw new BadRequestException('No encontramos la materia solicitada.');
     course.isActive = false;
     return this.courseRepository.save(course);
   }
@@ -83,19 +83,19 @@ export class CoursesService {
     const course = await this.courseRepository.findOne({
       where: { idCourse, isActive: false },
     });
-    if (!course) throw new BadRequestException('Course not found');
+    if (!course) throw new BadRequestException('No encontramos la materia solicitada.');
     course.isActive = true;
     return this.courseRepository.save(course);
   }
 
   async update(idCourse: number, dto: CourseUpdateDto) {
     const record = await this.courseRepository.findOne({ where: { idCourse, isActive: true } });
-    if (!record) throw new BadRequestException('Course not found');
+    if (!record) throw new BadRequestException('No encontramos la materia solicitada.');
     const name = dto.name;
     if (name !== undefined) {
       const duplicate = await this.courseRepository.findOne({ where: { name } });
       if (duplicate && duplicate.idCourse !== idCourse)
-        throw new BadRequestException('Course already exists');
+        throw new BadRequestException('Ya existe una materia con estos datos.');
     }
 
     if (dto.code !== undefined) {
@@ -103,7 +103,7 @@ export class CoursesService {
         where: { code: dto.code.toUpperCase().trim() },
       });
       if (duplicate && duplicate.idCourse !== idCourse)
-        throw new BadRequestException('Course code already exists');
+        throw new BadRequestException('Ya existe una materia con ese código.');
       dto.code = dto.code.toUpperCase().trim();
     }
 

@@ -38,6 +38,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: mocks.replace, 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: mocks.user, loading: false, refreshUser: mocks.refresh, logout: vi.fn() }),
 }));
+vi.mock('@/api/auth.service', () => ({ hasAuthSessionCookie: vi.fn().mockResolvedValue(false) }));
 vi.mock('@/utils/authCookies', () => ({
   getAccessToken: () => (mocks.credentials ? 'fixture-access' : undefined),
   getRefreshToken: () => (mocks.credentials ? 'fixture-refresh' : undefined),

@@ -86,7 +86,7 @@ describe('Public registration check: controller, auth and users services', () =>
       expect(response.body).toEqual({
         status: true,
         statusCode: 200,
-        message: 'Registration checked successfully',
+        message: 'La verificación del registro se completó.',
         data: { registered: active !== null, status },
       });
       expect(find).toHaveBeenCalledWith({

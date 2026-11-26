@@ -1,0 +1,9 @@
+# SEC-1 · Política de contraseñas
+
+Las contraseñas elegidas manualmente en creación, edición administrativa o cambio propio deben tener ocho puntos de código como mínimo, una mayúscula Unicode, una minúscula Unicode, un dígito decimal y un signo de puntuación o símbolo Unicode. Los espacios se conservan y no cuentan como símbolos. bcrypt limita la entrada nueva a 72 bytes en UTF-8 para evitar truncamiento, lo que admite 64 caracteres ASCII y contraseñas Unicode dentro del mismo límite. El inicio de sesión sigue aceptando las credenciales heredadas. Los procesos académicos de importación y sus credenciales iniciales mantienen su contrato.
+
+El cambio propio admite cinco intentos de verificación por cuenta en una ventana fija de 15 minutos, compartida entre sesiones e instancias. Los intentos que llegan a la comprobación de credenciales consumen cuota. PostgreSQL registra un contador por cuenta, sin contraseñas. Aplica la migración `PasswordChangeAttempts1795708800000` al entorno autorizado antes de habilitar el endpoint.
+
+Al confirmar una nueva contraseña, se guarda el hash bcrypt y se revocan todas las sesiones en una transacción. Un error de contraseña actual o persistencia conserva la contraseña y las sesiones anteriores. La política sintáctica no comprueba diccionarios ni credenciales comprometidas. No existe una biblioteca de comprobación de contraseñas comunes en el proyecto.
+
+La suite `auth-rem2-postgres` usa PostgreSQL descartable con `ATTENDANCE_TEST_PG_BIN`. Para incluir Edge, prepara una copia descartable del frontend junto al proyecto con su código, archivos públicos y configuración, sin copiar `.env` ni `.next`. Define su ruta absoluta en `SEC1_BROWSER_APP_DIR` y ejecuta la suite con `-t 'real Next.js dialog'`. La prueba usa el puerto local 4396, inicia Nest en otro puerto local y crea su propio usuario sintético. `SEC1_BROWSER_EXE` admite una ubicación alternativa de Edge.

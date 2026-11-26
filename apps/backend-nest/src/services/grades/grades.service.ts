@@ -9,7 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, QueryFailedError, Repository } from 'typeorm';
 import { ACTIVITY_ORDER } from '@common/utils/activity-rules';
 import {
   assertGradeActivity,
@@ -226,7 +226,7 @@ export class GradesService {
     });
 
     if (!grade) {
-      throw new NotFoundException('Nota no encontrada');
+      throw new NotFoundException('No encontramos la calificación solicitada.');
     }
 
     if (grade.enrollment.user.idUser !== idUser) {
@@ -256,7 +256,7 @@ export class GradesService {
     await this.gradeRepository.remove(grade);
 
     return {
-      message: 'Nota eliminada correctamente',
+      message: 'La calificación se eliminó correctamente.',
     };
   }
 
@@ -412,14 +412,18 @@ export class GradesService {
     user: Pick<JwtPayload, 'idUser' | 'roles' | 'permissions'>,
     idAssistantEnrollment: number,
     dto: BulkActivityGradesDto,
+    imported?: { manager: EntityManager; updateExisting: boolean },
   ) {
     // The existing decorator is OR-based; mixed upserts must require BOTH write permissions.
     if (
       !user.roles.includes('SUPERADMIN') &&
-      (!user.permissions.includes('grade.create') || !user.permissions.includes('grade.update'))
+      (!user.permissions.includes('grade.create') ||
+        ((!imported || imported.updateExisting) && !user.permissions.includes('grade.update')))
     ) {
       throw new ForbiddenException(
-        'Se requieren los permisos para crear y actualizar calificaciones',
+        imported && !imported.updateExisting
+          ? 'Se requiere permiso para crear calificaciones'
+          : 'Se requieren los permisos para crear y actualizar calificaciones',
       );
     }
     if (!dto.grades.length || dto.grades.length > 1000)
@@ -432,7 +436,7 @@ export class GradesService {
         throw new BadRequestException('No se puede repetir una celda en la operación');
       keys.add(key);
     }
-    return this.gradeRepository.manager.transaction(async (manager) => {
+    const write = async (manager: EntityManager) => {
       const assistant = await this.enrollmentsService.getAssistantEnrollment(
         user.idUser,
         idAssistantEnrollment,
@@ -500,7 +504,9 @@ export class GradesService {
         .into(Grade)
         .values(values)
         .onConflict(
-          '("id_enrollment", "id_activity") WHERE "id_activity" IS NOT NULL DO UPDATE SET "score" = EXCLUDED."score"',
+          imported && !imported.updateExisting
+            ? '("id_enrollment", "id_activity") WHERE "id_activity" IS NOT NULL DO NOTHING'
+            : '("id_enrollment", "id_activity") WHERE "id_activity" IS NOT NULL DO UPDATE SET "score" = EXCLUDED."score"',
         )
         // Database names in an array are treated as entity property paths and omit relation FKs.
         .returning('"id_grade", "id_enrollment", "id_activity", "score"')
@@ -519,6 +525,7 @@ export class GradesService {
           score: Number(row.score),
         })),
       };
-    });
+    };
+    return imported ? write(imported.manager) : this.gradeRepository.manager.transaction(write);
   }
 }

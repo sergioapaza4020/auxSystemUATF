@@ -5,6 +5,6 @@ export class CheckRegistrationDto {
   @ApiProperty({ description: 'Registro universitario', example: '0012345' })
   @IsString()
   @IsNotEmpty()
-  @Matches(/\S/, { message: 'ru should not be empty' })
+  @Matches(/\S/, { message: 'El RU es obligatorio.' })
   ru: string;
 }

@@ -7,6 +7,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "mail:verify": "node --env-file-if-exists=.env node_modules/ts-node/dist/bin.js src/services/mail/diagnostics.ts verify",
+    "mail:test": "node --env-file-if-exists=.env node_modules/ts-node/dist/bin.js src/services/mail/diagnostics.ts send",
     "format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:fix": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -32,6 +34,7 @@
     "migration:show": "typeorm-ts-node-commonjs migration:show -d src/database/datasource.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1178.0",
     "@nestjs/bullmq": "11.0.5",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
@@ -41,6 +44,8 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/typeorm": "^11.0.1",
+    "@repo/grade-calculations": "workspace:*",
+    "@repo/password-policy": "workspace:*",
     "bcrypt": "^6.0.0",
     "bullmq": "5.81.5",
     "class-transformer": "^0.5.1",
@@ -49,13 +54,14 @@
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "multer": "^2.4.0",
+    "nodemailer": "^10.6.1",
     "passport-jwt": "^4.0.1",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sharp": "0.35.5",
     "typeorm": "^0.3.28",
-    "ua-parser-js": "^2.0.10",
-    "@repo/grade-calculations": "workspace:*"
+    "ua-parser-js": "^2.0.10"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -69,6 +75,7 @@
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.2.0",
     "@types/node": "^22.10.7",
+    "@types/nodemailer": "^8.0.2",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.18.0",

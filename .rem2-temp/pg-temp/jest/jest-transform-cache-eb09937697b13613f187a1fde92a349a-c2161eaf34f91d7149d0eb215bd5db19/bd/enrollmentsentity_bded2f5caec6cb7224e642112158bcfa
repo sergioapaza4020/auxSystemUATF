@@ -1,0 +1,62 @@
+3b50aa6503f4df83eb466fc068215166
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Enrollment = void 0;
+const base_entity_1 = require("@common/entities/base.entity");
+const typeorm_1 = require("typeorm");
+const courses_entity_1 = require("../courses/courses.entity");
+const semester_entity_1 = require("../semesters/semester.entity");
+const users_entity_1 = require("../users/users.entity");
+const courseRelations_1 = require("@common/enums/courseRelations");
+const grades_entity_1 = require("../grades/grades.entity");
+let Enrollment = class Enrollment extends base_entity_1.BaseEntity {
+    idEnrollment;
+    semester;
+    course;
+    user;
+    role;
+    grades;
+};
+exports.Enrollment = Enrollment;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_enrollment' }),
+    __metadata("design:type", Number)
+], Enrollment.prototype, "idEnrollment", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => semester_entity_1.Semester, (semester) => semester.enrollments, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinColumn)({ name: 'id_semester' }),
+    __metadata("design:type", typeof (_a = typeof semester_entity_1.Semester !== "undefined" && semester_entity_1.Semester) === "function" ? _a : Object)
+], Enrollment.prototype, "semester", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => courses_entity_1.Course, (course) => course.enrollments, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinColumn)({ name: 'id_course' }),
+    __metadata("design:type", typeof (_b = typeof courses_entity_1.Course !== "undefined" && courses_entity_1.Course) === "function" ? _b : Object)
+], Enrollment.prototype, "course", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => users_entity_1.User, (user) => user.enrollments, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinColumn)({ name: 'id_user' }),
+    __metadata("design:type", typeof (_c = typeof users_entity_1.User !== "undefined" && users_entity_1.User) === "function" ? _c : Object)
+], Enrollment.prototype, "user", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: courseRelations_1.CourseRelations, name: 'role' }),
+    __metadata("design:type", typeof (_d = typeof courseRelations_1.CourseRelations !== "undefined" && courseRelations_1.CourseRelations) === "function" ? _d : Object)
+], Enrollment.prototype, "role", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => grades_entity_1.Grade, (grade) => grade.enrollment),
+    __metadata("design:type", Array)
+], Enrollment.prototype, "grades", void 0);
+exports.Enrollment = Enrollment = __decorate([
+    (0, typeorm_1.Unique)(['user', 'course', 'semester']),
+    (0, typeorm_1.Entity)('enrollments')
+], Enrollment);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGVucm9sbG1lbnRzXFxlbnJvbGxtZW50cy5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLDhEQUEwRDtBQUMxRCxxQ0FRaUI7QUFDakIsOERBQW1EO0FBQ25ELGtFQUF3RDtBQUN4RCx3REFBNkM7QUFDN0MsbUVBQWdFO0FBQ2hFLDJEQUFnRDtBQUl6QyxJQUFNLFVBQVUsR0FBaEIsTUFBTSxVQUFXLFNBQVEsd0JBQVU7SUFFeEMsWUFBWSxDQUFTO0lBSXJCLFFBQVEsQ0FBVztJQUluQixNQUFNLENBQVM7SUFJZixJQUFJLENBQU87SUFHWCxJQUFJLENBQWtCO0lBR3RCLE1BQU0sQ0FBVTtDQUNqQixDQUFBO0FBckJZLGdDQUFVO0FBRXJCO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxFQUFFLElBQUksRUFBRSxlQUFlLEVBQUUsQ0FBQzs7Z0RBQzdCO0FBSXJCO0lBRkMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLDBCQUFRLEVBQUUsQ0FBQyxRQUFRLEVBQUUsRUFBRSxDQUFDLFFBQVEsQ0FBQyxXQUFXLEVBQUUsRUFBRSxRQUFRLEVBQUUsU0FBUyxFQUFFLENBQUM7SUFDdEYsSUFBQSxvQkFBVSxFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxDQUFDO2tEQUMxQiwwQkFBUSxvQkFBUiwwQkFBUTs0Q0FBQztBQUluQjtJQUZDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyx1QkFBTSxFQUFFLENBQUMsTUFBTSxFQUFFLEVBQUUsQ0FBQyxNQUFNLENBQUMsV0FBVyxFQUFFLEVBQUUsUUFBUSxFQUFFLFNBQVMsRUFBRSxDQUFDO0lBQ2hGLElBQUEsb0JBQVUsRUFBQyxFQUFFLElBQUksRUFBRSxXQUFXLEVBQUUsQ0FBQztrREFDMUIsdUJBQU0sb0JBQU4sdUJBQU07MENBQUM7QUFJZjtJQUZDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyxtQkFBSSxFQUFFLENBQUMsSUFBSSxFQUFFLEVBQUUsQ0FBQyxJQUFJLENBQUMsV0FBVyxFQUFFLEVBQUUsUUFBUSxFQUFFLFNBQVMsRUFBRSxDQUFDO0lBQzFFLElBQUEsb0JBQVUsRUFBQyxFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsQ0FBQztrREFDMUIsbUJBQUksb0JBQUosbUJBQUk7d0NBQUM7QUFHWDtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxNQUFNLEVBQUUsSUFBSSxFQUFFLGlDQUFlLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxDQUFDO2tEQUN4RCxpQ0FBZSxvQkFBZixpQ0FBZTt3Q0FBQztBQUd0QjtJQURDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyxxQkFBSyxFQUFFLENBQUMsS0FBSyxFQUFFLEVBQUUsQ0FBQyxLQUFLLENBQUMsVUFBVSxDQUFDOzswQ0FDcEM7cUJBcEJMLFVBQVU7SUFGdEIsSUFBQSxnQkFBTSxFQUFDLENBQUMsTUFBTSxFQUFFLFFBQVEsRUFBRSxVQUFVLENBQUMsQ0FBQztJQUN0QyxJQUFBLGdCQUFNLEVBQUMsYUFBYSxDQUFDO0dBQ1QsVUFBVSxDQXFCdEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGVucm9sbG1lbnRzXFxlbnJvbGxtZW50cy5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQmFzZUVudGl0eSB9IGZyb20gJ0Bjb21tb24vZW50aXRpZXMvYmFzZS5lbnRpdHknO1xuaW1wb3J0IHtcbiAgQ29sdW1uLFxuICBFbnRpdHksXG4gIEpvaW5Db2x1bW4sXG4gIE1hbnlUb09uZSxcbiAgT25lVG9NYW55LFxuICBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uLFxuICBVbmlxdWUsXG59IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgQ291cnNlIH0gZnJvbSAnLi4vY291cnNlcy9jb3Vyc2VzLmVudGl0eSc7XG5pbXBvcnQgeyBTZW1lc3RlciB9IGZyb20gJy4uL3NlbWVzdGVycy9zZW1lc3Rlci5lbnRpdHknO1xuaW1wb3J0IHsgVXNlciB9IGZyb20gJy4uL3VzZXJzL3VzZXJzLmVudGl0eSc7XG5pbXBvcnQgeyBDb3Vyc2VSZWxhdGlvbnMgfSBmcm9tICdAY29tbW9uL2VudW1zL2NvdXJzZVJlbGF0aW9ucyc7XG5pbXBvcnQgeyBHcmFkZSB9IGZyb20gJy4uL2dyYWRlcy9ncmFkZXMuZW50aXR5JztcblxuQFVuaXF1ZShbJ3VzZXInLCAnY291cnNlJywgJ3NlbWVzdGVyJ10pXG5ARW50aXR5KCdlbnJvbGxtZW50cycpXG5leHBvcnQgY2xhc3MgRW5yb2xsbWVudCBleHRlbmRzIEJhc2VFbnRpdHkge1xuICBAUHJpbWFyeUdlbmVyYXRlZENvbHVtbih7IG5hbWU6ICdpZF9lbnJvbGxtZW50JyB9KVxuICBpZEVucm9sbG1lbnQ6IG51bWJlcjtcblxuICBATWFueVRvT25lKCgpID0+IFNlbWVzdGVyLCAoc2VtZXN0ZXIpID0+IHNlbWVzdGVyLmVucm9sbG1lbnRzLCB7IG9uRGVsZXRlOiAnQ0FTQ0FERScgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnaWRfc2VtZXN0ZXInIH0pXG4gIHNlbWVzdGVyOiBTZW1lc3RlcjtcblxuICBATWFueVRvT25lKCgpID0+IENvdXJzZSwgKGNvdXJzZSkgPT4gY291cnNlLmVucm9sbG1lbnRzLCB7IG9uRGVsZXRlOiAnQ0FTQ0FERScgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnaWRfY291cnNlJyB9KVxuICBjb3Vyc2U6IENvdXJzZTtcblxuICBATWFueVRvT25lKCgpID0+IFVzZXIsICh1c2VyKSA9PiB1c2VyLmVucm9sbG1lbnRzLCB7IG9uRGVsZXRlOiAnQ0FTQ0FERScgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnaWRfdXNlcicgfSlcbiAgdXNlcjogVXNlcjtcblxuICBAQ29sdW1uKHsgdHlwZTogJ2VudW0nLCBlbnVtOiBDb3Vyc2VSZWxhdGlvbnMsIG5hbWU6ICdyb2xlJyB9KVxuICByb2xlOiBDb3Vyc2VSZWxhdGlvbnM7XG5cbiAgQE9uZVRvTWFueSgoKSA9PiBHcmFkZSwgKGdyYWRlKSA9PiBncmFkZS5lbnJvbGxtZW50KVxuICBncmFkZXM6IEdyYWRlW107XG59XG4iXSwidmVyc2lvbiI6M30=

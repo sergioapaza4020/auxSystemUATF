@@ -1,0 +1,40 @@
+93ed8ced72f2781a601fb1255994ee6a
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LoginDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+class LoginDto {
+    rememberMe;
+    username;
+    password;
+}
+exports.LoginDto = LoginDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ required: false, default: false, type: Boolean }),
+    (0, class_validator_1.ValidateIf)((_object, value) => value !== undefined),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], LoginDto.prototype, "rememberMe", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'super-mushu', description: 'Username' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], LoginDto.prototype, "username", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'password', description: 'Password' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], LoginDto.prototype, "password", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZHRvc1xcYXV0aFxcbG9naW4uZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLDZDQUE4QztBQUM5QyxxREFBOEU7QUFFOUUsTUFBYSxRQUFRO0lBSW5CLFVBQVUsQ0FBVztJQUtyQixRQUFRLENBQVM7SUFLakIsUUFBUSxDQUFTO0NBQ2xCO0FBZkQsNEJBZUM7QUFYQztJQUhDLElBQUEscUJBQVcsRUFBQyxFQUFFLFFBQVEsRUFBRSxLQUFLLEVBQUUsT0FBTyxFQUFFLEtBQUssRUFBRSxJQUFJLEVBQUUsT0FBTyxFQUFFLENBQUM7SUFDL0QsSUFBQSw0QkFBVSxFQUFDLENBQUMsT0FBZ0IsRUFBRSxLQUFjLEVBQUUsRUFBRSxDQUFDLEtBQUssS0FBSyxTQUFTLENBQUM7SUFDckUsSUFBQSwyQkFBUyxHQUFFOzs0Q0FDUztBQUtyQjtJQUhDLElBQUEscUJBQVcsRUFBQyxFQUFFLE9BQU8sRUFBRSxhQUFhLEVBQUUsV0FBVyxFQUFFLFVBQVUsRUFBRSxDQUFDO0lBQ2hFLElBQUEsMEJBQVEsR0FBRTtJQUNWLElBQUEsNEJBQVUsR0FBRTs7MENBQ0k7QUFLakI7SUFIQyxJQUFBLHFCQUFXLEVBQUMsRUFBRSxPQUFPLEVBQUUsVUFBVSxFQUFFLFdBQVcsRUFBRSxVQUFVLEVBQUUsQ0FBQztJQUM3RCxJQUFBLDBCQUFRLEdBQUU7SUFDVixJQUFBLDRCQUFVLEdBQUU7OzBDQUNJIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkQ6XFx1YXRmXFxpbnZlc3RpZ2F0aW9uMjAyNlxcYXV4U3lzdGVtVUFURlxcYXBwc1xcYmFja2VuZC1uZXN0XFxzcmNcXGR0b3NcXGF1dGhcXGxvZ2luLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBJc0Jvb2xlYW4sIElzTm90RW1wdHksIElzU3RyaW5nLCBWYWxpZGF0ZUlmIH0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcblxuZXhwb3J0IGNsYXNzIExvZ2luRHRvIHtcbiAgQEFwaVByb3BlcnR5KHsgcmVxdWlyZWQ6IGZhbHNlLCBkZWZhdWx0OiBmYWxzZSwgdHlwZTogQm9vbGVhbiB9KVxuICBAVmFsaWRhdGVJZigoX29iamVjdDogdW5rbm93biwgdmFsdWU6IHVua25vd24pID0+IHZhbHVlICE9PSB1bmRlZmluZWQpXG4gIEBJc0Jvb2xlYW4oKVxuICByZW1lbWJlck1lPzogYm9vbGVhbjtcblxuICBAQXBpUHJvcGVydHkoeyBleGFtcGxlOiAnc3VwZXItbXVzaHUnLCBkZXNjcmlwdGlvbjogJ1VzZXJuYW1lJyB9KVxuICBASXNTdHJpbmcoKVxuICBASXNOb3RFbXB0eSgpXG4gIHVzZXJuYW1lOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHsgZXhhbXBsZTogJ3Bhc3N3b3JkJywgZGVzY3JpcHRpb246ICdQYXNzd29yZCcgfSlcbiAgQElzU3RyaW5nKClcbiAgQElzTm90RW1wdHkoKVxuICBwYXNzd29yZDogc3RyaW5nO1xufVxuIl0sInZlcnNpb24iOjN9

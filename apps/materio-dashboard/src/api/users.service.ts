@@ -1,3 +1,5 @@
+import { isAxiosError } from 'axios';
+
 import { instance } from './config/config';
 import type { UserQuery } from '@/interfaces/users/user-query.interface';
 import type { IUser, IUserCreate, IUserUpdate } from '@/interfaces/users/user.interface';
@@ -23,6 +25,18 @@ export const getUsersPage = async (query?: UserQuery, signal?: AbortSignal): Pro
 export const getUsers = async (query?: UserQuery): Promise<IUser[]> => {
   return (await getUsersPage(query)).data;
 };
+
+export async function requestUserPasswordReset(id: number): Promise<void> {
+  try {
+    await instance.post(`/users/${id}/password-reset`);
+  } catch (error) {
+    if (!isAxiosError(error) || !error.response || error.response.status >= 500) {
+      throw new Error('No pudimos iniciar el restablecimiento. Inténtalo nuevamente.');
+    }
+
+    throw error;
+  }
+}
 
 export const getUserById = async (id: number, signal?: AbortSignal): Promise<IUser | null> => {
   const response = await instance.get<ApiResponse<IUser | null>>(`/users/id/${id}`, { signal });

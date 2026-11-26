@@ -14,6 +14,8 @@ import { GradeItem } from 'src/entities/grade-items/grade-items.entity';
 import { Permission } from 'src/entities/permissions/permissions.entity';
 import { Semester } from 'src/entities/semesters/semester.entity';
 import { User } from 'src/entities/users/users.entity';
+import { UserSession } from 'src/entities/user-sessions/user-sessions.entity';
+import { SessionRevokeReasons } from '@common/enums/sessionRevokeReasons';
 import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
 import { GradeScheme } from 'src/entities/grade-schemes/grade-schemes.entity';
 import { GradeSchemeDetail } from 'src/entities/grade-scheme-detail/grade-scheme-detail.entity';
@@ -50,6 +52,7 @@ function repositoryMock() {
       return target;
     }),
     save: jest.fn((data: object) => Promise.resolve(data)),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     manager: { getRepository: jest.fn(), transaction: jest.fn() },
   };
@@ -69,6 +72,7 @@ describe('CRUD service behavior', () => {
     AttendanceSession,
     Attendance,
     Grade,
+    UserSession,
   ];
   let repositories: Map<Type<unknown>, ReturnType<typeof repositoryMock>>;
   const repo = (entity: Type<unknown>) => repositories.get(entity)!;
@@ -85,10 +89,12 @@ describe('CRUD service behavior', () => {
 
   beforeEach(async () => {
     repositories = new Map(entities.map((entity) => [entity, repositoryMock()]));
-    repo(Enrollment).manager.transaction.mockImplementation(
-      (work: (manager: { getRepository: typeof repo }) => Promise<unknown>) =>
-        work({ getRepository: repo }),
-    );
+    for (const entity of entities) {
+      repo(entity).manager.transaction.mockImplementation(
+        (work: (manager: { getRepository: typeof repo; query: jest.Mock }) => Promise<unknown>) =>
+          work({ getRepository: repo, query: jest.fn().mockResolvedValue(undefined) }),
+      );
+    }
     roles = { getOneByName: jest.fn() };
     const module = await Test.createTestingModule({
       providers: [
@@ -298,12 +304,14 @@ describe('CRUD service behavior', () => {
   });
 
   it('hashes an updated password, preserves omitted data and does not expose the hash', async () => {
-    repo(User).findOne.mockResolvedValue({
-      idUser: 1,
-      email: 'a@example.com',
-      name: 'Alice',
-      password: 'old',
-    });
+    repo(User)
+      .findOne.mockResolvedValueOnce({
+        idUser: 1,
+        email: 'a@example.com',
+        name: 'Alice',
+        password: 'old',
+      })
+      .mockResolvedValueOnce({ idUser: 1, password: 'old' });
     // Match TypeORM merge semantics for undefined optional properties.
     repo(User).merge.mockImplementation((target, ...sources) => {
       for (const source of sources)
@@ -314,7 +322,17 @@ describe('CRUD service behavior', () => {
     });
     const result = await users.update(1, { password: 'new-secret' });
     const saved = repo(User).save.mock.calls[0][0] as User;
+    const updateCalls = repo(UserSession).update.mock.calls as unknown as Array<
+      [unknown, Partial<UserSession>]
+    >;
+    const revocationCriteria = updateCalls[0]?.[0];
+    const revoked = updateCalls[0]?.[1];
     expect(await bcrypt.compare('new-secret', saved.password)).toBe(true);
+    expect(revocationCriteria).toEqual({ user: { idUser: 1 }, isActive: true });
+    expect(revoked).toMatchObject({
+      isActive: false,
+      revokedReason: SessionRevokeReasons.PASSWORD_CHANGED,
+    });
     expect(result).toMatchObject({ idUser: 1, email: 'a@example.com', name: 'Alice' });
     expect(result).not.toHaveProperty('password');
   });

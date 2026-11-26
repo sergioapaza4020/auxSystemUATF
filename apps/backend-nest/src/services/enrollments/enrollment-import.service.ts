@@ -120,7 +120,7 @@ export class EnrollmentImportService {
   private async operation(operationId: string, ownerId: number) {
     const operation = await this.bulk.getById(operationId, ownerId);
     if (operation.type !== BulkOperationType.ENROLLMENT_IMPORT)
-      throw new NotFoundException('Enrollment import not found');
+      throw new NotFoundException('No encontramos la importación de matrículas.');
     return operation;
   }
 
@@ -145,7 +145,7 @@ export class EnrollmentImportService {
   ): Promise<EnrollmentImportPreviewDto> {
     const operation = await this.operation(operationId, actor.idUser);
     if (operation.status !== BulkOperationStatus.READY)
-      throw new BadRequestException('Enrollment import preview is not ready');
+      throw new BadRequestException('La vista previa de matrículas aún no está lista.');
     await this.validateTarget(this.repository.manager, this.target(operation), actor);
     const rows = await this.bulk.findRows(
       operationId,
@@ -235,7 +235,7 @@ export class EnrollmentImportService {
             ? await manager.getRepository(Role).findOneBy({ name: 'STUDENT', isActive: true })
             : null;
           if (preview.rows.some((row) => row.action === 'CREATE_ACCOUNT') && !role)
-            throw new BadRequestException('El rol STUDENT no está disponible');
+            throw new BadRequestException('El rol de estudiante no está disponible.');
           let accountsCreated = 0,
             accountsReused = 0,
             skipped = 0;
@@ -268,7 +268,8 @@ export class EnrollmentImportService {
               idUser = (await repository.save(account)).idUser;
               accountsCreated++;
             } else accountsReused++;
-            if (idUser === null) throw new BadRequestException('Estudiante no resuelto');
+            if (idUser === null)
+              throw new BadRequestException('No pudimos identificar al estudiante de esta fila.');
             values.push({
               user: { idUser },
               course: { idCourse: target.courseId },
@@ -305,7 +306,7 @@ export class EnrollmentImportService {
   ): Promise<void> {
     const course = await manager.getRepository(Course).findOneBy({ idCourse: target.courseId });
     if (!course) throw new NotFoundException('Materia/grupo no encontrado');
-    if (!course.isActive) throw new BadRequestException('La materia/grupo está inactiva');
+    if (!course.isActive) throw new BadRequestException('La materia o el grupo está inactivo.');
     const semester = await manager
       .getRepository(Semester)
       .findOneBy({ idSemester: target.semesterId });
@@ -424,10 +425,10 @@ export class EnrollmentImportService {
         errors.push('El RU es obligatorio');
       const conflict = (match: User | undefined) => match && match.idUser !== user?.idUser;
       if (conflict(byUsername.get(input.ru)))
-        errors.push('El username RU pertenece a otra identidad');
-      if (input.ci && conflict(byCi.get(input.ci))) errors.push('El CI pertenece a otra identidad');
+        errors.push('El nombre de usuario asociado al RU pertenece a otra cuenta.');
+      if (input.ci && conflict(byCi.get(input.ci))) errors.push('El CI pertenece a otra cuenta.');
       if (input.email && conflict(byEmail.get(input.email)))
-        errors.push('El email pertenece a otra identidad');
+        errors.push('El correo electrónico pertenece a otra cuenta.');
       let action: EnrollmentImportRowDto['action'] = user ? 'ENROLL' : 'CREATE_ACCOUNT';
       if (user) {
         if (!user.isActive || user.deletedAt) errors.push('El usuario está inactivo o eliminado');
@@ -449,11 +450,11 @@ export class EnrollmentImportService {
             );
         }
       } else {
-        if (!input.name) errors.push('Nombres es obligatorio para crear una cuenta');
-        if (!input.lastname) errors.push('Apellidos es obligatorio para crear una cuenta');
-        if (!input.ci) errors.push('CI es obligatorio para crear una cuenta');
+        if (!input.name) errors.push('Ingresa los nombres para crear la cuenta.');
+        if (!input.lastname) errors.push('Ingresa los apellidos para crear la cuenta.');
+        if (!input.ci) errors.push('Ingresa el CI para crear la cuenta.');
         if (!input.email || !isEmail(input.email))
-          errors.push('Email válido es obligatorio para crear una cuenta');
+          errors.push('Ingresa un correo electrónico válido para crear la cuenta.');
       }
       return {
         row: input.row,
@@ -544,7 +545,7 @@ export class EnrollmentImportService {
           text('message')?.includes('ENROLLMENT_IMPORT')
         ) {
           throw new ServiceUnavailableException(
-            'La importación de matrículas no está habilitada en esta base de datos. El administrador debe aplicar la actualización pendiente de importaciones académicas.',
+            'La importación de matrículas aún no está disponible. Comunícate con administración.',
           );
         }
         if (
@@ -555,7 +556,7 @@ export class EnrollmentImportService {
         ) {
           if (attempt < 2) continue;
           throw new ConflictException(
-            'Los datos cambiaron concurrentemente. No se crearon cuentas ni matrículas; vuelve a revisar el archivo.',
+            'Los datos cambiaron durante la importación. Vuelve a revisar el archivo. No se crearon cuentas ni matrículas.',
           );
         }
         throw new InternalServerErrorException(

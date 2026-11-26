@@ -11,6 +11,7 @@ describe('JWT session authority', () => {
   let stored: { idSession: number; idUser: number; isActive: boolean; expiresAt: Date } | null;
   let filter: { idSession: number; idUser: number; now: Date };
   const where = jest.fn<unknown, [string, typeof filter]>();
+  const innerJoin = jest.fn();
   const getExists = jest.fn(() =>
     Promise.resolve(
       !!stored &&
@@ -20,7 +21,7 @@ describe('JWT session authority', () => {
         stored.expiresAt > filter.now,
     ),
   );
-  const query = { where, getExists };
+  const query = { innerJoin, where, getExists };
   const repository = { createQueryBuilder: jest.fn(() => query) };
   const payload: JwtPayload = {
     idUser: 1,
@@ -38,6 +39,7 @@ describe('JWT session authority', () => {
       JWT_ACCESS_SECRET: 'strategy-test-only',
     });
     stored = { idSession: 7, idUser: 1, isActive: true, expiresAt: new Date(Date.now() + 60000) };
+    innerJoin.mockReturnValue(query);
     where.mockImplementation((_sql: string, parameters: typeof filter) => {
       filter = parameters;
       return query;
@@ -60,7 +62,11 @@ describe('JWT session authority', () => {
     const sql = where.mock.calls[0][0];
     expect(sql).toContain('session.id_user = :idUser');
     expect(sql).toContain('session.expires_at > :now');
-    expect(sql.toLowerCase()).not.toContain('join');
+    expect(innerJoin).toHaveBeenCalledWith(
+      'session.user',
+      'account',
+      'account.isActive = true AND account.deletedAt IS NULL',
+    );
   });
 
   it.each(['missing', 'inactive', 'expired', 'wrong-user'])(

@@ -14,6 +14,9 @@ describe('RolesService', () => {
     create: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn(),
+    manager: {
+      transaction: jest.fn(),
+    },
   };
 
   const permissionsService = {
@@ -22,6 +25,18 @@ describe('RolesService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    roleRepository.manager.transaction.mockImplementation(
+      (
+        work: (manager: {
+          getRepository: () => typeof roleRepository;
+          query: jest.Mock;
+        }) => Promise<unknown>,
+      ) =>
+        work({
+          getRepository: () => roleRepository,
+          query: jest.fn().mockResolvedValue(undefined),
+        }),
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

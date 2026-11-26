@@ -50,6 +50,7 @@ import { ActivityFormDialog } from '../ActivityFormDialog';
 import { GradePlanTable, formatGradeDeadline } from './GradePlanTable';
 
 import { GradeChangesBar } from './GradeChangesBar';
+import { GradeImportDialog } from './GradeImportDialog';
 
 import { DEFAULT_GRADE_DISPLAY_MODE, GradeViewToggle, type GradeDisplayMode } from '../GradeViewToggle';
 
@@ -91,6 +92,7 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
   const [activityId, setActivityId] = useState<number | null>(null);
 
   const [activityFormOpen, setActivityFormOpen] = useState(false);
+  const [gradeImportOpen, setGradeImportOpen] = useState(false);
 
   const [creatingActivity, setCreatingActivity] = useState(false);
 
@@ -235,6 +237,13 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
 
   return (
     <Box>
+      {gradeImportOpen && (
+        <GradeImportDialog
+          enrollmentId={idEnrollment}
+          onClose={() => setGradeImportOpen(false)}
+          onImported={grades.reload}
+        />
+      )}
       <Paper variant='outlined' sx={{ borderRadius: 3, p: { xs: 2, md: 3 }, boxShadow: 'none' }}>
         <Button
           size='small'
@@ -290,6 +299,11 @@ export function GradeManagement({ idEnrollment }: { idEnrollment: number }) {
             </Typography>
 
             <Typography color='text.secondary'>Gestiona las notas de las actividades de cada criterio</Typography>
+            {matrix && hasPermission(user, 'grade.create') && (
+              <Button onClick={() => setGradeImportOpen(true)} disabled={grades.saving || dirtyCount > 0}>
+                Importar calificaciones desde Excel
+              </Button>
+            )}
           </Box>
 
           <ToggleButtonGroup

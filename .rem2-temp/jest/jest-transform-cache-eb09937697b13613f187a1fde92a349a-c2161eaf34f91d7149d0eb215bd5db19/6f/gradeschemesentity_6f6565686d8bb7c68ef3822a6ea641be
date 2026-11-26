@@ -1,0 +1,68 @@
+194ec9ea23043e7a315d7e274c1352b2
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GradeScheme = void 0;
+const base_entity_1 = require("@common/entities/base.entity");
+const typeorm_1 = require("typeorm");
+const courses_entity_1 = require("../courses/courses.entity");
+const grade_scheme_detail_entity_1 = require("../grade-scheme-detail/grade-scheme-detail.entity");
+const enrollments_entity_1 = require("../enrollments/enrollments.entity");
+let GradeScheme = class GradeScheme extends base_entity_1.BaseEntity {
+    idGradeScheme;
+    name;
+    description;
+    courses;
+    details;
+    assistantEnrollment;
+    assistantPercentage;
+};
+exports.GradeScheme = GradeScheme;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_grade_scheme' }),
+    __metadata("design:type", Number)
+], GradeScheme.prototype, "idGradeScheme", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'name' }),
+    __metadata("design:type", String)
+], GradeScheme.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'description', nullable: true }),
+    __metadata("design:type", String)
+], GradeScheme.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => courses_entity_1.Course, (course) => course.gradeScheme),
+    __metadata("design:type", Array)
+], GradeScheme.prototype, "courses", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => grade_scheme_detail_entity_1.GradeSchemeDetail, (detail) => detail.gradeScheme),
+    __metadata("design:type", Array)
+], GradeScheme.prototype, "details", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => enrollments_entity_1.Enrollment, { nullable: true, onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinColumn)({ name: 'id_assistant_enrollment' }),
+    __metadata("design:type", Object)
+], GradeScheme.prototype, "assistantEnrollment", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'assistant_percentage',
+        type: 'numeric',
+        precision: 5,
+        scale: 2,
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], GradeScheme.prototype, "assistantPercentage", void 0);
+exports.GradeScheme = GradeScheme = __decorate([
+    (0, typeorm_1.Entity)('grade_schemes')
+], GradeScheme);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGdyYWRlLXNjaGVtZXNcXGdyYWRlLXNjaGVtZXMuZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSw4REFBMEQ7QUFDMUQscUNBQWtHO0FBQ2xHLDhEQUFtRDtBQUNuRCxrR0FBc0Y7QUFDdEYsMEVBQStEO0FBR3hELElBQU0sV0FBVyxHQUFqQixNQUFNLFdBQVksU0FBUSx3QkFBVTtJQUV6QyxhQUFhLENBQVM7SUFHdEIsSUFBSSxDQUFTO0lBR2IsV0FBVyxDQUFTO0lBR3BCLE9BQU8sQ0FBVztJQUdsQixPQUFPLENBQXNCO0lBSTdCLG1CQUFtQixDQUFvQjtJQVN2QyxtQkFBbUIsQ0FBZ0I7Q0FDcEMsQ0FBQTtBQTVCWSxrQ0FBVztBQUV0QjtJQURDLElBQUEsZ0NBQXNCLEVBQUMsRUFBRSxJQUFJLEVBQUUsaUJBQWlCLEVBQUUsQ0FBQzs7a0RBQzlCO0FBR3RCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxDQUFDOzt5Q0FDWjtBQUdiO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7O2dEQUM1QjtBQUdwQjtJQURDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyx1QkFBTSxFQUFFLENBQUMsTUFBTSxFQUFFLEVBQUUsQ0FBQyxNQUFNLENBQUMsV0FBVyxDQUFDOzs0Q0FDdEM7QUFHbEI7SUFEQyxJQUFBLG1CQUFTLEVBQUMsR0FBRyxFQUFFLENBQUMsOENBQWlCLEVBQUUsQ0FBQyxNQUFNLEVBQUUsRUFBRSxDQUFDLE1BQU0sQ0FBQyxXQUFXLENBQUM7OzRDQUN0QztBQUk3QjtJQUZDLElBQUEsa0JBQVEsRUFBQyxHQUFHLEVBQUUsQ0FBQywrQkFBVSxFQUFFLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxRQUFRLEVBQUUsU0FBUyxFQUFFLENBQUM7SUFDbkUsSUFBQSxvQkFBVSxFQUFDLEVBQUUsSUFBSSxFQUFFLHlCQUF5QixFQUFFLENBQUM7O3dEQUNUO0FBU3ZDO0lBUEMsSUFBQSxnQkFBTSxFQUFDO1FBQ04sSUFBSSxFQUFFLHNCQUFzQjtRQUM1QixJQUFJLEVBQUUsU0FBUztRQUNmLFNBQVMsRUFBRSxDQUFDO1FBQ1osS0FBSyxFQUFFLENBQUM7UUFDUixRQUFRLEVBQUUsSUFBSTtLQUNmLENBQUM7O3dEQUNpQztzQkEzQnhCLFdBQVc7SUFEdkIsSUFBQSxnQkFBTSxFQUFDLGVBQWUsQ0FBQztHQUNYLFdBQVcsQ0E0QnZCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkQ6XFx1YXRmXFxpbnZlc3RpZ2F0aW9uMjAyNlxcYXV4U3lzdGVtVUFURlxcYXBwc1xcYmFja2VuZC1uZXN0XFxzcmNcXGVudGl0aWVzXFxncmFkZS1zY2hlbWVzXFxncmFkZS1zY2hlbWVzLmVudGl0eS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBCYXNlRW50aXR5IH0gZnJvbSAnQGNvbW1vbi9lbnRpdGllcy9iYXNlLmVudGl0eSc7XG5pbXBvcnQgeyBDb2x1bW4sIEVudGl0eSwgSm9pbkNvbHVtbiwgT25lVG9NYW55LCBPbmVUb09uZSwgUHJpbWFyeUdlbmVyYXRlZENvbHVtbiB9IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgQ291cnNlIH0gZnJvbSAnLi4vY291cnNlcy9jb3Vyc2VzLmVudGl0eSc7XG5pbXBvcnQgeyBHcmFkZVNjaGVtZURldGFpbCB9IGZyb20gJy4uL2dyYWRlLXNjaGVtZS1kZXRhaWwvZ3JhZGUtc2NoZW1lLWRldGFpbC5lbnRpdHknO1xuaW1wb3J0IHsgRW5yb2xsbWVudCB9IGZyb20gJy4uL2Vucm9sbG1lbnRzL2Vucm9sbG1lbnRzLmVudGl0eSc7XG5cbkBFbnRpdHkoJ2dyYWRlX3NjaGVtZXMnKVxuZXhwb3J0IGNsYXNzIEdyYWRlU2NoZW1lIGV4dGVuZHMgQmFzZUVudGl0eSB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKHsgbmFtZTogJ2lkX2dyYWRlX3NjaGVtZScgfSlcbiAgaWRHcmFkZVNjaGVtZTogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnbmFtZScgfSlcbiAgbmFtZTogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnZGVzY3JpcHRpb24nLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBkZXNjcmlwdGlvbjogc3RyaW5nO1xuXG4gIEBPbmVUb01hbnkoKCkgPT4gQ291cnNlLCAoY291cnNlKSA9PiBjb3Vyc2UuZ3JhZGVTY2hlbWUpXG4gIGNvdXJzZXM6IENvdXJzZVtdO1xuXG4gIEBPbmVUb01hbnkoKCkgPT4gR3JhZGVTY2hlbWVEZXRhaWwsIChkZXRhaWwpID0+IGRldGFpbC5ncmFkZVNjaGVtZSlcbiAgZGV0YWlsczogR3JhZGVTY2hlbWVEZXRhaWxbXTtcblxuICBAT25lVG9PbmUoKCkgPT4gRW5yb2xsbWVudCwgeyBudWxsYWJsZTogdHJ1ZSwgb25EZWxldGU6ICdDQVNDQURFJyB9KVxuICBASm9pbkNvbHVtbih7IG5hbWU6ICdpZF9hc3Npc3RhbnRfZW5yb2xsbWVudCcgfSlcbiAgYXNzaXN0YW50RW5yb2xsbWVudDogRW5yb2xsbWVudCB8IG51bGw7XG5cbiAgQENvbHVtbih7XG4gICAgbmFtZTogJ2Fzc2lzdGFudF9wZXJjZW50YWdlJyxcbiAgICB0eXBlOiAnbnVtZXJpYycsXG4gICAgcHJlY2lzaW9uOiA1LFxuICAgIHNjYWxlOiAyLFxuICAgIG51bGxhYmxlOiB0cnVlLFxuICB9KVxuICBhc3Npc3RhbnRQZXJjZW50YWdlOiBudW1iZXIgfCBudWxsO1xufVxuIl0sInZlcnNpb24iOjN9
