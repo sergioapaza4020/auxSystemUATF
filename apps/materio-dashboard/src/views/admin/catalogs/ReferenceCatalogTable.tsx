@@ -274,28 +274,6 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
         )}
       </Stack>
 
-      <CatalogToolbar
-        search={kind === 'courses' ? courses.query.search : search}
-        searchLabel={kind === 'careers' ? 'Buscar carrera' : 'Buscar código, nombre o grupo'}
-        onSearch={(value) => {
-          if (kind === 'courses') courses.changeQuery({ search: value });
-          else {
-            setSearch(value);
-            careerTable.handleChangePage(null, 0);
-          }
-        }}
-        status={kind === 'courses' ? courses.query.status : (status as RecordStatus)}
-        onStatus={(value) => {
-          if (kind === 'courses') courses.changeQuery({ status: value });
-          else {
-            setStatus(value);
-            careerTable.handleChangePage(null, 0);
-          }
-        }}
-        onReload={() => void load()}
-        disabled={busy || (kind === 'careers' ? loading : courses.loading)}
-      />
-
       {kind === 'courses' && courses.error && <Alert severity='error'>{courses.error}</Alert>}
       {kind === 'careers' && loadError && <Alert severity='error'>{loadError}</Alert>}
       {tableLoading ? (
@@ -305,6 +283,27 @@ export function ReferenceCatalogTable({ kind }: { kind: Kind }) {
           <DataTableContainer>
             <Table>
               <TableHead>
+                <CatalogToolbar
+                  search={kind === 'courses' ? courses.query.search : search}
+                  searchLabel={kind === 'careers' ? 'Buscar carrera' : 'Buscar código, nombre o grupo'}
+                  onSearch={(value) => {
+                    if (kind === 'courses') courses.changeQuery({ search: value });
+                    else {
+                      setSearch(value);
+                      careerTable.handleChangePage(null, 0);
+                    }
+                  }}
+                  status={kind === 'courses' ? courses.query.status : (status as RecordStatus)}
+                  onStatus={(value) => {
+                    if (kind === 'courses') courses.changeQuery({ status: value });
+                    else {
+                      setStatus(value);
+                      careerTable.handleChangePage(null, 0);
+                    }
+                  }}
+                  onReload={() => void load()}
+                  disabled={busy || (kind === 'careers' ? loading : courses.loading)}
+                />
                 <TableRow>
                   <TableCell>{kind === 'careers' ? 'Carrera' : 'Código'}</TableCell>
 

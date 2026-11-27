@@ -192,7 +192,7 @@ export function useAttendances(idEnrollment: number | null) {
   );
 
   const createSession = useCallback(
-    async (date: string, mode?: AttendanceSessionMode) => {
+    async (date: string, mode?: AttendanceSessionMode, topic?: string | null) => {
       if (!idEnrollment) {
         throw new Error('No se encontró la matrícula del auxiliar.');
       }
@@ -204,6 +204,7 @@ export function useAttendances(idEnrollment: number | null) {
           enrollmentId: idEnrollment,
           date,
           ...(mode ? { mode } : {}),
+          ...(topic !== undefined ? { topic } : {}),
         });
 
         try {

@@ -1,0 +1,10 @@
+71a49b5bde2e9250fbf9a0dcfea71b6e
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SemesterNumber = void 0;
+var SemesterNumber;
+(function (SemesterNumber) {
+    SemesterNumber["I"] = "I";
+    SemesterNumber["II"] = "II";
+})(SemesterNumber || (exports.SemesterNumber = SemesterNumber = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcY29tbW9uXFxlbnVtc1xcc2VtZXN0ZXJOdW1iZXIudHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsSUFBWSxjQUdYO0FBSEQsV0FBWSxjQUFjO0lBQ3hCLHlCQUFPLENBQUE7SUFDUCwyQkFBUyxDQUFBO0FBQ1gsQ0FBQyxFQUhXLGNBQWMsOEJBQWQsY0FBYyxRQUd6QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxjb21tb25cXGVudW1zXFxzZW1lc3Rlck51bWJlci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZW51bSBTZW1lc3Rlck51bWJlciB7XG4gIEkgPSAnSScsXG4gIElJID0gJ0lJJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

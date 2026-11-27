@@ -1,7 +1,5 @@
 // MUI Imports
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
 
 // Third-party Imports
 import classnames from 'classnames';
@@ -46,26 +44,6 @@ const NavbarContent = () => {
         }}
       >
         <ModeDropdown />
-
-        <Tooltip title='Notificaciones'>
-          <IconButton
-            aria-label='Notificaciones'
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2.5,
-              color: 'text.secondary',
-
-              '&:hover': {
-                color: 'primary.main',
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <i className='ri-notification-3-line text-xl' />
-          </IconButton>
-        </Tooltip>
-
         <UserDropdown />
       </Box>
     </div>

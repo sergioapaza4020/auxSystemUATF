@@ -1,0 +1,73 @@
+03b77ca62088383b987acdc236741c4d
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GradeSchemeDetail = void 0;
+const typeorm_1 = require("typeorm");
+const grade_schemes_entity_1 = require("../grade-schemes/grade-schemes.entity");
+const grade_items_entity_1 = require("../grade-items/grade-items.entity");
+const activity_entity_1 = require("../activities/activity.entity");
+let GradeSchemeDetail = class GradeSchemeDetail extends typeorm_1.BaseEntity {
+    isActive;
+    archivedAt;
+    idGradeSchemeDetail;
+    gradeScheme;
+    gradeItem;
+    activities;
+    percentage;
+    permissionWeight;
+    order;
+};
+exports.GradeSchemeDetail = GradeSchemeDetail;
+__decorate([
+    (0, typeorm_1.Column)({ name: 'is_active', default: true }),
+    __metadata("design:type", Boolean)
+], GradeSchemeDetail.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'archived_at', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
+], GradeSchemeDetail.prototype, "archivedAt", void 0);
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_grade_scheme_detail' }),
+    __metadata("design:type", Number)
+], GradeSchemeDetail.prototype, "idGradeSchemeDetail", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => grade_schemes_entity_1.GradeScheme),
+    (0, typeorm_1.JoinColumn)({ name: 'id_grade_scheme' }),
+    __metadata("design:type", typeof (_b = typeof grade_schemes_entity_1.GradeScheme !== "undefined" && grade_schemes_entity_1.GradeScheme) === "function" ? _b : Object)
+], GradeSchemeDetail.prototype, "gradeScheme", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => grade_items_entity_1.GradeItem),
+    (0, typeorm_1.JoinColumn)({ name: 'id_grade_item' }),
+    __metadata("design:type", typeof (_c = typeof grade_items_entity_1.GradeItem !== "undefined" && grade_items_entity_1.GradeItem) === "function" ? _c : Object)
+], GradeSchemeDetail.prototype, "gradeItem", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => activity_entity_1.Activity, (activity) => activity.gradeSchemeDetail),
+    __metadata("design:type", Array)
+], GradeSchemeDetail.prototype, "activities", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'percentage' }),
+    __metadata("design:type", Number)
+], GradeSchemeDetail.prototype, "percentage", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'permission_weight', type: 'double precision', default: 1 }),
+    __metadata("design:type", Number)
+], GradeSchemeDetail.prototype, "permissionWeight", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'order' }),
+    __metadata("design:type", Number)
+], GradeSchemeDetail.prototype, "order", void 0);
+exports.GradeSchemeDetail = GradeSchemeDetail = __decorate([
+    (0, typeorm_1.Entity)('grade_scheme_details'),
+    (0, typeorm_1.Check)('CHK_attendance_permission_weight', '"permission_weight" >= 0 AND "permission_weight" <= 1')
+], GradeSchemeDetail);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGdyYWRlLXNjaGVtZS1kZXRhaWxcXGdyYWRlLXNjaGVtZS1kZXRhaWwuZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FTaUI7QUFDakIsZ0ZBQW9FO0FBQ3BFLDBFQUE4RDtBQUM5RCxtRUFBeUQ7QUFJbEQsSUFBTSxpQkFBaUIsR0FBdkIsTUFBTSxpQkFBa0IsU0FBUSxvQkFBVTtJQUUvQyxRQUFRLENBQVU7SUFHbEIsVUFBVSxDQUFjO0lBR3hCLG1CQUFtQixDQUFTO0lBSTVCLFdBQVcsQ0FBYztJQUl6QixTQUFTLENBQVk7SUFHckIsVUFBVSxDQUFhO0lBR3ZCLFVBQVUsQ0FBUztJQUduQixnQkFBZ0IsQ0FBUztJQUd6QixLQUFLLENBQVM7Q0FDZixDQUFBO0FBN0JZLDhDQUFpQjtBQUU1QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxXQUFXLEVBQUUsT0FBTyxFQUFFLElBQUksRUFBRSxDQUFDOzttREFDM0I7QUFHbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsYUFBYSxFQUFFLElBQUksRUFBRSxXQUFXLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOztxREFDM0M7QUFHeEI7SUFEQyxJQUFBLGdDQUFzQixFQUFDLEVBQUUsSUFBSSxFQUFFLHdCQUF3QixFQUFFLENBQUM7OzhEQUMvQjtBQUk1QjtJQUZDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyxrQ0FBVyxDQUFDO0lBQzVCLElBQUEsb0JBQVUsRUFBQyxFQUFFLElBQUksRUFBRSxpQkFBaUIsRUFBRSxDQUFDO2tEQUMzQixrQ0FBVyxvQkFBWCxrQ0FBVztzREFBQztBQUl6QjtJQUZDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyw4QkFBUyxDQUFDO0lBQzFCLElBQUEsb0JBQVUsRUFBQyxFQUFFLElBQUksRUFBRSxlQUFlLEVBQUUsQ0FBQztrREFDM0IsOEJBQVMsb0JBQVQsOEJBQVM7b0RBQUM7QUFHckI7SUFEQyxJQUFBLG1CQUFTLEVBQUMsR0FBRyxFQUFFLENBQUMsMEJBQVEsRUFBRSxDQUFDLFFBQVEsRUFBRSxFQUFFLENBQUMsUUFBUSxDQUFDLGlCQUFpQixDQUFDOztxREFDN0M7QUFHdkI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLENBQUM7O3FEQUNaO0FBR25CO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLG1CQUFtQixFQUFFLElBQUksRUFBRSxrQkFBa0IsRUFBRSxPQUFPLEVBQUUsQ0FBQyxFQUFFLENBQUM7OzJEQUNuRDtBQUd6QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxPQUFPLEVBQUUsQ0FBQzs7Z0RBQ1o7NEJBNUJILGlCQUFpQjtJQUY3QixJQUFBLGdCQUFNLEVBQUMsc0JBQXNCLENBQUM7SUFDOUIsSUFBQSxlQUFLLEVBQUMsa0NBQWtDLEVBQUUsdURBQXVELENBQUM7R0FDdEYsaUJBQWlCLENBNkI3QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxlbnRpdGllc1xcZ3JhZGUtc2NoZW1lLWRldGFpbFxcZ3JhZGUtc2NoZW1lLWRldGFpbC5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgQmFzZUVudGl0eSxcbiAgQ2hlY2ssXG4gIENvbHVtbixcbiAgRW50aXR5LFxuICBKb2luQ29sdW1uLFxuICBNYW55VG9PbmUsXG4gIE9uZVRvTWFueSxcbiAgUHJpbWFyeUdlbmVyYXRlZENvbHVtbixcbn0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBHcmFkZVNjaGVtZSB9IGZyb20gJy4uL2dyYWRlLXNjaGVtZXMvZ3JhZGUtc2NoZW1lcy5lbnRpdHknO1xuaW1wb3J0IHsgR3JhZGVJdGVtIH0gZnJvbSAnLi4vZ3JhZGUtaXRlbXMvZ3JhZGUtaXRlbXMuZW50aXR5JztcbmltcG9ydCB7IEFjdGl2aXR5IH0gZnJvbSAnLi4vYWN0aXZpdGllcy9hY3Rpdml0eS5lbnRpdHknO1xuXG5ARW50aXR5KCdncmFkZV9zY2hlbWVfZGV0YWlscycpXG5AQ2hlY2soJ0NIS19hdHRlbmRhbmNlX3Blcm1pc3Npb25fd2VpZ2h0JywgJ1wicGVybWlzc2lvbl93ZWlnaHRcIiA+PSAwIEFORCBcInBlcm1pc3Npb25fd2VpZ2h0XCIgPD0gMScpXG5leHBvcnQgY2xhc3MgR3JhZGVTY2hlbWVEZXRhaWwgZXh0ZW5kcyBCYXNlRW50aXR5IHtcbiAgQENvbHVtbih7IG5hbWU6ICdpc19hY3RpdmUnLCBkZWZhdWx0OiB0cnVlIH0pXG4gIGlzQWN0aXZlOiBib29sZWFuO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnYXJjaGl2ZWRfYXQnLCB0eXBlOiAndGltZXN0YW1wJywgbnVsbGFibGU6IHRydWUgfSlcbiAgYXJjaGl2ZWRBdDogRGF0ZSB8IG51bGw7XG5cbiAgQFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4oeyBuYW1lOiAnaWRfZ3JhZGVfc2NoZW1lX2RldGFpbCcgfSlcbiAgaWRHcmFkZVNjaGVtZURldGFpbDogbnVtYmVyO1xuXG4gIEBNYW55VG9PbmUoKCkgPT4gR3JhZGVTY2hlbWUpXG4gIEBKb2luQ29sdW1uKHsgbmFtZTogJ2lkX2dyYWRlX3NjaGVtZScgfSlcbiAgZ3JhZGVTY2hlbWU6IEdyYWRlU2NoZW1lO1xuXG4gIEBNYW55VG9PbmUoKCkgPT4gR3JhZGVJdGVtKVxuICBASm9pbkNvbHVtbih7IG5hbWU6ICdpZF9ncmFkZV9pdGVtJyB9KVxuICBncmFkZUl0ZW06IEdyYWRlSXRlbTtcblxuICBAT25lVG9NYW55KCgpID0+IEFjdGl2aXR5LCAoYWN0aXZpdHkpID0+IGFjdGl2aXR5LmdyYWRlU2NoZW1lRGV0YWlsKVxuICBhY3Rpdml0aWVzOiBBY3Rpdml0eVtdO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAncGVyY2VudGFnZScgfSlcbiAgcGVyY2VudGFnZTogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAncGVybWlzc2lvbl93ZWlnaHQnLCB0eXBlOiAnZG91YmxlIHByZWNpc2lvbicsIGRlZmF1bHQ6IDEgfSlcbiAgcGVybWlzc2lvbldlaWdodDogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnb3JkZXInIH0pXG4gIG9yZGVyOiBudW1iZXI7XG59XG4iXSwidmVyc2lvbiI6M30=

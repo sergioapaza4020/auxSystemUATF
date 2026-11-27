@@ -66,7 +66,8 @@ export class GradeSchemesService {
       where: { name: gradeSchemeCreateDto.name },
     });
 
-    if (gradeScheme) throw new BadRequestException('Grade scheme already exists');
+    if (gradeScheme)
+      throw new BadRequestException('Ya existe un esquema de calificaciones con estos datos.');
 
     const newGradeScheme = this.gradeSchemeRepository.create({
       name: gradeSchemeCreateDto.name,
@@ -79,9 +80,7 @@ export class GradeSchemesService {
     );
 
     if (totalPercentage !== 100)
-      throw new BadRequestException(
-        'The total percentage of the grade scheme must be exactly 100%.',
-      );
+      throw new BadRequestException('La ponderación del esquema debe sumar 100 %.');
 
     newGradeScheme.name = gradeSchemeCreateDto.name ?? '';
     newGradeScheme.description = gradeSchemeCreateDto.description ?? '';
@@ -161,7 +160,7 @@ export class GradeSchemesService {
     const totalPercentage = dto.details.reduce((sum, detail) => sum + detail.percentage, 0);
 
     if (totalPercentage !== 100) {
-      throw new BadRequestException('El porcentaje total del esquema debe ser exactamente 100%.');
+      throw new BadRequestException('La ponderación del esquema debe sumar 100 %.');
     }
 
     return this.dataSource.transaction(async (manager) => {
@@ -222,9 +221,12 @@ export class GradeSchemesService {
         relations: { assistantEnrollment: true },
       });
 
-      if (!gradeScheme) throw new BadRequestException('Grade scheme not found');
+      if (!gradeScheme)
+        throw new BadRequestException('No encontramos el esquema de calificaciones.');
       if (!gradeSchemeUpdateDto.details)
-        throw new BadRequestException('Details from grade scheme not found');
+        throw new BadRequestException(
+          'No encontramos los criterios del esquema de calificaciones.',
+        );
 
       if (gradeScheme.assistantEnrollment) {
         throw new BadRequestException(
@@ -238,9 +240,7 @@ export class GradeSchemesService {
       );
 
       if (totalPercentage !== 100)
-        throw new BadRequestException(
-          'The total percentage of the grade scheme must be exactly 100%.',
-        );
+        throw new BadRequestException('La ponderación del esquema debe sumar 100 %.');
 
       gradeScheme.name = gradeSchemeUpdateDto.name ?? '';
       gradeScheme.description = gradeSchemeUpdateDto.description ?? '';
@@ -279,7 +279,7 @@ export class GradeSchemesService {
       where: { idGradeScheme, isActive: true },
     });
 
-    if (!gradeScheme) throw new BadRequestException('Grade scheme not found');
+    if (!gradeScheme) throw new BadRequestException('No encontramos el esquema de calificaciones.');
     gradeScheme.isActive = false;
     return this.gradeSchemeRepository.save(gradeScheme);
   }
@@ -289,7 +289,7 @@ export class GradeSchemesService {
       where: { idGradeScheme, isActive: false },
     });
 
-    if (!gradeScheme) throw new BadRequestException('Grade scheme not found');
+    if (!gradeScheme) throw new BadRequestException('No encontramos el esquema de calificaciones.');
     gradeScheme.isActive = true;
     return this.gradeSchemeRepository.save(gradeScheme);
   }

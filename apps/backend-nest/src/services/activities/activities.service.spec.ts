@@ -62,6 +62,7 @@ describe('Activity name validation', () => {
     const course = { findOneOrFail: jest.fn().mockResolvedValue({ idCourse: 5 }) };
     const repository = { createQueryBuilder: jest.fn().mockReturnValue(query), save };
     const manager = {
+      query: jest.fn().mockResolvedValue(undefined),
       getRepository: jest
         .fn()
         .mockImplementation((entity: unknown) => (entity === Course ? course : repository)),

@@ -146,7 +146,7 @@ export class UsersController {
   @Permissions('user.create')
   @Post('import')
   importUsers() {
-    throw new GoneException('Usa el preview y POST /users/import/:operationId/confirm');
+    throw new GoneException('Revisa la vista previa del archivo y confirma la importación.');
   }
 
   @Permissions('user.create')

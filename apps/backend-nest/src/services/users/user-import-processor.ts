@@ -124,7 +124,7 @@ export class UserImportProcessor {
       name: 'Los nombres son obligatorios',
       lastname: 'Los apellidos son obligatorios',
       ci: 'El CI es obligatorio',
-      email: 'El email no es válido',
+      email: 'Ingresa un correo electrónico válido.',
     };
     for (const result of validations)
       errors.push(messages[result.property] ?? 'Datos de fila inválidos');
@@ -132,7 +132,7 @@ export class UserImportProcessor {
     if (userImportRequiresRu(role) && !data.ru)
       errors.push(`El RU es obligatorio para usuarios con rol ${role}`);
     if (data.username !== userImportUsername(role, data.ci, data.ru))
-      errors.push('El username no corresponde al rol');
+      errors.push('El nombre de usuario no corresponde al rol.');
     return { row, data, errors };
   }
 

@@ -8,7 +8,6 @@ import type { MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 // MUI Imports
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -25,6 +24,7 @@ import capitalize from '@mui/utils/capitalize';
 
 // Hooks
 import { useAuth } from '@/hooks/useAuth';
+import PrivateAvatar from '@/components/auth/PrivateAvatar';
 
 const UserDropdown = () => {
   const [open, setOpen] = useState(false);
@@ -139,7 +139,8 @@ const UserDropdown = () => {
           },
         }}
       >
-        <Avatar
+        <PrivateAvatar
+          idUser={user?.idUser}
           sx={{
             width: 40,
             height: 40,
@@ -153,7 +154,7 @@ const UserDropdown = () => {
           }}
         >
           {getInitials(username)}
-        </Avatar>
+        </PrivateAvatar>
 
         {/* Información visible solo en escritorio */}
         <Box
@@ -261,7 +262,8 @@ const UserDropdown = () => {
                       py: 2,
                     }}
                   >
-                    <Avatar
+                    <PrivateAvatar
+                      idUser={user?.idUser}
                       sx={{
                         width: 44,
                         height: 44,
@@ -274,7 +276,7 @@ const UserDropdown = () => {
                       }}
                     >
                       {getInitials(username)}
-                    </Avatar>
+                    </PrivateAvatar>
 
                     <Box
                       sx={{
@@ -311,25 +313,7 @@ const UserDropdown = () => {
                   {/* Perfil */}
                   <Box sx={{ py: 1 }}>
                     <MenuItem
-                      onClick={(event) => handleDropdownClose(event, '/dashboard/profile')}
-                      sx={{
-                        mx: 1,
-                        minHeight: 44,
-
-                        gap: 1.5,
-
-                        borderRadius: 2,
-                      }}
-                    >
-                      <i className='ri-user-3-line text-xl' />
-
-                      <Typography variant='body2' color='text.primary'>
-                        Mi perfil
-                      </Typography>
-                    </MenuItem>
-
-                    <MenuItem
-                      onClick={(event) => handleDropdownClose(event, '/dashboard/settings')}
+                      onClick={(event) => handleDropdownClose(event, '/dashboard/account-settings')}
                       sx={{
                         mx: 1,
                         minHeight: 44,
@@ -342,7 +326,7 @@ const UserDropdown = () => {
                       <i className='ri-settings-3-line text-xl' />
 
                       <Typography variant='body2' color='text.primary'>
-                        Configuración
+                        Configuración de cuenta
                       </Typography>
                     </MenuItem>
                   </Box>

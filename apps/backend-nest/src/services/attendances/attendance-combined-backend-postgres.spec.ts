@@ -149,7 +149,12 @@ describePg('COMB-3 backend on verified disposable PostgreSQL with real JWT sessi
     });
     database = await createSeedTestDatabase(pgBin!);
     source = database.source;
-    expect(await source.runMigrations({ transaction: 'each' })).toHaveLength(25);
+    const applied = await source.runMigrations({ transaction: 'each' });
+    const names = applied.map(({ name }) => name);
+    expect(names).toContain('AttendanceCombinedEnums1794614400000');
+    expect(names).toContain('AttendanceCombinedPersistence1794614460000');
+    expect(names).toContain('RememberMeSessions1795536000000');
+    expect(await source.showMigrations()).toBe(false);
     await source.query(`INSERT INTO users (id_user,email,username,password,name,lastname,ci)
       SELECT n,'comb3-'||n||'@test.invalid','comb3-'||n,'unused','Synthetic','Fixture','comb3-'||n FROM generate_series(1,7)n`);
     await source.query(
@@ -595,10 +600,11 @@ describePg('COMB-3 backend on verified disposable PostgreSQL with real JWT sessi
     await expect(api.deleteAttendance(1, id, 2)).rejects.toThrow();
     await source.query('UPDATE users SET is_active=false WHERE id_user=1');
     try {
+      // The JWT guard rejects inactive accounts before the attendance permission check.
       await request(app.getHttpServer())
         .get(path(id, 'audit'))
         .auth(assistant(), { type: 'bearer' })
-        .expect(403);
+        .expect(401);
     } finally {
       await source.query('UPDATE users SET is_active=true WHERE id_user=1');
     }

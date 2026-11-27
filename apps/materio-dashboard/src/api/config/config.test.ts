@@ -77,7 +77,12 @@ it('preserves QR transfer synchronously before failed refresh navigates to ordin
   });
   const log = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-  vi.mocked(refreshAccessToken).mockRejectedValueOnce(new Error('expired refresh'));
+  vi.mocked(refreshAccessToken).mockRejectedValueOnce(
+    Object.assign(new Error('expired refresh'), {
+      isAxiosError: true,
+      response: { status: 401 },
+    }),
+  );
   await expect(
     instance.post(
       '/attendances/sessions/7/qr-context',

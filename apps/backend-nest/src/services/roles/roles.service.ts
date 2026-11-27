@@ -1,3 +1,4 @@
+import { revokePrivilegeSessions } from '@common/utils/revoke-privilege-sessions';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoleCreateDto } from 'src/dtos/roles/roles.dto';
@@ -18,7 +19,7 @@ export class RolesService {
     const normalizedName = roleCreateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
 
     const role = await this.getOneByName(normalizedName);
-    if (role) throw new BadRequestException('Role already exists');
+    if (role) throw new BadRequestException('Ya existe un rol con estos datos.');
 
     const permissions: Permission[] = [];
 
@@ -26,7 +27,7 @@ export class RolesService {
       const permission = await this.permissionsService.getOneByName(permissionName);
 
       if (!permission) {
-        throw new BadRequestException(`Permission not found: ${permissionName}`);
+        throw new BadRequestException(`No encontramos el permiso «${permissionName}».`);
       }
 
       permissions.push(permission);
@@ -67,13 +68,13 @@ export class RolesService {
       where: { idRole, isActive: true },
       relations: ['permissions'],
     });
-    if (!role) throw new BadRequestException('Role not found');
+    if (!role) throw new BadRequestException('No encontramos el rol solicitado.');
     for (const pn of permissionNames) {
       const permission = await this.permissionsService.getOneByName(pn);
-      if (!permission) throw new BadRequestException(`Permission not found: ${pn}`);
+      if (!permission) throw new BadRequestException(`No encontramos el permiso «${pn}».`);
 
       const alreadyAssigned = role.permissions?.some((p) => p.name === pn);
-      if (alreadyAssigned) throw new BadRequestException(`Permission already assigned: ${pn}`);
+      if (alreadyAssigned) throw new BadRequestException(`El rol ya tiene el permiso «${pn}».`);
 
       role.permissions?.push(permission);
     }
@@ -94,7 +95,7 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new BadRequestException('Role not found');
+      throw new BadRequestException('No encontramos el rol solicitado.');
     }
 
     const normalizedName = roleUpdateDto.name.toUpperCase().trim().replace(/\s+/g, ' ');
@@ -107,7 +108,7 @@ export class RolesService {
     });
 
     if (existingRole && existingRole.idRole !== idRole) {
-      throw new BadRequestException('Role already exists');
+      throw new BadRequestException('Ya existe un rol con estos datos.');
     }
 
     const permissions: Permission[] = [];
@@ -116,7 +117,7 @@ export class RolesService {
       const permission = await this.permissionsService.getOneByName(permissionName);
 
       if (!permission) {
-        throw new BadRequestException(`Permission not found: ${permissionName}`);
+        throw new BadRequestException(`No encontramos el permiso «${permissionName}».`);
       }
 
       permissions.push(permission);
@@ -127,23 +128,31 @@ export class RolesService {
     role.permissions = permissions;
     role.updatedAt = new Date();
 
-    return this.roleRepository.save(role);
+    return this.roleRepository.manager.transaction(async (manager) => {
+      const saved = await manager.getRepository(Role).save(role);
+      await revokePrivilegeSessions(manager, 'role', idRole);
+      return saved;
+    });
   }
 
   async delete(idRole: number) {
     const role = await this.roleRepository.findOne({
       where: { idRole, isActive: true },
     });
-    if (!role) throw new BadRequestException('Role not found');
+    if (!role) throw new BadRequestException('No encontramos el rol solicitado.');
     role.isActive = false;
-    return this.roleRepository.save(role);
+    return this.roleRepository.manager.transaction(async (manager) => {
+      const saved = await manager.getRepository(Role).save(role);
+      await revokePrivilegeSessions(manager, 'role', idRole);
+      return saved;
+    });
   }
 
   async reactivate(idRole: number) {
     const role = await this.roleRepository.findOne({
       where: { idRole, isActive: false },
     });
-    if (!role) throw new BadRequestException('Role not found');
+    if (!role) throw new BadRequestException('No encontramos el rol solicitado.');
     role.isActive = true;
     return this.roleRepository.save(role);
   }

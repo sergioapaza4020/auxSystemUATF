@@ -65,7 +65,7 @@ describe('AppController HTTP authentication (isolated)', () => {
       .get('/api')
       .auth(token(), { type: 'bearer' })
       .expect(200)
-      .expect('Hello World!');
+      .expect('El servicio está disponible.');
     expect(assertActiveSession).toHaveBeenCalledWith(7, 1);
   });
 

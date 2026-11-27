@@ -1,3 +1,7 @@
+import { AttendanceSessionTopicDto } from 'src/dtos/attendances/attendance-session-topic.dto';
+import { attendanceImportDateError } from '@common/utils/attendance-import-period';
+import { BulkOperation } from 'src/entities/bulk-operations/bulk-operation.entity';
+import { BulkOperationStatus, BulkOperationType } from '@common/enums/bulk-operation';
 import { AttendanceOpenNowDto } from 'src/dtos/attendances/attendance-open-now.dto';
 import { createHash, randomBytes } from 'node:crypto';
 import { AttendanceCombinedAuthorization } from 'src/entities/attendance/attendance-combined-authorization.entity';
@@ -898,7 +902,7 @@ export class AttendancesService {
     return { data, meta: { limit, hasMore: sessions.length > limit, upcomingUntil } };
   }
 
-  private async getAssistantEnrollment(
+  async getAssistantEnrollment(
     idUser: number,
     idEnrollment: number,
     manager?: EntityManager,
@@ -954,10 +958,26 @@ export class AttendancesService {
     return this.createSessionRecord(idUser, dto);
   }
 
+  createImportedManualSession(
+    idUser: number,
+    enrollmentId: number,
+    date: string,
+    manager: EntityManager,
+    operation: BulkOperation,
+  ) {
+    return this.createSessionRecord(
+      idUser,
+      { enrollmentId, date, mode: AttendanceSessionMode.MANUAL },
+      manager,
+      operation,
+    );
+  }
+
   private async createSessionRecord(
     idUser: number,
     dto: AttendanceSessionCreateDto,
     manager?: EntityManager,
+    importOperation?: BulkOperation,
   ): Promise<AttendanceSession> {
     if (
       dto.mode !== undefined &&
@@ -983,11 +1003,36 @@ export class AttendancesService {
       attendanceAcademicDate(new Date(`${dto.date}T00:00:00-04:00`)) !== dto.date
     )
       throw new BadRequestException('SESSION_DATE_INVALID');
-    if (dto.date < today) throw new BadRequestException('SESSION_DATE_PAST');
+    if (importOperation) {
+      if (
+        !manager?.queryRunner?.isTransactionActive ||
+        importOperation.type !== BulkOperationType.ATTENDANCE_IMPORT ||
+        importOperation.status !== BulkOperationStatus.IMPORTING ||
+        importOperation.metadata?.enrollmentId !== dto.enrollmentId ||
+        importOperation.metadata?.courseId !== assistantEnrollment.course?.idCourse ||
+        importOperation.metadata?.semesterId !== assistantEnrollment.semester?.idSemester ||
+        dto.mode !== AttendanceSessionMode.MANUAL
+      )
+        throw new ForbiddenException(
+          'La creación histórica requiere una importación autorizada en curso',
+        );
+      if (
+        !(await manager.getRepository(BulkOperation).existsBy({
+          idBulkOperation: importOperation.idBulkOperation,
+          createdBy: { idUser },
+          type: BulkOperationType.ATTENDANCE_IMPORT,
+          status: BulkOperationStatus.IMPORTING,
+        }))
+      )
+        throw new ForbiddenException('Operación de importación no autorizada');
+      const error = attendanceImportDateError(dto.date, assistantEnrollment.semester);
+      if (error) throw new BadRequestException(error);
+    } else if (dto.date < today) throw new BadRequestException('SESSION_DATE_PAST');
     const repository =
       manager?.getRepository(AttendanceSession) ?? this.attendanceSessionRepository;
 
     const session = repository.create({
+      topic: this.sessionTopic(dto.topic) ?? null,
       assistantEnrollment,
       date: dto.date as unknown as Date,
       ...(dto.mode !== undefined && isSelfRegistrationMode(dto.mode)
@@ -1453,12 +1498,20 @@ export class AttendancesService {
     idSession: number,
     dto: AttendanceSaveDto,
     originalBody?: unknown,
+    importManager?: EntityManager,
   ): Promise<Attendance[]> {
-    const session = await this.getSession(idUser, idSession, false, true);
+    const session = await this.getSession(idUser, idSession, false, true, importManager);
+    if (
+      importManager &&
+      (session.mode !== AttendanceSessionMode.MANUAL || session.closedAt || session.cancelledAt)
+    )
+      throw new ForbiddenException('Solo se pueden importar marcas en sesiones manuales editables');
     if (session.mode === AttendanceSessionMode.GEOLOCATION_QR)
       return this.saveCombinedAttendances(idUser, idSession, dto, originalBody);
 
-    const studentEnrollments = await this.enrollmentRepository.find({
+    const studentEnrollments = await (
+      importManager?.getRepository(Enrollment) ?? this.enrollmentRepository
+    ).find({
       where: {
         course: {
           idCourse: session.assistantEnrollment.course.idCourse,
@@ -1494,12 +1547,19 @@ export class AttendancesService {
       }
     }
 
-    return this.attendanceRepository.manager.transaction(async (manager) => {
+    const write = async (manager: EntityManager) => {
       // Serialize writes to a session, including insertion of previously unmarked students.
       const locked = await manager.getRepository(AttendanceSession).findOneOrFail({
         where: { idAttendanceSession: idSession },
         lock: { mode: 'pessimistic_write' },
       });
+      if (
+        importManager &&
+        (locked.mode !== AttendanceSessionMode.MANUAL || locked.closedAt || locked.cancelledAt)
+      )
+        throw new ForbiddenException(
+          'Solo se pueden importar marcas en sesiones manuales editables',
+        );
       if (locked.mode === AttendanceSessionMode.GEOLOCATION_QR)
         throw new AttendanceCheckInException(
           CheckInCode.MANUAL_OVERRIDE_FORBIDDEN,
@@ -1533,7 +1593,9 @@ export class AttendancesService {
       });
       const previous = new Map(existing.map((record) => [record.enrollment.idEnrollment, record]));
       if (existing.some((record) => isProtectedAttendanceEvidence(record.registrationMethod))) {
-        throw new ForbiddenException('No se puede sobrescribir evidencia GEOLOCATION o QR');
+        throw new ForbiddenException(
+          'La evidencia de ubicación o código QR no se puede reemplazar.',
+        );
       }
       const overrides = new Map(dto.attendances.map((record) => [record.enrollmentId, record]));
       const values = ids
@@ -1559,6 +1621,7 @@ export class AttendancesService {
         })
         .filter(
           (record) =>
+            importManager ||
             record.status !== AttendanceStatus.ABSENT ||
             previous.has(record.enrollment.idEnrollment),
         );
@@ -1580,7 +1643,10 @@ export class AttendancesService {
             relations: { enrollment: true },
           })
         : [];
-    });
+    };
+    return importManager
+      ? write(importManager)
+      : this.attendanceRepository.manager.transaction(write);
   }
 
   async getStudentAttendance(
@@ -1684,12 +1750,45 @@ export class AttendancesService {
     };
   }
 
+  private sessionTopic(value: unknown): string | null | undefined {
+    const dto = plainToInstance(AttendanceSessionTopicDto, { topic: value });
+    if (validateSync(dto).length)
+      throw new BadRequestException('El tema debe ser texto de hasta 255 caracteres.');
+    return dto.topic;
+  }
+
+  async updateSessionTopic(idUser: number, idSession: number, dto: AttendanceSessionTopicDto) {
+    const topic = this.sessionTopic(dto.topic);
+    await this.getSession(idUser, idSession, false, true);
+    return this.attendanceSessionRepository.manager.transaction(async (manager) => {
+      const repository = manager.getRepository(AttendanceSession);
+      const locked = await repository.findOne({
+        where: { idAttendanceSession: idSession },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked) throw new NotFoundException('Sesión de asistencia no encontrada');
+      const session = await this.getSession(idUser, idSession, false, true, manager);
+      const owner = session.assistantEnrollment;
+      // Metadata correction may prepare historical reports; it does not reopen an inactive semester.
+      if (!owner.user.isActive || !owner.course?.isActive || !owner.semester)
+        throw new ForbiddenException('Contexto académico no autorizado');
+      const now = new Date();
+      if (getAttendanceSessionState(session, now) === State.CANCELLED)
+        throw new ConflictException('SESSION_CANCELLED');
+      if (topic !== undefined) {
+        await repository.update({ idAttendanceSession: idSession }, { topic });
+        session.topic = topic;
+      }
+      return attendanceSessionResponse(session, now);
+    });
+  }
+
   async updateSession(idUser: number, idSession: number, dto: AttendanceSessionUpdateDto) {
     const owned = await this.getSession(idUser, idSession, true, true);
     if (isSelfRegistrationMode(owned.mode))
       throw new ConflictException('SESSION_USE_GEO_CONFIGURATION');
     if (owned.attendances?.some((mark) => isProtectedAttendanceEvidence(mark.registrationMethod)))
-      throw new ForbiddenException('No se puede sobrescribir evidencia GEOLOCATION o QR');
+      throw new ForbiddenException('La evidencia de ubicación o código QR no se puede reemplazar.');
     const session = owned;
     session.date = dto.date as unknown as Date;
     return this.attendanceSessionRepository.save(session);
@@ -1718,18 +1817,18 @@ export class AttendancesService {
         )
           throw new ConflictException('SESSION_HAS_ATTENDANCE');
         await manager.getRepository(AttendanceSession).delete({ idAttendanceSession: idSession });
-        return { message: 'Sesión de asistencia eliminada' };
+        return { message: 'La sesión de asistencia se eliminó.' };
       });
     }
     if (owned.attendances?.some((mark) => isProtectedAttendanceEvidence(mark.registrationMethod)))
-      throw new ForbiddenException('No se puede eliminar evidencia GEOLOCATION o QR');
+      throw new ForbiddenException('La evidencia de ubicación o código QR no se puede eliminar.');
     await this.attendanceSessionRepository.manager.transaction(async (manager) => {
       await manager
         .getRepository(Attendance)
         .delete({ attendanceSession: { idAttendanceSession: idSession } });
       await manager.getRepository(AttendanceSession).delete({ idAttendanceSession: idSession });
     });
-    return { message: 'Sesión de asistencia eliminada' };
+    return { message: 'La sesión de asistencia se eliminó.' };
   }
 
   async deleteAttendance(idUser: number, idSession: number, idEnrollment: number) {
@@ -1740,6 +1839,6 @@ export class AttendancesService {
       registrationMethod: AttendanceRegistrationMethod.MANUAL,
     });
     if (!result.affected) throw new NotFoundException('Asistencia no encontrada');
-    return { message: 'Asistencia eliminada' };
+    return { message: 'La asistencia se eliminó.' };
   }
 }

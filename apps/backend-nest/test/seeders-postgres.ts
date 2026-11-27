@@ -1,12 +1,13 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve, sep } from 'node:path';
 import { createServer } from 'node:net';
 import { DataSource } from 'typeorm';
 
 /** No DATABASE_URL is read. This cluster is created by this process on localhost. */
-export async function createSeedTestDatabase(pgBin: string) {
+export async function createSeedTestDatabase(pgBin: string, isolatedCredentials = false) {
   const root = resolve(tmpdir());
   const directory = mkdtempSync(join(root, 'seeders-pg-'));
   const port = await new Promise<number>((accept, reject) => {
@@ -20,13 +21,19 @@ export async function createSeedTestDatabase(pgBin: string) {
     });
   });
   const processOptions = { stdio: 'ignore' as const, windowsHide: true, timeout: 30000 };
+  const username = isolatedCredentials ? 'rem32_test' : 'seeders_test';
+  const database = isolatedCredentials ? 'rem32_test' : 'postgres';
+  const password = isolatedCredentials ? randomBytes(32).toString('hex') : undefined;
+  const dataDirectory = password ? join(directory, 'data') : directory;
   let started = false;
   const source = new DataSource({
     type: 'postgres',
     host: '127.0.0.1',
     port,
-    username: 'seeders_test',
-    database: 'postgres',
+    username,
+    database,
+    password,
+    ...(isolatedCredentials ? { ssl: false } : {}),
     entities: [resolve('src/**/*.entity.ts')],
     migrations: [resolve('src/database/migrations/*.ts')],
     synchronize: false,
@@ -38,7 +45,7 @@ export async function createSeedTestDatabase(pgBin: string) {
     if (started) {
       execFileSync(
         join(pgBin, 'pg_ctl.exe'),
-        ['-D', directory, '-m', 'fast', '-w', 'stop'],
+        ['-D', dataDirectory, '-m', 'fast', '-w', 'stop'],
         processOptions,
       );
       started = false;
@@ -50,16 +57,30 @@ export async function createSeedTestDatabase(pgBin: string) {
     rmSync(target, { recursive: true, force: true });
   }
   try {
+    const passwordFile = join(directory, 'init-password');
+    // initdb requires an empty data directory. Put its transient password file beside it.
+    if (password) writeFileSync(passwordFile, password, { flag: 'wx', mode: 0o600 });
     execFileSync(
       join(pgBin, 'initdb.exe'),
-      ['-D', directory, '-U', 'seeders_test', '-A', 'trust', '--no-locale', '--encoding=UTF8'],
+      [
+        '-D',
+        dataDirectory,
+        '-U',
+        username,
+        '-A',
+        password ? 'scram-sha-256' : 'trust',
+        ...(password ? [`--pwfile=${passwordFile}`] : []),
+        '--no-locale',
+        '--encoding=UTF8',
+      ],
       processOptions,
     );
+    if (password) unlinkSync(passwordFile);
     execFileSync(
       join(pgBin, 'pg_ctl.exe'),
       [
         '-D',
-        directory,
+        dataDirectory,
         '-l',
         join(directory, 'server.log'),
         '-o',
@@ -70,12 +91,41 @@ export async function createSeedTestDatabase(pgBin: string) {
       processOptions,
     );
     started = true;
+    if (password) {
+      // libpq reads PGHOSTADDR and service settings even when --host is explicit.
+      const localEnvironment = Object.fromEntries(
+        Object.entries(process.env).filter(([name]) => !/^PG/i.test(name)),
+      );
+      execFileSync(
+        join(pgBin, 'createdb.exe'),
+        [
+          '-h',
+          '127.0.0.1',
+          '-p',
+          String(port),
+          '-U',
+          username,
+          '--no-password',
+          '--maintenance-db=postgres',
+          database,
+        ],
+        { ...processOptions, env: { ...localEnvironment, PGPASSWORD: password } },
+      );
+    }
     await source.initialize();
     const identity: unknown = await source.query(
-      "SELECT current_setting('data_directory') AS directory, inet_server_port() AS port",
+      `SELECT current_setting('data_directory') AS directory, inet_server_port() AS port,
+              current_user AS username, current_database() AS database`,
     );
-    const row = (identity as { directory: string; port: number }[])[0];
-    if (resolve(row.directory) !== resolve(directory) || row.port !== port)
+    const row = (
+      identity as { directory: string; port: number; username: string; database: string }[]
+    )[0];
+    if (
+      resolve(row.directory) !== resolve(dataDirectory) ||
+      row.port !== port ||
+      row.username !== username ||
+      row.database !== database
+    )
       throw new Error('Test isolation verification failed');
     return { source, close, port };
   } catch (error: unknown) {

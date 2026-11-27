@@ -27,7 +27,7 @@ describe('SessionsController', () => {
 
     getAllSessions.mockResolvedValueOnce(result);
     expect(await controller.getAllSessions({ page: 2, limit: 10 })).toEqual({
-      message: 'Sesiones recuperadas con éxito',
+      message: 'Las sesiones se consultaron correctamente.',
       ...result,
     });
     expect(getAllSessions).toHaveBeenCalledWith({ page: 2, limit: 10 });

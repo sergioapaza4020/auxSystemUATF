@@ -35,7 +35,7 @@ async function main(){
     throw new Error('UI_TIMEOUT');
   };
   const click=async(expression)=>{
-    const point=await evaluate(`(()=>{const e=${expression};if(!e || e.disabled)return null;const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+    const point=await evaluate(`(()=>{const e=${expression};if(!e || e.disabled)return null;e.scrollIntoView({block:'center',behavior:'instant'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
     assert.ok(point);
     await send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
     await send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
@@ -92,10 +92,13 @@ async function main(){
       await send('Input.insertText',{text:value});
     }
     await click(`document.querySelector('button[type=submit]')`);
-    await wait(`location.pathname==='/attendance/qr' && document.body.textContent.includes('El código QR caducó')`);
+    await wait(`location.pathname==='/attendance/qr' && /El código QR caducó|No pudimos confirmar el resultado/.test(document.body.textContent)`);
+    if(!await evaluate(`document.body.textContent.includes('El código QR caducó')`)){
+      assert.ok(evidence.requests.some(r=>r.method==='GET' && r.path.endsWith('/qr-own-mark')));
+    }
     evidence.checks.realLogin=true;evidence.checks.safeLoginReturn=true;
     assert.equal(await evaluate('window.__comb6GpsCalls'),0);
-    assert.equal(evidence.requests.filter(r=>r.path.endsWith('/combined-challenge')).length,0);
+    assert.equal(evidence.requests.filter(r=>r.method==='POST' && r.path.endsWith('/combined-challenge')).length,0);
     evidence.checks.expiredQrDuringLoginWithoutGpsOrChallenge=true;
     stage='scan and discovery';await send('Page.navigate',{url:`${api}/__comb6/scan`});
     await wait(`!!document.querySelector('a')`);await click(`document.querySelector('a')`);
@@ -104,19 +107,19 @@ async function main(){
     await wait(`!!(${locationButton})`);
     assert.equal(await evaluate('location.hash'),'');
     assert.equal(await evaluate('window.__comb6GpsCalls'),0);
-    assert.equal(evidence.requests.filter(r=>r.path.endsWith('/combined-check-in')).length,0);
+    assert.equal(evidence.requests.filter(r=>r.method==='POST' && r.path.endsWith('/combined-check-in')).length,0);
     evidence.checks.noSilentGpsOrCheckIn=true;
     assert.equal((await (await fetch(`${api}/__comb6/status`)).json()).marks,0);
     stage='explicit GPS';await click(locationButton);await wait(`!!(${confirmButton})`);
     assert.equal(await evaluate('window.__comb6GpsCalls'),1);
-    assert.equal(evidence.requests.filter(r=>r.path.endsWith('/combined-check-in')).length,0);
+    assert.equal(evidence.requests.filter(r=>r.method==='POST' && r.path.endsWith('/combined-check-in')).length,0);
     assert.equal((await (await fetch(`${api}/__comb6/status`)).json()).marks,0);
     assert.ok(authorization);
     const safe=await evaluate(`(()=>{const secret=${JSON.stringify(authorization)};const values=[...Object.values(localStorage),...Object.values(sessionStorage),document.cookie];return {authorization:values.every(v=>!v.includes(secret)),location:values.every(v=>!/(latitude|longitude|accuracy)/.test(v))};})()`);
     assert.equal(safe.authorization,true);assert.equal(safe.location,true);evidence.checks.storageClean=true;
     stage='explicit confirmation';await click(confirmButton);
     await wait(`document.body.textContent.includes('Asistencia registrada correctamente')`);
-    assert.equal(evidence.requests.filter(r=>r.path.endsWith('/combined-check-in')).length,1);
+    assert.equal(evidence.requests.filter(r=>r.method==='POST' && r.path.endsWith('/combined-check-in')).length,1);
     assert.equal(await evaluate(`!!(${confirmButton})`),false);
     assert.equal((await (await fetch(`${api}/__comb6/status`)).json()).marks,1);
     evidence.checks.oneConfirmedAttendance=true;

@@ -1,0 +1,59 @@
+5fbbc2141cc46a675b1d8e2edc96e5da
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Career = void 0;
+const base_entity_1 = require("@common/entities/base.entity");
+const typeorm_1 = require("typeorm");
+const users_entity_1 = require("../users/users.entity");
+const faculties_entity_1 = require("../faculties/faculties.entity");
+const courses_entity_1 = require("../courses/courses.entity");
+let Career = class Career extends base_entity_1.BaseEntity {
+    idCareer;
+    faculty;
+    director;
+    members;
+    courses;
+    name;
+};
+exports.Career = Career;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_career' }),
+    __metadata("design:type", Number)
+], Career.prototype, "idCareer", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => faculties_entity_1.Faculty, (faculty) => faculty.careers, { nullable: false }),
+    (0, typeorm_1.JoinColumn)({ name: 'id_faculty' }),
+    __metadata("design:type", typeof (_a = typeof faculties_entity_1.Faculty !== "undefined" && faculties_entity_1.Faculty) === "function" ? _a : Object)
+], Career.prototype, "faculty", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => users_entity_1.User, (user) => user.directorCareer),
+    (0, typeorm_1.JoinColumn)({ name: 'id_director' }),
+    __metadata("design:type", typeof (_b = typeof users_entity_1.User !== "undefined" && users_entity_1.User) === "function" ? _b : Object)
+], Career.prototype, "director", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => users_entity_1.User, (user) => user.careers, { nullable: true }),
+    __metadata("design:type", Array)
+], Career.prototype, "members", void 0);
+__decorate([
+    (0, typeorm_1.ManyToMany)(() => courses_entity_1.Course, (course) => course.career),
+    (0, typeorm_1.JoinTable)({ name: 'career_courses' }),
+    __metadata("design:type", Array)
+], Career.prototype, "courses", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'name', unique: true }),
+    __metadata("design:type", String)
+], Career.prototype, "name", void 0);
+exports.Career = Career = __decorate([
+    (0, typeorm_1.Entity)('careers')
+], Career);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGNhcmVlcnNcXGNhcmVlcnMuZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSw4REFBMEQ7QUFDMUQscUNBVWlCO0FBQ2pCLHdEQUE2QztBQUM3QyxvRUFBd0Q7QUFDeEQsOERBQW1EO0FBRzVDLElBQU0sTUFBTSxHQUFaLE1BQU0sTUFBTyxTQUFRLHdCQUFVO0lBRXBDLFFBQVEsQ0FBUztJQUlqQixPQUFPLENBQVU7SUFJakIsUUFBUSxDQUFPO0lBR2YsT0FBTyxDQUFTO0lBSWhCLE9BQU8sQ0FBVztJQUdsQixJQUFJLENBQVM7Q0FDZCxDQUFBO0FBckJZLHdCQUFNO0FBRWpCO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxFQUFFLElBQUksRUFBRSxXQUFXLEVBQUUsQ0FBQzs7d0NBQzdCO0FBSWpCO0lBRkMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLDBCQUFPLEVBQUUsQ0FBQyxPQUFPLEVBQUUsRUFBRSxDQUFDLE9BQU8sQ0FBQyxPQUFPLEVBQUUsRUFBRSxRQUFRLEVBQUUsS0FBSyxFQUFFLENBQUM7SUFDM0UsSUFBQSxvQkFBVSxFQUFDLEVBQUUsSUFBSSxFQUFFLFlBQVksRUFBRSxDQUFDO2tEQUMxQiwwQkFBTyxvQkFBUCwwQkFBTzt1Q0FBQztBQUlqQjtJQUZDLElBQUEsa0JBQVEsRUFBQyxHQUFHLEVBQUUsQ0FBQyxtQkFBSSxFQUFFLENBQUMsSUFBSSxFQUFFLEVBQUUsQ0FBQyxJQUFJLENBQUMsY0FBYyxDQUFDO0lBQ25ELElBQUEsb0JBQVUsRUFBQyxFQUFFLElBQUksRUFBRSxhQUFhLEVBQUUsQ0FBQztrREFDMUIsbUJBQUksb0JBQUosbUJBQUk7d0NBQUM7QUFHZjtJQURDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyxtQkFBSSxFQUFFLENBQUMsSUFBSSxFQUFFLEVBQUUsQ0FBQyxJQUFJLENBQUMsT0FBTyxFQUFFLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOzt1Q0FDbEQ7QUFJaEI7SUFGQyxJQUFBLG9CQUFVLEVBQUMsR0FBRyxFQUFFLENBQUMsdUJBQU0sRUFBRSxDQUFDLE1BQU0sRUFBRSxFQUFFLENBQUMsTUFBTSxDQUFDLE1BQU0sQ0FBQztJQUNuRCxJQUFBLG1CQUFTLEVBQUMsRUFBRSxJQUFJLEVBQUUsZ0JBQWdCLEVBQUUsQ0FBQzs7dUNBQ3BCO0FBR2xCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxNQUFNLEVBQUUsSUFBSSxFQUFFLENBQUM7O29DQUMxQjtpQkFwQkYsTUFBTTtJQURsQixJQUFBLGdCQUFNLEVBQUMsU0FBUyxDQUFDO0dBQ0wsTUFBTSxDQXFCbEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGNhcmVlcnNcXGNhcmVlcnMuZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEJhc2VFbnRpdHkgfSBmcm9tICdAY29tbW9uL2VudGl0aWVzL2Jhc2UuZW50aXR5JztcbmltcG9ydCB7XG4gIENvbHVtbixcbiAgRW50aXR5LFxuICBKb2luQ29sdW1uLFxuICBKb2luVGFibGUsXG4gIE1hbnlUb01hbnksXG4gIE1hbnlUb09uZSxcbiAgT25lVG9NYW55LFxuICBPbmVUb09uZSxcbiAgUHJpbWFyeUdlbmVyYXRlZENvbHVtbixcbn0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBVc2VyIH0gZnJvbSAnLi4vdXNlcnMvdXNlcnMuZW50aXR5JztcbmltcG9ydCB7IEZhY3VsdHkgfSBmcm9tICcuLi9mYWN1bHRpZXMvZmFjdWx0aWVzLmVudGl0eSc7XG5pbXBvcnQgeyBDb3Vyc2UgfSBmcm9tICcuLi9jb3Vyc2VzL2NvdXJzZXMuZW50aXR5JztcblxuQEVudGl0eSgnY2FyZWVycycpXG5leHBvcnQgY2xhc3MgQ2FyZWVyIGV4dGVuZHMgQmFzZUVudGl0eSB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKHsgbmFtZTogJ2lkX2NhcmVlcicgfSlcbiAgaWRDYXJlZXI6IG51bWJlcjtcblxuICBATWFueVRvT25lKCgpID0+IEZhY3VsdHksIChmYWN1bHR5KSA9PiBmYWN1bHR5LmNhcmVlcnMsIHsgbnVsbGFibGU6IGZhbHNlIH0pXG4gIEBKb2luQ29sdW1uKHsgbmFtZTogJ2lkX2ZhY3VsdHknIH0pXG4gIGZhY3VsdHk6IEZhY3VsdHk7XG5cbiAgQE9uZVRvT25lKCgpID0+IFVzZXIsICh1c2VyKSA9PiB1c2VyLmRpcmVjdG9yQ2FyZWVyKVxuICBASm9pbkNvbHVtbih7IG5hbWU6ICdpZF9kaXJlY3RvcicgfSlcbiAgZGlyZWN0b3I6IFVzZXI7XG5cbiAgQE9uZVRvTWFueSgoKSA9PiBVc2VyLCAodXNlcikgPT4gdXNlci5jYXJlZXJzLCB7IG51bGxhYmxlOiB0cnVlIH0pXG4gIG1lbWJlcnM6IFVzZXJbXTtcblxuICBATWFueVRvTWFueSgoKSA9PiBDb3Vyc2UsIChjb3Vyc2UpID0+IGNvdXJzZS5jYXJlZXIpXG4gIEBKb2luVGFibGUoeyBuYW1lOiAnY2FyZWVyX2NvdXJzZXMnIH0pXG4gIGNvdXJzZXM6IENvdXJzZVtdO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnbmFtZScsIHVuaXF1ZTogdHJ1ZSB9KVxuICBuYW1lOiBzdHJpbmc7XG59XG4iXSwidmVyc2lvbiI6M30=

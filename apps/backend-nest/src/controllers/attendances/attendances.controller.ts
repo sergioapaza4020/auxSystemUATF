@@ -1,3 +1,5 @@
+import { AttendanceSessionTopicDto } from 'src/dtos/attendances/attendance-session-topic.dto';
+import { BadRequestException } from '@nestjs/common';
 import { AttendanceOpenNowDto } from 'src/dtos/attendances/attendance-open-now.dto';
 import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
 import { AttendanceCombinedCheckInDto } from 'src/dtos/attendances/attendance-combined.dto';
@@ -249,7 +251,7 @@ export class AttendancesController {
     @Req() request: Request,
   ) {
     if (dto.mode === AttendanceSessionMode.GEOLOCATION_QR)
-      this.strictQrBody(request, ['enrollmentId', 'date', 'mode']);
+      this.strictQrBody(request, ['enrollmentId', 'date', 'mode', 'topic']);
     const session = await this.attendancesService.createSession(user.idUser, dto);
     return { ...session, ...attendanceSessionResponse(session, new Date()) };
   }
@@ -355,6 +357,26 @@ export class AttendancesController {
     @Param('idEnrollment', ParseIntPipe) idEnrollment: number,
   ) {
     return this.attendancesService.getMyStudentAttendance(user.idUser, idEnrollment);
+  }
+
+  @Permissions('attendance.session.update')
+  @Patch('sessions/:idSession/topic')
+  @ApiOkResponse({ type: AttendanceSessionLifecycleResponseDto })
+  updateSessionTopic(
+    @CurrentUser() user: JwtPayload,
+    @Param('idSession', ParseIntPipe) idSession: number,
+    @Body() dto: AttendanceSessionTopicDto,
+    @Req() request: Request,
+  ) {
+    const body: unknown = request.body;
+    if (
+      !body ||
+      typeof body !== 'object' ||
+      Array.isArray(body) ||
+      Object.keys(body).some((key) => key !== 'topic')
+    )
+      throw new BadRequestException('Solo se admite el tema de la clase.');
+    return this.attendancesService.updateSessionTopic(user.idUser, idSession, dto);
   }
 
   @Permissions('attendance.session.update')

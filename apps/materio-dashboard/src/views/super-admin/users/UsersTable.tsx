@@ -9,6 +9,12 @@ import {
   LinearProgress,
   Box,
   Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   MenuItem,
   Stack,
   Table,
@@ -22,7 +28,14 @@ import {
 
 import { DataTableContainer, DataTableSurface, PaginationTable, TableToolbar } from '@/components/table';
 
-import { addUserRoles, createUser, deactivateUser, reactivateUser, updateUser } from '@/api/users.service';
+import {
+  addUserRoles,
+  createUser,
+  deactivateUser,
+  reactivateUser,
+  requestUserPasswordReset,
+  updateUser,
+} from '@/api/users.service';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsersPage } from '@/hooks/users/useUsersPage';
@@ -36,13 +49,21 @@ import { UserEditDialog } from './components/UserEditDialog';
 import { UserDetailsDialog } from './components/UserDetailsDialog';
 import { UserRolesDialog } from './components/UserRolesDialog';
 
-type UserDialog = { type: 'create' } | { type: 'edit' | 'detail' | 'roles'; user: IUser } | null;
+type UserDialog = { type: 'create' } | { type: 'edit' | 'detail' | 'roles' | 'reset'; user: IUser } | null;
 
 export function UsersTable() {
   const router = useRouter();
   const { user: currentUser, loading: authLoading, refreshUser } = useAuth();
   const can = (action: string) => hasPermission(currentUser, `user.${action}`);
   const canReadRoles = hasPermission(currentUser, 'role.get-all');
+
+  const canReset = (user: IUser) =>
+    currentUser?.roles.includes('SUPERADMIN') &&
+    can('reset-password') &&
+    currentUser.idUser !== user.idUser &&
+    user.isActive &&
+    user.roles?.every((role) => role.name === 'STUDENT' || role.name === 'ASSISTANT');
+
   const users = useUsersPage(!authLoading && can('get-all'));
   const roles = useUserRoleOptions(!authLoading && can('get-all') && canReadRoles);
   const mutation = useUserMutations(users.reload);
@@ -240,6 +261,7 @@ export function UsersTable() {
                       busy={mutation.busy}
                       onView={() => open({ type: 'detail', user })}
                       onEdit={can('update') ? () => open({ type: 'edit', user }) : undefined}
+                      onResetPassword={canReset(user) ? () => open({ type: 'reset', user }) : undefined}
                       onDeactivate={can('delete') ? () => void changeState(user) : undefined}
                       onReactivate={can('reactivate') ? () => void changeState(user) : undefined}
                       onAddRoles={can('assign-roles') && canReadRoles ? () => open({ type: 'roles', user }) : undefined}
@@ -292,6 +314,46 @@ export function UsersTable() {
           onCreate={create}
           onUpdate={update}
         />
+      )}
+      {dialog?.type === 'reset' && (
+        <Dialog open fullWidth maxWidth='xs' onClose={close} aria-labelledby='user-password-reset-title'>
+          <DialogTitle id='user-password-reset-title'>Restablecer contraseña</DialogTitle>
+          <DialogContent>
+            <Typography fontWeight={600}>
+              {dialog.user.name} {dialog.user.lastname}
+            </Typography>
+            <DialogContentText sx={{ mt: 2 }}>
+              Se enviará un código de recuperación al correo electrónico registrado del usuario para que pueda
+              establecer una nueva contraseña.
+            </DialogContentText>
+            {mutation.error && (
+              <Alert severity='error' sx={{ mt: 2 }}>
+                {mutation.error}
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
+            <Button onClick={close} disabled={mutation.busy}>
+              Cancelar
+            </Button>
+            <Button
+              variant='contained'
+              disabled={mutation.busy || !canReset(dialog.user)}
+              startIcon={
+                mutation.busy ? <CircularProgress size={16} color='inherit' aria-label='Enviando' /> : undefined
+              }
+              onClick={() =>
+                void mutation.run(
+                  () => requestUserPasswordReset(dialog.user.idUser),
+                  'Se inició el proceso de recuperación de contraseña.',
+                  () => onSaved(),
+                )
+              }
+            >
+              Restablecer contraseña
+            </Button>
+          </DialogActions>
+        </Dialog>
       )}
       {dialog?.type === 'detail' && (
         <UserDetailsDialog user={dialog.user} canFetch={can('get-one-by-id')} onClose={close} />

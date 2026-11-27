@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  updateAttendanceSessionTopic,
   getQrContext,
   checkInWithQr,
   getMyQrMark,
@@ -238,3 +239,14 @@ it('opens with duration only, preserving the legacy empty-body contract', async 
   await openSessionNow(7);
   expect(instance.patch).toHaveBeenLastCalledWith('/attendances/sessions/7/open-now');
 });
+
+it.each(['Introducción a Git', null])(
+  'updates only session topic through existing Axios client (%j)',
+  async (topic) => {
+    const result = { idAttendanceSession: 7, topic };
+
+    vi.mocked(instance.patch).mockResolvedValueOnce({ data: { data: result } });
+    expect(await updateAttendanceSessionTopic(7, topic)).toBe(result);
+    expect(instance.patch).toHaveBeenLastCalledWith('/attendances/sessions/7/topic', { topic });
+  },
+);

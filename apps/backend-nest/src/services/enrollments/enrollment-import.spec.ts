@@ -503,7 +503,7 @@ describe('Enrollment import service', () => {
       const ctx = await setup([other]);
       const preview = await ctx.service.preview(await fullExcel([newRow]), target, actor);
       expect(preview.invalid).toBe(1);
-      expect(preview.data[0].errors.join(' ')).toContain('otra identidad');
+      expect(preview.data[0].errors.join(' ')).toContain('pertenece a otra cuenta.');
     },
   );
   it('rejects mismatched CI and duplicate RU/CI/email in the file without writes', async () => {
@@ -621,7 +621,7 @@ describe('Enrollment import service', () => {
       expect(response.body).toHaveProperty(
         'message',
         status === 503
-          ? 'La importación de matrículas no está habilitada en esta base de datos. El administrador debe aplicar la actualización pendiente de importaciones académicas.'
+          ? 'La importación de matrículas aún no está disponible. Comunícate con administración.'
           : 'No se pudo procesar la importación. No se crearon cuentas ni matrículas.',
       );
       expect(JSON.stringify(response.body)).not.toMatch(/private-value|INSERT INTO|22P02/);

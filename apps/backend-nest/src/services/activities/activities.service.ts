@@ -12,7 +12,7 @@ import { ActivityUpdateDto } from 'src/dtos/activities/activity-update.dto';
 import { Activity } from 'src/entities/activities/activity.entity';
 import { Enrollment } from 'src/entities/enrollments/enrollments.entity';
 import { GradeSchemeDetail } from 'src/entities/grade-scheme-detail/grade-scheme-detail.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Course } from 'src/entities/courses/courses.entity';
 import { ACTIVITY_ORDER } from '@common/utils/activity-rules';
 
@@ -27,43 +27,57 @@ export class ActivitiesService {
     private readonly enrollmentRepository: Repository<Enrollment>,
   ) {}
 
-  private async saveWithUniqueName(activity: Activity, idCourse: number): Promise<Activity> {
+  private async saveWithUniqueName(
+    activity: Activity,
+    idCourse: number,
+    transaction?: EntityManager,
+  ): Promise<Activity> {
     activity.name = activity.name.trim();
     if (!activity.name)
       throw new BadRequestException('El nombre de la actividad no puede estar vacío');
 
-    return this.activityRepository.manager.transaction(async (manager) => {
+    const save = async (manager: EntityManager) => {
       // Serialize activity writes within the course; its identity is reached through relations,
       // so a simple unique index on activities cannot enforce course-wide uniqueness.
       await manager.getRepository(Course).findOneOrFail({
         where: { idCourse },
         lock: { mode: 'pessimistic_write' },
       });
-      const repository = manager.getRepository(Activity);
-      const query = repository
-        .createQueryBuilder('activity')
-        .innerJoin('activity.gradeSchemeDetail', 'detail')
-        .innerJoin('detail.gradeScheme', 'scheme')
-        .leftJoin('scheme.assistantEnrollment', 'assistantEnrollment')
-        .leftJoin('assistantEnrollment.course', 'assistantCourse')
-        .leftJoin('scheme.courses', 'schemeCourse')
-        .where('(assistantCourse.idCourse = :idCourse OR schemeCourse.idCourse = :idCourse)', {
-          idCourse,
-        })
-        .andWhere('activity.isActive = :isActive', { isActive: true })
-        .andWhere('activity.deletedAt IS NULL');
-      if (activity.idActivity !== undefined) {
-        query.andWhere('activity.idActivity != :idActivity', { idActivity: activity.idActivity });
-      }
-      // PostgreSQL's C locale does not lowercase accented letters. Compare names
-      // consistently in JavaScript while retaining the course lock and SQL scope.
-      const names = await query.select('activity.name', 'name').getRawMany<{ name: string }>();
+      // Change the row version so a serializable import with an older snapshot
+      // fails when taking the course lock after a concurrent activity write.
+      const names = await this.listActiveNames(idCourse, manager, activity.idActivity);
       const normalizedName = activity.name.toLowerCase();
       if (names.some(({ name }) => name.trim().toLowerCase() === normalizedName)) {
         throw new ConflictException('Ya existe una actividad con ese nombre en esta materia.');
       }
-      return repository.save(activity);
-    });
+      await manager.query('UPDATE "courses" SET "id_course" = "id_course" WHERE "id_course" = $1', [
+        idCourse,
+      ]);
+      return manager.getRepository(Activity).save(activity);
+    };
+    return transaction ? save(transaction) : this.activityRepository.manager.transaction(save);
+  }
+
+  listActiveNames(idCourse: number, manager: EntityManager, excludeActivityId?: number) {
+    const query = manager
+      .getRepository(Activity)
+      .createQueryBuilder('activity')
+      .innerJoin('activity.gradeSchemeDetail', 'detail')
+      .innerJoin('detail.gradeScheme', 'scheme')
+      .leftJoin('scheme.assistantEnrollment', 'assistantEnrollment')
+      .leftJoin('assistantEnrollment.course', 'assistantCourse')
+      .leftJoin('scheme.courses', 'schemeCourse')
+      .where('(assistantCourse.idCourse = :idCourse OR schemeCourse.idCourse = :idCourse)', {
+        idCourse,
+      })
+      .andWhere('activity.isActive = :isActive', { isActive: true })
+      .andWhere('activity.deletedAt IS NULL');
+    if (excludeActivityId !== undefined) {
+      query.andWhere('activity.idActivity != :idActivity', { idActivity: excludeActivityId });
+    }
+    // PostgreSQL's C locale does not lowercase accented letters. Compare names
+    // consistently in JavaScript while retaining the course lock and SQL scope.
+    return query.select('activity.name', 'name').getRawMany<{ name: string }>();
   }
 
   async getAll(): Promise<Activity[]> {
@@ -80,8 +94,16 @@ export class ActivitiesService {
     });
   }
 
-  async create(idCourse: number, idUser: number, dto: ActivityCreateDto) {
-    const enrollment = await this.enrollmentRepository.findOne({
+  async create(
+    idCourse: number,
+    idUser: number,
+    dto: ActivityCreateDto,
+    imported?: { manager: EntityManager; enrollmentId: number },
+  ) {
+    const enrollments = imported?.manager.getRepository(Enrollment) ?? this.enrollmentRepository;
+    const details =
+      imported?.manager.getRepository(GradeSchemeDetail) ?? this.gradeSchemeDetailRepository;
+    const enrollment = await enrollments.findOne({
       where: {
         user: {
           idUser,
@@ -91,6 +113,7 @@ export class ActivitiesService {
         },
         role: CourseRelations.ASSISTANT,
         isActive: true,
+        ...(imported ? { idEnrollment: imported.enrollmentId } : {}),
       },
       relations: {
         course: true,
@@ -101,7 +124,7 @@ export class ActivitiesService {
       throw new ForbiddenException('No eres auxiliar de esta materia');
     }
 
-    const detail = await this.gradeSchemeDetailRepository.findOne({
+    const detail = await details.findOne({
       where: {
         idGradeSchemeDetail: dto.gradeSchemeDetailId,
         gradeScheme: {
@@ -130,7 +153,7 @@ export class ActivitiesService {
       createdBy: idUser,
     });
 
-    return this.saveWithUniqueName(activity, idCourse);
+    return this.saveWithUniqueName(activity, idCourse, imported?.manager);
   }
 
   async getByGradeSchemeDetail(idGradeSchemeDetail: number): Promise<Activity[]> {

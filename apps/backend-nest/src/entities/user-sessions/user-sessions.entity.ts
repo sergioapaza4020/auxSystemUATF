@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { User } from '../users/users.entity';
 import { SessionRevokeReasons } from '@common/enums/sessionRevokeReasons';
-import { Transform } from 'class-transformer';
+import { Exclude, Transform } from 'class-transformer';
 import { normalizeIp } from '@common/utils/normalize-ip';
 
 @Entity('user_sessions')
@@ -21,7 +21,11 @@ export class UserSession {
   user: User;
 
   @Column({ name: 'refresh_token' })
+  @Exclude({ toPlainOnly: true })
   refreshToken: string;
+
+  @Column({ name: 'remember_me', type: 'boolean', nullable: true })
+  rememberMe: boolean | null;
 
   @Column({
     name: 'ip_address',

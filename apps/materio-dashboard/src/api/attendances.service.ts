@@ -29,6 +29,7 @@ import type {
 } from '@/interfaces/attendances/attendance.interface';
 
 export interface IAttendanceSessionCreate {
+  topic?: string | null;
   enrollmentId: number;
   date: string;
   mode?: AttendanceSessionMode;
@@ -244,3 +245,7 @@ export const checkInCombined = async (
       { signal },
     )
   ).data.data;
+
+export const updateAttendanceSessionTopic = async (idSession: number, topic: string | null) =>
+  (await instance.patch<{ data: IAttendanceLifecycle }>(`/attendances/sessions/${idSession}/topic`, { topic })).data
+    .data;

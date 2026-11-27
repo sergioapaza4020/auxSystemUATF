@@ -4,8 +4,15 @@ import { describe, expect, it } from 'vitest';
 
 import { middleware } from './middleware';
 
-describe('Public account verification navigation', () => {
-  it.each(['/login', '/verify-account'])('allows %s without a session', (path) => {
+describe('Public authentication navigation', () => {
+  it.each([
+    '/login',
+    '/verify-account',
+    '/forgot-password',
+    '/forgot-password/verify',
+    '/forgot-password/reset',
+    '/forgot-password/reset/submit',
+  ])('allows %s without a session', (path) => {
     expect(middleware(new NextRequest(`http://localhost${path}`)).headers.get('location')).toBeNull();
   });
 

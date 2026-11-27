@@ -1,0 +1,55 @@
+093191dc82f6ba086256f0b621a75c51
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+const bcrypt = __importStar(require("bcrypt"));
+const refresh_digest_1 = require("./refresh-digest");
+describe('refresh digest', () => {
+    it('uses a versioned SHA-256 digest of the complete token', async () => {
+        const token = `${'x'.repeat(200)}-one`;
+        const other = `${'x'.repeat(200)}-two`;
+        const stored = (0, refresh_digest_1.refreshDigest)(token);
+        expect(stored).toMatch(/^sha256:v1:[a-f0-9]{64}$/);
+        expect(await (0, refresh_digest_1.matchesRefresh)(token, stored)).toBe(true);
+        expect(await (0, refresh_digest_1.matchesRefresh)(other, stored)).toBe(false);
+    });
+    it('continues to validate legacy bcrypt hashes', async () => {
+        const token = 'historical-refresh-token';
+        const stored = await bcrypt.hash(token, 4);
+        expect(await (0, refresh_digest_1.matchesRefresh)(token, stored)).toBe(true);
+        expect(await (0, refresh_digest_1.matchesRefresh)('different-token', stored)).toBe(false);
+    });
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcY29tbW9uXFx1dGlsc1xccmVmcmVzaC1kaWdlc3Quc3BlYy50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLCtDQUFpQztBQUNqQyxxREFBaUU7QUFFakUsUUFBUSxDQUFDLGdCQUFnQixFQUFFLEdBQUcsRUFBRTtJQUM5QixFQUFFLENBQUMsdURBQXVELEVBQUUsS0FBSyxJQUFJLEVBQUU7UUFDckUsTUFBTSxLQUFLLEdBQUcsR0FBRyxHQUFHLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FBQyxNQUFNLENBQUM7UUFDdkMsTUFBTSxLQUFLLEdBQUcsR0FBRyxHQUFHLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FBQyxNQUFNLENBQUM7UUFDdkMsTUFBTSxNQUFNLEdBQUcsSUFBQSw4QkFBYSxFQUFDLEtBQUssQ0FBQyxDQUFDO1FBQ3BDLE1BQU0sQ0FBQyxNQUFNLENBQUMsQ0FBQyxPQUFPLENBQUMsMEJBQTBCLENBQUMsQ0FBQztRQUNuRCxNQUFNLENBQUMsTUFBTSxJQUFBLCtCQUFjLEVBQUMsS0FBSyxFQUFFLE1BQU0sQ0FBQyxDQUFDLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxDQUFDO1FBQ3ZELE1BQU0sQ0FBQyxNQUFNLElBQUEsK0JBQWMsRUFBQyxLQUFLLEVBQUUsTUFBTSxDQUFDLENBQUMsQ0FBQyxJQUFJLENBQUMsS0FBSyxDQUFDLENBQUM7SUFDMUQsQ0FBQyxDQUFDLENBQUM7SUFFSCxFQUFFLENBQUMsNENBQTRDLEVBQUUsS0FBSyxJQUFJLEVBQUU7UUFDMUQsTUFBTSxLQUFLLEdBQUcsMEJBQTBCLENBQUM7UUFDekMsTUFBTSxNQUFNLEdBQUcsTUFBTSxNQUFNLENBQUMsSUFBSSxDQUFDLEtBQUssRUFBRSxDQUFDLENBQUMsQ0FBQztRQUMzQyxNQUFNLENBQUMsTUFBTSxJQUFBLCtCQUFjLEVBQUMsS0FBSyxFQUFFLE1BQU0sQ0FBQyxDQUFDLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxDQUFDO1FBQ3ZELE1BQU0sQ0FBQyxNQUFNLElBQUEsK0JBQWMsRUFBQyxpQkFBaUIsRUFBRSxNQUFNLENBQUMsQ0FBQyxDQUFDLElBQUksQ0FBQyxLQUFLLENBQUMsQ0FBQztJQUN0RSxDQUFDLENBQUMsQ0FBQztBQUNMLENBQUMsQ0FBQyxDQUFDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkQ6XFx1YXRmXFxpbnZlc3RpZ2F0aW9uMjAyNlxcYXV4U3lzdGVtVUFURlxcYXBwc1xcYmFja2VuZC1uZXN0XFxzcmNcXGNvbW1vblxcdXRpbHNcXHJlZnJlc2gtZGlnZXN0LnNwZWMudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0ICogYXMgYmNyeXB0IGZyb20gJ2JjcnlwdCc7XG5pbXBvcnQgeyBtYXRjaGVzUmVmcmVzaCwgcmVmcmVzaERpZ2VzdCB9IGZyb20gJy4vcmVmcmVzaC1kaWdlc3QnO1xuXG5kZXNjcmliZSgncmVmcmVzaCBkaWdlc3QnLCAoKSA9PiB7XG4gIGl0KCd1c2VzIGEgdmVyc2lvbmVkIFNIQS0yNTYgZGlnZXN0IG9mIHRoZSBjb21wbGV0ZSB0b2tlbicsIGFzeW5jICgpID0+IHtcbiAgICBjb25zdCB0b2tlbiA9IGAkeyd4Jy5yZXBlYXQoMjAwKX0tb25lYDtcbiAgICBjb25zdCBvdGhlciA9IGAkeyd4Jy5yZXBlYXQoMjAwKX0tdHdvYDtcbiAgICBjb25zdCBzdG9yZWQgPSByZWZyZXNoRGlnZXN0KHRva2VuKTtcbiAgICBleHBlY3Qoc3RvcmVkKS50b01hdGNoKC9ec2hhMjU2OnYxOlthLWYwLTldezY0fSQvKTtcbiAgICBleHBlY3QoYXdhaXQgbWF0Y2hlc1JlZnJlc2godG9rZW4sIHN0b3JlZCkpLnRvQmUodHJ1ZSk7XG4gICAgZXhwZWN0KGF3YWl0IG1hdGNoZXNSZWZyZXNoKG90aGVyLCBzdG9yZWQpKS50b0JlKGZhbHNlKTtcbiAgfSk7XG5cbiAgaXQoJ2NvbnRpbnVlcyB0byB2YWxpZGF0ZSBsZWdhY3kgYmNyeXB0IGhhc2hlcycsIGFzeW5jICgpID0+IHtcbiAgICBjb25zdCB0b2tlbiA9ICdoaXN0b3JpY2FsLXJlZnJlc2gtdG9rZW4nO1xuICAgIGNvbnN0IHN0b3JlZCA9IGF3YWl0IGJjcnlwdC5oYXNoKHRva2VuLCA0KTtcbiAgICBleHBlY3QoYXdhaXQgbWF0Y2hlc1JlZnJlc2godG9rZW4sIHN0b3JlZCkpLnRvQmUodHJ1ZSk7XG4gICAgZXhwZWN0KGF3YWl0IG1hdGNoZXNSZWZyZXNoKCdkaWZmZXJlbnQtdG9rZW4nLCBzdG9yZWQpKS50b0JlKGZhbHNlKTtcbiAgfSk7XG59KTtcbiJdLCJ2ZXJzaW9uIjozfQ==

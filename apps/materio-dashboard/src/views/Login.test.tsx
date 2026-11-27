@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { memorySessionStorage, qrToken } from '@/test-utils/qr-fixtures';
 import { savePendingQr, QR_PENDING_KEY } from '@/utils/student-qr-flow';
 
-import { login } from '../api/auth.service';
+import { hasPendingLogout, login } from '../api/auth.service';
 
 import Login from './Login';
 
@@ -15,10 +15,15 @@ const { replace, showError } = vi.hoisted(() => ({ replace: vi.fn(), showError: 
 vi.mock('react', async () => {
   const actual = await vi.importActual<typeof React>('react');
 
-  return { ...actual, useState: vi.fn(actual.useState), useRef: vi.fn(actual.useRef) };
+  return {
+    ...actual,
+    useEffect: vi.fn(actual.useEffect),
+    useState: vi.fn(actual.useState),
+    useRef: vi.fn(actual.useRef),
+  };
 });
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
-vi.mock('../api/auth.service', () => ({ login: vi.fn() }));
+vi.mock('../api/auth.service', () => ({ login: vi.fn(), hasPendingLogout: vi.fn(), logoutAuthSession: vi.fn() }));
 vi.mock('@/hooks/useSnackbar', () => ({ useSnackbar: () => ({ error: showError }) }));
 vi.mock('@core/hooks/useSettings', () => ({ useSettings: () => ({ settings: { mode: 'light' } }) }));
 vi.mock('@/components/auth/LoginBrandPanel', () => ({ default: () => null }));
@@ -31,7 +36,7 @@ afterEach(() => {
 
 // Exercise the real handler with persistent hook values, then render with real MUI.
 // The existing test environment has no browser DOM or client rendering dependency.
-function mountLogin() {
+function mountLogin(rememberMe = false) {
   let showPassword = false;
   let loading = false;
   const lock = { current: false };
@@ -48,6 +53,7 @@ function mountLogin() {
 
   nativeFormData.set('username', 'test-user');
   nativeFormData.set('password', 'test-password');
+  if (rememberMe) nativeFormData.set('remember', 'on');
   vi.stubGlobal(
     'FormData',
     vi.fn(function () {
@@ -67,6 +73,7 @@ function mountLogin() {
   type FormProps = {
     component?: string;
     onSubmit?: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
+    onClick?: () => Promise<void>;
     children?: React.ReactNode;
   };
 
@@ -86,7 +93,11 @@ function mountLogin() {
 
   const event = { preventDefault: vi.fn(), currentTarget: {} } as unknown as React.FormEvent<HTMLFormElement>;
 
-  return { submit: () => submit(event), html: () => renderToStaticMarkup(render()), setLoading };
+  return {
+    submit: () => submit(event),
+    html: () => renderToStaticMarkup(render()),
+    setLoading,
+  };
 }
 
 function expectBusy(html: string) {
@@ -104,6 +115,20 @@ function expectBusy(html: string) {
 }
 
 describe('Login submit concurrency', () => {
+  it('shows no pending logout warning or retry button and preserves remember me', async () => {
+    vi.mocked(hasPendingLogout).mockReturnValue(true);
+    vi.mocked(login).mockResolvedValueOnce(undefined);
+    const view = mountLogin(true);
+    const html = view.html();
+
+    expect(html).not.toContain('No se pudo confirmar el cierre');
+    expect(html).not.toContain('Reintentar cierre');
+    expect(html).not.toContain('MuiAlert');
+    expect(html).toContain('Recuérdame');
+    await view.submit();
+    expect(login).toHaveBeenCalledWith({ username: 'test-user', password: 'test-password', rememberMe: true });
+  });
+
   it('locks immediately, ignores repeated submits and stays busy after success until unmount', async () => {
     let resolveLogin = () => {};
 
@@ -122,7 +147,7 @@ describe('Login submit concurrency', () => {
     await view.submit();
     await view.submit();
     expect(login).toHaveBeenCalledTimes(1);
-    expect(login).toHaveBeenCalledWith({ username: 'test-user', password: 'test-password' });
+    expect(login).toHaveBeenCalledWith({ username: 'test-user', password: 'test-password', rememberMe: false });
     expectBusy(view.html());
     resolveLogin();
     await first;
@@ -150,10 +175,11 @@ describe('Login submit concurrency', () => {
 
     expect(html).not.toContain('role="progressbar"');
     expect(showError).toHaveBeenCalledTimes(1);
+    expect(showError).toHaveBeenCalledWith('Login failed');
     expect(replace).not.toHaveBeenCalled();
     await view.submit();
     expect(login).toHaveBeenCalledTimes(2);
-    expect(login).toHaveBeenNthCalledWith(2, { username: 'test-user', password: 'test-password' });
+    expect(login).toHaveBeenNthCalledWith(2, { username: 'test-user', password: 'test-password', rememberMe: false });
     expect(replace).toHaveBeenCalledExactlyOnceWith('/dashboard');
     expectBusy(view.html());
   });

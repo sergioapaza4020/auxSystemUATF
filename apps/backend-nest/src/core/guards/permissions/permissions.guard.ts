@@ -18,12 +18,14 @@ export class PermissionsGuard implements CanActivate {
 
     if (user.roles.includes('SUPERADMIN')) return true;
 
-    if (!user?.permissions) throw new ForbiddenException('No permissions found');
+    if (!user?.permissions)
+      throw new ForbiddenException('No tienes permiso para realizar esta acción.');
 
     const hasPermission = requiredPermissions.some((permission) =>
       user.permissions.includes(permission),
     );
-    if (!hasPermission) throw new ForbiddenException('Insufficient permissions');
+    if (!hasPermission)
+      throw new ForbiddenException('No tienes permiso para realizar esta acción.');
 
     return true;
   }

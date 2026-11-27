@@ -27,6 +27,7 @@ import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNav
 import menuItemStyles from '@core/styles/vertical/menuItemStyles';
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles';
 import { getMenuSectionAccess } from './menuSectionAccess';
+import MySubjectsMenu from './MySubjectsMenu';
 
 type RenderExpandIconProps = {
   open?: boolean;
@@ -121,6 +122,8 @@ const VerticalMenu = ({ scrollMenu }: VerticalMenuProps) => {
           <MenuItem href='/dashboard' icon={<i className='ri-home-5-line' />}>
             Inicio
           </MenuItem>
+
+          <MySubjectsMenu />
 
           {/* SUPER ADMIN */}
           {showSuperAdministration && (

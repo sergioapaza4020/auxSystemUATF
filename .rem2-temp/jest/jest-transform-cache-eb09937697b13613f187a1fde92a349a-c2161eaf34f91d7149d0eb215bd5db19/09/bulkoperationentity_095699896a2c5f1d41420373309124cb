@@ -1,0 +1,113 @@
+2cd1689f43111954478e015244353b4c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e, _f, _g, _h;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BulkOperation = void 0;
+const typeorm_1 = require("typeorm");
+const users_entity_1 = require("../users/users.entity");
+const bulk_operation_1 = require("@common/enums/bulk-operation");
+let BulkOperation = class BulkOperation {
+    idBulkOperation;
+    type;
+    status;
+    createdBy;
+    totalRows;
+    validRows;
+    invalidRows;
+    processedRows;
+    failedRows;
+    metadata;
+    createdAt;
+    updatedAt;
+    startedAt;
+    completedAt;
+    expiresAt;
+};
+exports.BulkOperation = BulkOperation;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid', {
+        name: 'id_bulk_operation',
+        primaryKeyConstraintName: 'PK_bulk_operations',
+    }),
+    __metadata("design:type", String)
+], BulkOperation.prototype, "idBulkOperation", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: bulk_operation_1.BulkOperationType }),
+    __metadata("design:type", typeof (_a = typeof bulk_operation_1.BulkOperationType !== "undefined" && bulk_operation_1.BulkOperationType) === "function" ? _a : Object)
+], BulkOperation.prototype, "type", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: bulk_operation_1.BulkOperationStatus,
+        default: bulk_operation_1.BulkOperationStatus.PENDING,
+    }),
+    __metadata("design:type", typeof (_b = typeof bulk_operation_1.BulkOperationStatus !== "undefined" && bulk_operation_1.BulkOperationStatus) === "function" ? _b : Object)
+], BulkOperation.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => users_entity_1.User, { nullable: false, onDelete: 'RESTRICT' }),
+    (0, typeorm_1.JoinColumn)({ name: 'created_by', foreignKeyConstraintName: 'FK_bulk_operations_created_by' }),
+    __metadata("design:type", typeof (_c = typeof users_entity_1.User !== "undefined" && users_entity_1.User) === "function" ? _c : Object)
+], BulkOperation.prototype, "createdBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'total_rows', default: 0 }),
+    __metadata("design:type", Number)
+], BulkOperation.prototype, "totalRows", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'valid_rows', default: 0 }),
+    __metadata("design:type", Number)
+], BulkOperation.prototype, "validRows", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'invalid_rows', default: 0 }),
+    __metadata("design:type", Number)
+], BulkOperation.prototype, "invalidRows", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'processed_rows', default: 0 }),
+    __metadata("design:type", Number)
+], BulkOperation.prototype, "processedRows", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'failed_rows', default: 0 }),
+    __metadata("design:type", Number)
+], BulkOperation.prototype, "failedRows", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Object)
+], BulkOperation.prototype, "metadata", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
+    __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
+], BulkOperation.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
+    __metadata("design:type", typeof (_e = typeof Date !== "undefined" && Date) === "function" ? _e : Object)
+], BulkOperation.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'started_at', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
+], BulkOperation.prototype, "startedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'completed_at', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
+], BulkOperation.prototype, "completedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'expires_at', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
+], BulkOperation.prototype, "expiresAt", void 0);
+exports.BulkOperation = BulkOperation = __decorate([
+    (0, typeorm_1.Entity)('bulk_operations'),
+    (0, typeorm_1.Index)('IDX_bulk_operations_created_by', ['createdBy']),
+    (0, typeorm_1.Index)('IDX_bulk_operations_type', ['type']),
+    (0, typeorm_1.Index)('IDX_bulk_operations_status', ['status']),
+    (0, typeorm_1.Index)('IDX_bulk_operations_created_at', ['createdAt']),
+    (0, typeorm_1.Index)('IDX_bulk_operations_expires_at', ['expiresAt']),
+    (0, typeorm_1.Check)('CHK_bulk_operations_counts', '"total_rows" >= 0 AND "valid_rows" >= 0 AND "invalid_rows" >= 0 AND "processed_rows" >= 0 AND "failed_rows" >= 0 AND "valid_rows" + "invalid_rows" = "total_rows" AND "processed_rows" + "failed_rows" <= "total_rows"')
+], BulkOperation);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXGJ1bGstb3BlcmF0aW9uc1xcYnVsay1vcGVyYXRpb24uZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FVaUI7QUFDakIsd0RBQTZDO0FBQzdDLGlFQUFzRjtBQWEvRSxJQUFNLGFBQWEsR0FBbkIsTUFBTSxhQUFhO0lBS3hCLGVBQWUsQ0FBUztJQUd4QixJQUFJLENBQW9CO0lBT3hCLE1BQU0sQ0FBc0I7SUFJNUIsU0FBUyxDQUFPO0lBR2hCLFNBQVMsQ0FBUztJQUdsQixTQUFTLENBQVM7SUFHbEIsV0FBVyxDQUFTO0lBR3BCLGFBQWEsQ0FBUztJQUd0QixVQUFVLENBQVM7SUFHbkIsUUFBUSxDQUFvQjtJQUc1QixTQUFTLENBQU87SUFHaEIsU0FBUyxDQUFPO0lBR2hCLFNBQVMsQ0FBYztJQUd2QixXQUFXLENBQWM7SUFHekIsU0FBUyxDQUFjO0NBQ3hCLENBQUE7QUFyRFksc0NBQWE7QUFLeEI7SUFKQyxJQUFBLGdDQUFzQixFQUFDLE1BQU0sRUFBRTtRQUM5QixJQUFJLEVBQUUsbUJBQW1CO1FBQ3pCLHdCQUF3QixFQUFFLG9CQUFvQjtLQUMvQyxDQUFDOztzREFDc0I7QUFHeEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLElBQUksRUFBRSxrQ0FBaUIsRUFBRSxDQUFDO2tEQUM1QyxrQ0FBaUIsb0JBQWpCLGtDQUFpQjsyQ0FBQztBQU94QjtJQUxDLElBQUEsZ0JBQU0sRUFBQztRQUNOLElBQUksRUFBRSxNQUFNO1FBQ1osSUFBSSxFQUFFLG9DQUFtQjtRQUN6QixPQUFPLEVBQUUsb0NBQW1CLENBQUMsT0FBTztLQUNyQyxDQUFDO2tEQUNNLG9DQUFtQixvQkFBbkIsb0NBQW1COzZDQUFDO0FBSTVCO0lBRkMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLG1CQUFJLEVBQUUsRUFBRSxRQUFRLEVBQUUsS0FBSyxFQUFFLFFBQVEsRUFBRSxVQUFVLEVBQUUsQ0FBQztJQUNoRSxJQUFBLG9CQUFVLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLHdCQUF3QixFQUFFLCtCQUErQixFQUFFLENBQUM7a0RBQ25GLG1CQUFJLG9CQUFKLG1CQUFJO2dEQUFDO0FBR2hCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLFlBQVksRUFBRSxPQUFPLEVBQUUsQ0FBQyxFQUFFLENBQUM7O2dEQUN6QjtBQUdsQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxZQUFZLEVBQUUsT0FBTyxFQUFFLENBQUMsRUFBRSxDQUFDOztnREFDekI7QUFHbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsY0FBYyxFQUFFLE9BQU8sRUFBRSxDQUFDLEVBQUUsQ0FBQzs7a0RBQ3pCO0FBR3BCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLGdCQUFnQixFQUFFLE9BQU8sRUFBRSxDQUFDLEVBQUUsQ0FBQzs7b0RBQ3pCO0FBR3RCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxPQUFPLEVBQUUsQ0FBQyxFQUFFLENBQUM7O2lEQUN6QjtBQUduQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxPQUFPLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOzsrQ0FDZDtBQUc1QjtJQURDLElBQUEsMEJBQWdCLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLElBQUksRUFBRSxXQUFXLEVBQUUsT0FBTyxFQUFFLEdBQUcsRUFBRSxDQUFDLG1CQUFtQixFQUFFLENBQUM7a0RBQ3JGLElBQUksb0JBQUosSUFBSTtnREFBQztBQUdoQjtJQURDLElBQUEsMEJBQWdCLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLElBQUksRUFBRSxXQUFXLEVBQUUsT0FBTyxFQUFFLEdBQUcsRUFBRSxDQUFDLG1CQUFtQixFQUFFLENBQUM7a0RBQ3JGLElBQUksb0JBQUosSUFBSTtnREFBQztBQUdoQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxZQUFZLEVBQUUsSUFBSSxFQUFFLFdBQVcsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7O2dEQUMzQztBQUd2QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxjQUFjLEVBQUUsSUFBSSxFQUFFLFdBQVcsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7O2tEQUMzQztBQUd6QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxZQUFZLEVBQUUsSUFBSSxFQUFFLFdBQVcsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7O2dEQUMzQzt3QkFwRFosYUFBYTtJQVZ6QixJQUFBLGdCQUFNLEVBQUMsaUJBQWlCLENBQUM7SUFDekIsSUFBQSxlQUFLLEVBQUMsZ0NBQWdDLEVBQUUsQ0FBQyxXQUFXLENBQUMsQ0FBQztJQUN0RCxJQUFBLGVBQUssRUFBQywwQkFBMEIsRUFBRSxDQUFDLE1BQU0sQ0FBQyxDQUFDO0lBQzNDLElBQUEsZUFBSyxFQUFDLDRCQUE0QixFQUFFLENBQUMsUUFBUSxDQUFDLENBQUM7SUFDL0MsSUFBQSxlQUFLLEVBQUMsZ0NBQWdDLEVBQUUsQ0FBQyxXQUFXLENBQUMsQ0FBQztJQUN0RCxJQUFBLGVBQUssRUFBQyxnQ0FBZ0MsRUFBRSxDQUFDLFdBQVcsQ0FBQyxDQUFDO0lBQ3RELElBQUEsZUFBSyxFQUNKLDRCQUE0QixFQUM1Qix3TkFBd04sQ0FDek47R0FDWSxhQUFhLENBcUR6QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxlbnRpdGllc1xcYnVsay1vcGVyYXRpb25zXFxidWxrLW9wZXJhdGlvbi5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgQ29sdW1uLFxuICBDcmVhdGVEYXRlQ29sdW1uLFxuICBFbnRpdHksXG4gIEluZGV4LFxuICBKb2luQ29sdW1uLFxuICBNYW55VG9PbmUsXG4gIFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4sXG4gIFVwZGF0ZURhdGVDb2x1bW4sXG4gIENoZWNrLFxufSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7IFVzZXIgfSBmcm9tICcuLi91c2Vycy91c2Vycy5lbnRpdHknO1xuaW1wb3J0IHsgQnVsa09wZXJhdGlvblN0YXR1cywgQnVsa09wZXJhdGlvblR5cGUgfSBmcm9tICdAY29tbW9uL2VudW1zL2J1bGstb3BlcmF0aW9uJztcbmltcG9ydCB0eXBlIHsgSnNvbk9iamVjdCB9IGZyb20gJ3NyYy9kdG9zL2J1bGstb3BlcmF0aW9ucy9idWxrLW9wZXJhdGlvbi5kdG8nO1xuXG5ARW50aXR5KCdidWxrX29wZXJhdGlvbnMnKVxuQEluZGV4KCdJRFhfYnVsa19vcGVyYXRpb25zX2NyZWF0ZWRfYnknLCBbJ2NyZWF0ZWRCeSddKVxuQEluZGV4KCdJRFhfYnVsa19vcGVyYXRpb25zX3R5cGUnLCBbJ3R5cGUnXSlcbkBJbmRleCgnSURYX2J1bGtfb3BlcmF0aW9uc19zdGF0dXMnLCBbJ3N0YXR1cyddKVxuQEluZGV4KCdJRFhfYnVsa19vcGVyYXRpb25zX2NyZWF0ZWRfYXQnLCBbJ2NyZWF0ZWRBdCddKVxuQEluZGV4KCdJRFhfYnVsa19vcGVyYXRpb25zX2V4cGlyZXNfYXQnLCBbJ2V4cGlyZXNBdCddKVxuQENoZWNrKFxuICAnQ0hLX2J1bGtfb3BlcmF0aW9uc19jb3VudHMnLFxuICAnXCJ0b3RhbF9yb3dzXCIgPj0gMCBBTkQgXCJ2YWxpZF9yb3dzXCIgPj0gMCBBTkQgXCJpbnZhbGlkX3Jvd3NcIiA+PSAwIEFORCBcInByb2Nlc3NlZF9yb3dzXCIgPj0gMCBBTkQgXCJmYWlsZWRfcm93c1wiID49IDAgQU5EIFwidmFsaWRfcm93c1wiICsgXCJpbnZhbGlkX3Jvd3NcIiA9IFwidG90YWxfcm93c1wiIEFORCBcInByb2Nlc3NlZF9yb3dzXCIgKyBcImZhaWxlZF9yb3dzXCIgPD0gXCJ0b3RhbF9yb3dzXCInLFxuKVxuZXhwb3J0IGNsYXNzIEJ1bGtPcGVyYXRpb24ge1xuICBAUHJpbWFyeUdlbmVyYXRlZENvbHVtbigndXVpZCcsIHtcbiAgICBuYW1lOiAnaWRfYnVsa19vcGVyYXRpb24nLFxuICAgIHByaW1hcnlLZXlDb25zdHJhaW50TmFtZTogJ1BLX2J1bGtfb3BlcmF0aW9ucycsXG4gIH0pXG4gIGlkQnVsa09wZXJhdGlvbjogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAnZW51bScsIGVudW06IEJ1bGtPcGVyYXRpb25UeXBlIH0pXG4gIHR5cGU6IEJ1bGtPcGVyYXRpb25UeXBlO1xuXG4gIEBDb2x1bW4oe1xuICAgIHR5cGU6ICdlbnVtJyxcbiAgICBlbnVtOiBCdWxrT3BlcmF0aW9uU3RhdHVzLFxuICAgIGRlZmF1bHQ6IEJ1bGtPcGVyYXRpb25TdGF0dXMuUEVORElORyxcbiAgfSlcbiAgc3RhdHVzOiBCdWxrT3BlcmF0aW9uU3RhdHVzO1xuXG4gIEBNYW55VG9PbmUoKCkgPT4gVXNlciwgeyBudWxsYWJsZTogZmFsc2UsIG9uRGVsZXRlOiAnUkVTVFJJQ1QnIH0pXG4gIEBKb2luQ29sdW1uKHsgbmFtZTogJ2NyZWF0ZWRfYnknLCBmb3JlaWduS2V5Q29uc3RyYWludE5hbWU6ICdGS19idWxrX29wZXJhdGlvbnNfY3JlYXRlZF9ieScgfSlcbiAgY3JlYXRlZEJ5OiBVc2VyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAndG90YWxfcm93cycsIGRlZmF1bHQ6IDAgfSlcbiAgdG90YWxSb3dzOiBudW1iZXI7XG5cbiAgQENvbHVtbih7IG5hbWU6ICd2YWxpZF9yb3dzJywgZGVmYXVsdDogMCB9KVxuICB2YWxpZFJvd3M6IG51bWJlcjtcblxuICBAQ29sdW1uKHsgbmFtZTogJ2ludmFsaWRfcm93cycsIGRlZmF1bHQ6IDAgfSlcbiAgaW52YWxpZFJvd3M6IG51bWJlcjtcblxuICBAQ29sdW1uKHsgbmFtZTogJ3Byb2Nlc3NlZF9yb3dzJywgZGVmYXVsdDogMCB9KVxuICBwcm9jZXNzZWRSb3dzOiBudW1iZXI7XG5cbiAgQENvbHVtbih7IG5hbWU6ICdmYWlsZWRfcm93cycsIGRlZmF1bHQ6IDAgfSlcbiAgZmFpbGVkUm93czogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAnanNvbmInLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBtZXRhZGF0YTogSnNvbk9iamVjdCB8IG51bGw7XG5cbiAgQENyZWF0ZURhdGVDb2x1bW4oeyBuYW1lOiAnY3JlYXRlZF9hdCcsIHR5cGU6ICd0aW1lc3RhbXAnLCBkZWZhdWx0OiAoKSA9PiAnQ1VSUkVOVF9USU1FU1RBTVAnIH0pXG4gIGNyZWF0ZWRBdDogRGF0ZTtcblxuICBAVXBkYXRlRGF0ZUNvbHVtbih7IG5hbWU6ICd1cGRhdGVkX2F0JywgdHlwZTogJ3RpbWVzdGFtcCcsIGRlZmF1bHQ6ICgpID0+ICdDVVJSRU5UX1RJTUVTVEFNUCcgfSlcbiAgdXBkYXRlZEF0OiBEYXRlO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnc3RhcnRlZF9hdCcsIHR5cGU6ICd0aW1lc3RhbXAnLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBzdGFydGVkQXQ6IERhdGUgfCBudWxsO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnY29tcGxldGVkX2F0JywgdHlwZTogJ3RpbWVzdGFtcCcsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGNvbXBsZXRlZEF0OiBEYXRlIHwgbnVsbDtcblxuICBAQ29sdW1uKHsgbmFtZTogJ2V4cGlyZXNfYXQnLCB0eXBlOiAndGltZXN0YW1wJywgbnVsbGFibGU6IHRydWUgfSlcbiAgZXhwaXJlc0F0OiBEYXRlIHwgbnVsbDtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

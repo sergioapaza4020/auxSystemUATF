@@ -18,6 +18,7 @@ interface AttendanceSessionToolbarProps {
   onCreateSession: () => void;
   onConfigureQr?: () => void;
   onShowQr?: () => void;
+  onEditTopic?: () => void;
 }
 
 export function AttendanceSessionToolbar({
@@ -31,6 +32,7 @@ export function AttendanceSessionToolbar({
   onCreateSession,
   onConfigureQr,
   onShowQr,
+  onEditTopic,
 }: AttendanceSessionToolbarProps) {
   const date = session?.date?.slice(0, 10).split('-');
   const sessionDate = date ? `${date[2]}/${date[1]}/${date[0]}` : '';
@@ -86,6 +88,16 @@ export function AttendanceSessionToolbar({
             onChange={onDateChange}
             sx={{ width: { xs: '100%', sm: 175 } }}
           />
+          {selectedSessionId && session && (
+            <Box sx={{ minWidth: 0, maxWidth: { xs: '100%', sm: 280 }, overflowWrap: 'anywhere' }}>
+              <Typography variant='body2'>{session.topic?.trim() || 'Sin tema'}</Typography>
+              {onEditTopic && (
+                <Button size='small' disabled={saving || hasChanges} onClick={onEditTopic}>
+                  Editar tema
+                </Button>
+              )}
+            </Box>
+          )}
           {!selectedSessionId && (
             <Typography variant='caption' color='text.secondary'>
               Nueva sesión · aún no creada

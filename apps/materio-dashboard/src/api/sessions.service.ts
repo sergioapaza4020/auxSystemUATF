@@ -1,5 +1,5 @@
-import { clearTokens, getRefreshToken } from '@/utils/authCookies';
 import { instance } from './config/config';
+import { logoutAuthSession } from './auth.service';
 import type { ApiResponse, PaginatedApiResponse } from '@/interfaces/apiResponse';
 import type { ISession } from '@/interfaces/sessions/session.interface';
 
@@ -9,11 +9,7 @@ export interface SessionPageQuery {
 }
 
 export const logout = async (): Promise<void> => {
-  const refreshToken = getRefreshToken();
-
-  if (refreshToken) await instance.post('/sessions/logout', { refreshToken });
-
-  clearTokens();
+  await logoutAuthSession();
 };
 
 export const getAllSessions = async (

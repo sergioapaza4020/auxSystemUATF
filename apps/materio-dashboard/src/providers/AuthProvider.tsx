@@ -44,11 +44,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     clearPendingQr();
-    await apiLogout();
-    authEpoch.current += 1;
-    setUser(null);
-    clearTokens();
-    router.push('/login');
+
+    try {
+      await apiLogout();
+    } catch {
+      showError('No se pudo confirmar el cierre. Reintenta desde el inicio de sesión al recuperar la conexión.');
+    } finally {
+      authEpoch.current += 1;
+      setUser(null);
+      clearTokens();
+      router.push('/login');
+    }
   };
 
   useEffect(() => {
@@ -62,6 +68,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expired);
   }, []);
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel('uatf-auth');
+
+    channel.onmessage = (event: MessageEvent<unknown>) => {
+      if (!event.data || typeof event.data !== 'object' || !('type' in event.data)) return;
+      const type = event.data.type;
+
+      if (type === 'logout') {
+        authEpoch.current += 1;
+        setUser(null);
+        clearTokens();
+        setLoading(false);
+      } else if (type === 'login') {
+        authEpoch.current += 1;
+        clearTokens();
+        setUser(null);
+        setLoading(true);
+        void refreshUser();
+      }
+    };
+
+    return () => channel.close();
+  }, [refreshUser]);
 
   useEffect(() => {
     if (!isPublicRoute(pathname)) void refreshUser();

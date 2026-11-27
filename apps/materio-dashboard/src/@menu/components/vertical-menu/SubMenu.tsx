@@ -112,6 +112,7 @@ const SubMenu: ForwardRefRenderFunction<HTMLLIElement, SubMenuProps> = (props, r
     rootStyles,
     onOpenChange,
     onClick,
+    onKeyDown,
     onKeyUp,
     ...rest
   } = props;
@@ -158,9 +159,15 @@ const SubMenu: ForwardRefRenderFunction<HTMLLIElement, SubMenuProps> = (props, r
   const handleOnKeyUp = (event: KeyboardEvent<HTMLAnchorElement>) => {
     onKeyUp?.(event);
 
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' || event.key === ' ') {
       handleSlideToggle();
     }
+  };
+
+  const handleOnKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
+    onKeyDown?.(event);
+
+    if (event.key === ' ') event.preventDefault();
   };
 
   const getSubMenuItemStyles = (element: SubMenuItemElement): CSSObject | undefined => {
@@ -219,6 +226,7 @@ const SubMenu: ForwardRefRenderFunction<HTMLLIElement, SubMenuProps> = (props, r
   const submenuContent = (
     <SubMenuContent
       ref={contentRef}
+      id={`${id}-content`}
       transitionDuration={transitionDuration}
       open={isSubMenuOpen}
       level={level}
@@ -258,7 +266,11 @@ const SubMenu: ForwardRefRenderFunction<HTMLLIElement, SubMenuProps> = (props, r
       <MenuButton
         ref={null}
         onClick={handleOnClick}
+        onKeyDown={handleOnKeyDown}
         onKeyUp={handleOnKeyUp}
+        role='button'
+        aria-expanded={isSubMenuOpen}
+        aria-controls={`${id}-content`}
         title={title}
         className={classnames(menuClasses.button, { [menuClasses.active]: active })}
         tabIndex={disabled ? -1 : 0}

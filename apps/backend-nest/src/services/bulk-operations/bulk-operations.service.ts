@@ -40,7 +40,7 @@ export class BulkOperationsService {
   ) {
     this.validateOwner(ownerId);
     if (!Object.values(BulkOperationType).includes(dto.type)) {
-      throw new BadRequestException('Invalid bulk operation type');
+      throw new BadRequestException('Selecciona un tipo de operación válido.');
     }
     this.validateJson(dto.metadata ?? null);
     this.validateDate(dto.expiresAt);
@@ -72,7 +72,7 @@ export class BulkOperationsService {
       where: { idBulkOperation: operationId, createdBy: { idUser: ownerId } },
       relations: { createdBy: true },
     });
-    if (!operation) throw new NotFoundException('Bulk operation not found');
+    if (!operation) throw new NotFoundException('No encontramos la operación masiva.');
     return operation;
   }
 
@@ -86,7 +86,7 @@ export class BulkOperationsService {
         ![BulkOperationStatus.PENDING, BulkOperationStatus.PROCESSING].includes(operation.status)
       ) {
         throw new BadRequestException(
-          'Rows can only be added to a pending or processing operation',
+          'Solo puedes agregar filas mientras la operación está pendiente o en proceso.',
         );
       }
       await this.insertRows(manager, operationId, rows);
@@ -103,7 +103,7 @@ export class BulkOperationsService {
     this.validateDate(dto.startedAt);
     this.validateDate(dto.completedAt);
     if (dto.status !== undefined && !Object.values(BulkOperationStatus).includes(dto.status)) {
-      throw new BadRequestException('Invalid bulk operation status');
+      throw new BadRequestException('Selecciona un estado válido para la operación.');
     }
     return this.operations.manager.transaction(async (manager) => {
       const operation = await this.lockOperation(manager, operationId, ownerId);
@@ -113,7 +113,7 @@ export class BulkOperationsService {
         ![processed, failed].every((count) => Number.isSafeInteger(count) && count >= 0) ||
         processed + failed > operation.totalRows
       ) {
-        throw new BadRequestException('Invalid bulk operation counters');
+        throw new BadRequestException('Revisa las cantidades de filas de la operación.');
       }
       operation.processedRows = processed;
       operation.failedRows = failed;
@@ -141,10 +141,12 @@ export class BulkOperationsService {
       limit > 100 ||
       !Number.isSafeInteger(offset)
     ) {
-      throw new BadRequestException('Invalid pagination: page >= 1, limit between 1 and 100');
+      throw new BadRequestException(
+        'Selecciona una página desde la 1 y entre 1 y 100 registros por página.',
+      );
     }
     if (query.valid !== undefined && typeof query.valid !== 'boolean') {
-      throw new BadRequestException('Invalid valid filter');
+      throw new BadRequestException('Revisa el filtro de filas válidas.');
     }
     await this.getById(operationId, ownerId);
     const builder = this.rows
@@ -177,17 +179,20 @@ export class BulkOperationsService {
     this.validateIdentity(operationId, ownerId);
     return this.operations.manager.transaction('SERIALIZABLE', async (manager) => {
       const operation = await this.lockOperation(manager, operationId, ownerId);
-      if (operation.type !== type) throw new NotFoundException('Bulk operation not found');
+      if (operation.type !== type)
+        throw new NotFoundException('No encontramos la operación masiva.');
       if (operation.status !== BulkOperationStatus.READY)
-        throw new ConflictException('Bulk operation is not READY');
+        throw new ConflictException('La operación masiva aún no está lista.');
       if (operation.expiresAt && operation.expiresAt <= new Date())
-        throw new ConflictException('Bulk operation has expired');
+        throw new ConflictException('La operación masiva venció. Vuelve a revisar el archivo.');
       if (
         operation.invalidRows ||
         operation.validRows !== operation.totalRows ||
         operation.totalRows < 1
       )
-        throw new BadRequestException('El preview debe contener únicamente filas válidas');
+        throw new BadRequestException(
+          'Corrige las filas inválidas antes de confirmar la importación.',
+        );
       operation.status = BulkOperationStatus.IMPORTING;
       operation.startedAt = new Date();
       await manager.getRepository(BulkOperation).save(operation);
@@ -204,7 +209,7 @@ export class BulkOperationsService {
         );
       }
       if (rows.length !== operation.validRows)
-        throw new ConflictException('Bulk operation rows are incomplete');
+        throw new ConflictException('La operación tiene filas incompletas. Revisa el archivo.');
       const result = await work(manager, operation, rows);
       await repository.update(
         { operation: { idBulkOperation: operationId }, valid: true },
@@ -227,7 +232,7 @@ export class BulkOperationsService {
       .andWhere('operation.created_by = :ownerId', { ownerId })
       .setLock('pessimistic_write')
       .getOne();
-    if (!operation) throw new NotFoundException('Bulk operation not found');
+    if (!operation) throw new NotFoundException('No encontramos la operación masiva.');
     return operation;
   }
 
@@ -263,19 +268,19 @@ export class BulkOperationsService {
 
   private validateOwner(ownerId: number) {
     if (!Number.isSafeInteger(ownerId) || ownerId < 1)
-      throw new BadRequestException('Invalid owner');
+      throw new BadRequestException('La cuenta asociada a la operación no es válida.');
   }
 
   private validateIdentity(operationId: string, ownerId: number) {
     this.validateOwner(ownerId);
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(operationId)) {
-      throw new BadRequestException('Invalid bulk operation ID');
+      throw new BadRequestException('La referencia de la operación masiva no es válida.');
     }
   }
 
   private validateDate(value: Date | undefined) {
     if (value !== undefined && (!(value instanceof Date) || !Number.isFinite(value.getTime()))) {
-      throw new BadRequestException('Invalid bulk operation date');
+      throw new BadRequestException('Selecciona una fecha válida para la operación.');
     }
   }
 
@@ -289,17 +294,21 @@ export class BulkOperationsService {
         numbers.has(row.rowNumber) ||
         typeof row.valid !== 'boolean'
       ) {
-        throw new BadRequestException('Invalid or duplicate row number / validity');
+        throw new BadRequestException(
+          'Revisa la numeración y el estado de las filas. Los números deben ser únicos.',
+        );
       }
       numbers.add(row.rowNumber);
       if (!row.data || Array.isArray(row.data) || typeof row.data !== 'object') {
-        throw new BadRequestException('Row data must be a JSON object');
+        throw new BadRequestException('Cada fila debe contener un conjunto de datos válido.');
       }
       if (
         row.errors !== undefined &&
         (!Array.isArray(row.errors) || !row.errors.every((error) => typeof error === 'string'))
       ) {
-        throw new BadRequestException('Row errors must be an array of strings');
+        throw new BadRequestException(
+          'Las observaciones de cada fila deben presentarse como una lista de textos.',
+        );
       }
       this.validateJson(row.data);
     }
@@ -309,13 +318,13 @@ export class BulkOperationsService {
     if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
     if (typeof value === 'number' && Number.isFinite(value)) return;
     if (typeof value !== 'object' || ancestors.has(value))
-      throw new BadRequestException('Invalid JSON payload');
+      throw new BadRequestException('Revisa el formato de los datos enviados.');
     if (
       !Array.isArray(value) &&
       Object.getPrototypeOf(value) !== Object.prototype &&
       Object.getPrototypeOf(value) !== null
     ) {
-      throw new BadRequestException('Invalid JSON payload');
+      throw new BadRequestException('Revisa el formato de los datos enviados.');
     }
     ancestors.add(value);
     for (const [key, nested] of Object.entries(value)) {
@@ -323,7 +332,9 @@ export class BulkOperationsService {
       if (
         /password|passwd|pwd|hash|token|secret|apikey|authorization|credential/.test(normalized)
       ) {
-        throw new BadRequestException('Sensitive fields are not allowed in bulk operation JSON');
+        throw new BadRequestException(
+          'Retira los datos confidenciales del archivo antes de importar.',
+        );
       }
       this.validateJson(nested, ancestors);
     }

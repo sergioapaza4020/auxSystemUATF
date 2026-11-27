@@ -1,0 +1,171 @@
+5857eb1c2d70f043a4b9cad69eb3991d
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.userImportPreviewResponse = exports.UserImportPreview = exports.UserImportPreviewMeta = exports.UserImportPreviewRow = exports.UserImportPreviewQueryDto = void 0;
+const class_transformer_1 = require("class-transformer");
+const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
+class UserImportPreviewQueryDto {
+    page = 1;
+    limit = 25;
+    status = 'all';
+    search;
+}
+exports.UserImportPreviewQueryDto = UserImportPreviewQueryDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ default: 1, minimum: 1 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], UserImportPreviewQueryDto.prototype, "page", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ default: 25, enum: [25, 50, 100] }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(100),
+    (0, class_validator_1.IsIn)([25, 50, 100]),
+    __metadata("design:type", Number)
+], UserImportPreviewQueryDto.prototype, "limit", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ default: 'all', enum: ['all', 'valid', 'invalid'] }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(['all', 'valid', 'invalid']),
+    __metadata("design:type", String)
+], UserImportPreviewQueryDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Nombre, apellido, CI, RU, email o username' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(200),
+    __metadata("design:type", String)
+], UserImportPreviewQueryDto.prototype, "search", void 0);
+class UserImportPreviewRow {
+    row;
+    name;
+    lastname;
+    ci;
+    ru;
+    email;
+    username;
+    valid;
+    errors;
+}
+exports.UserImportPreviewRow = UserImportPreviewRow;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Número original de fila Excel, incluyendo encabezado' }),
+    __metadata("design:type", Number)
+], UserImportPreviewRow.prototype, "row", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], UserImportPreviewRow.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], UserImportPreviewRow.prototype, "lastname", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], UserImportPreviewRow.prototype, "ci", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], UserImportPreviewRow.prototype, "ru", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], UserImportPreviewRow.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], UserImportPreviewRow.prototype, "username", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", Boolean)
+], UserImportPreviewRow.prototype, "valid", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ type: [String] }),
+    __metadata("design:type", Array)
+], UserImportPreviewRow.prototype, "errors", void 0);
+class UserImportPreviewMeta {
+    page;
+    limit;
+    total;
+    totalPages;
+}
+exports.UserImportPreviewMeta = UserImportPreviewMeta;
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", Number)
+], UserImportPreviewMeta.prototype, "page", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ enum: [25, 50, 100] }),
+    __metadata("design:type", Number)
+], UserImportPreviewMeta.prototype, "limit", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Total filtrado' }),
+    __metadata("design:type", Number)
+], UserImportPreviewMeta.prototype, "total", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", Number)
+], UserImportPreviewMeta.prototype, "totalPages", void 0);
+class UserImportPreview {
+    operationId;
+    total;
+    valid;
+    invalid;
+    data;
+    meta;
+}
+exports.UserImportPreview = UserImportPreview;
+__decorate([
+    (0, swagger_1.ApiProperty)({ format: 'uuid' }),
+    __metadata("design:type", String)
+], UserImportPreview.prototype, "operationId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Total de filas de todo el archivo' }),
+    __metadata("design:type", Number)
+], UserImportPreview.prototype, "total", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Filas válidas de todo el archivo' }),
+    __metadata("design:type", Number)
+], UserImportPreview.prototype, "valid", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Filas inválidas de todo el archivo' }),
+    __metadata("design:type", Number)
+], UserImportPreview.prototype, "invalid", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ type: [UserImportPreviewRow] }),
+    __metadata("design:type", Array)
+], UserImportPreview.prototype, "data", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ type: UserImportPreviewMeta }),
+    __metadata("design:type", UserImportPreviewMeta)
+], UserImportPreview.prototype, "meta", void 0);
+exports.userImportPreviewResponse = {
+    description: 'Resumen global y página de filas dentro del sobre estándar de la API',
+    schema: {
+        type: 'object',
+        properties: {
+            status: { type: 'boolean' },
+            statusCode: { type: 'integer' },
+            data: { $ref: '#/components/schemas/UserImportPreview' },
+        },
+        required: ['status', 'statusCode', 'data'],
+    },
+};
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZHRvc1xcdXNlcnNcXHVzZXJzLWltcG9ydC1wcmV2aWV3LmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7QUFBQSx5REFBeUM7QUFDekMscURBQXlGO0FBQ3pGLDZDQUFtRTtBQUduRSxNQUFhLHlCQUF5QjtJQU1wQyxJQUFJLEdBQVcsQ0FBQyxDQUFDO0lBU2pCLEtBQUssR0FBVyxFQUFFLENBQUM7SUFLbkIsTUFBTSxHQUFnQyxLQUFLLENBQUM7SUFNNUMsTUFBTSxDQUFVO0NBQ2pCO0FBM0JELDhEQTJCQztBQXJCQztJQUxDLElBQUEsNkJBQW1CLEVBQUMsRUFBRSxPQUFPLEVBQUUsQ0FBQyxFQUFFLE9BQU8sRUFBRSxDQUFDLEVBQUUsQ0FBQztJQUMvQyxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLHdCQUFJLEVBQUMsR0FBRyxFQUFFLENBQUMsTUFBTSxDQUFDO0lBQ2xCLElBQUEsdUJBQUssR0FBRTtJQUNQLElBQUEscUJBQUcsRUFBQyxDQUFDLENBQUM7O3VEQUNVO0FBU2pCO0lBUEMsSUFBQSw2QkFBbUIsRUFBQyxFQUFFLE9BQU8sRUFBRSxFQUFFLEVBQUUsSUFBSSxFQUFFLENBQUMsRUFBRSxFQUFFLEVBQUUsRUFBRSxHQUFHLENBQUMsRUFBRSxDQUFDO0lBQ3pELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsd0JBQUksRUFBQyxHQUFHLEVBQUUsQ0FBQyxNQUFNLENBQUM7SUFDbEIsSUFBQSx1QkFBSyxHQUFFO0lBQ1AsSUFBQSxxQkFBRyxFQUFDLENBQUMsQ0FBQztJQUNOLElBQUEscUJBQUcsRUFBQyxHQUFHLENBQUM7SUFDUixJQUFBLHNCQUFJLEVBQUMsQ0FBQyxFQUFFLEVBQUUsRUFBRSxFQUFFLEdBQUcsQ0FBQyxDQUFDOzt3REFDRDtBQUtuQjtJQUhDLElBQUEsNkJBQW1CLEVBQUMsRUFBRSxPQUFPLEVBQUUsS0FBSyxFQUFF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QUFFO1lBQ1YsTUFBTSxFQUFFLEVBQUUsSUFBSSxFQUFFLFNBQVMsRUFBRTtZQUMzQixVQUFVLEVBQUUsRUFBRSxJQUFJLEVBQUUsU0FBUyxFQUFFO1lBQy9CLElBQUksRUFBRSxFQUFFLElBQUksRUFBRSx3Q0FBd0MsRUFBRTtTQUN6RDtRQUNELFFBQVEsRUFBRSxDQUFDLFFBQVEsRUFBRSxZQUFZLEVBQUUsTUFBTSxDQUFDO0tBQzNDO0NBQ0YsQ0FBQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxkdG9zXFx1c2Vyc1xcdXNlcnMtaW1wb3J0LXByZXZpZXcuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IFR5cGUgfSBmcm9tICdjbGFzcy10cmFuc2Zvcm1lcic7XG5pbXBvcnQgeyBJc0luLCBJc0ludCwgSXNPcHRpb25hbCwgSXNTdHJpbmcsIE1heCwgTWF4TGVuZ3RoLCBNaW4gfSBmcm9tICdjbGFzcy12YWxpZGF0b3InO1xuaW1wb3J0IHsgQXBpUHJvcGVydHksIEFwaVByb3BlcnR5T3B0aW9uYWwgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHR5cGUgeyBBcGlSZXNwb25zZU9wdGlvbnMgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuXG5leHBvcnQgY2xhc3MgVXNlckltcG9ydFByZXZpZXdRdWVyeUR0byB7XG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHsgZGVmYXVsdDogMSwgbWluaW11bTogMSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBUeXBlKCgpID0+IE51bWJlcilcbiAgQElzSW50KClcbiAgQE1pbigxKVxuICBwYWdlOiBudW1iZXIgPSAxO1xuXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHsgZGVmYXVsdDogMjUsIGVudW06IFsyNSwgNTAsIDEwMF0gfSlcbiAgQElzT3B0aW9uYWwoKVxuICBAVHlwZSgoKSA9PiBOdW1iZXIpXG4gIEBJc0ludCgpXG4gIEBNaW4oMSlcbiAgQE1heCgxMDApXG4gIEBJc0luKFsyNSwgNTAsIDEwMF0pXG4gIGxpbWl0OiBudW1iZXIgPSAyNTtcblxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7IGRlZmF1bHQ6ICdhbGwnLCBlbnVtOiBbJ2FsbCcsICd2YWxpZCcsICdpbnZhbGlkJ10gfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNJbihbJ2FsbCcsICd2YWxpZCcsICdpbnZhbGlkJ10pXG4gIHN0YXR1czogJ2FsbCcgfCAndmFsaWQnIHwgJ2ludmFsaWQnID0gJ2FsbCc7XG5cbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoeyBkZXNjcmlwdGlvbjogJ05vbWJyZSwgYXBlbGxpZG8sIENJLCBSVSwgZW1haWwgbyB1c2VybmFtZScgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNTdHJpbmcoKVxuICBATWF4TGVuZ3RoKDIwMClcbiAgc2VhcmNoPzogc3RyaW5nO1xufVxuXG5leHBvcnQgY2xhc3MgVXNlckltcG9ydFByZXZpZXdSb3cge1xuICBAQXBpUHJvcGVydHkoeyBkZXNjcmlwdGlvbjogJ07Dum1lcm8gb3JpZ2luYWwgZGUgZmlsYSBFeGNlbCwgaW5jbHV5ZW5kbyBlbmNhYmV6YWRvJyB9KVxuICByb3c6IG51bWJlcjtcbiAgQEFwaVByb3BlcnR5KClcbiAgbmFtZTogc3RyaW5nO1xuICBAQXBpUHJvcGVydHkoKVxuICBsYXN0bmFtZTogc3RyaW5nO1xuICBAQXBpUHJvcGVydHkoKVxuICBjaTogc3RyaW5nO1xuICBAQXBpUHJvcGVydHkoKVxuICBydTogc3RyaW5nO1xuICBAQXBpUHJvcGVydHkoKVxuICBlbWFpbDogc3RyaW5nO1xuICBAQXBpUHJvcGVydHkoKVxuICB1c2VybmFtZTogc3RyaW5nO1xuICBAQXBpUHJvcGVydHkoKVxuICB2YWxpZDogYm9vbGVhbjtcbiAgQEFwaVByb3BlcnR5KHsgdHlwZTogW1N0cmluZ10gfSlcbiAgZXJyb3JzOiBzdHJpbmdbXTtcbn1cblxuZXhwb3J0IGNsYXNzIFVzZXJJbXBvcnRQcmV2aWV3TWV0YSB7XG4gIEBBcGlQcm9wZXJ0eSgpXG4gIHBhZ2U6IG51bWJlcjtcbiAgQEFwaVByb3BlcnR5KHsgZW51bTogWzI1LCA1MCwgMTAwXSB9KVxuICBsaW1pdDogbnVtYmVyO1xuICBAQXBpUHJvcGVydHkoeyBkZXNjcmlwdGlvbjogJ1RvdGFsIGZpbHRyYWRvJyB9KVxuICB0b3RhbDogbnVtYmVyO1xuICBAQXBpUHJvcGVydHkoKVxuICB0b3RhbFBhZ2VzOiBudW1iZXI7XG59XG5cbmV4cG9ydCBjbGFzcyBVc2VySW1wb3J0UHJldmlldyB7XG4gIEBBcGlQcm9wZXJ0eSh7IGZvcm1hdDogJ3V1aWQnIH0pXG4gIG9wZXJhdGlvbklkOiBzdHJpbmc7XG4gIEBBcGlQcm9wZXJ0eSh7IGRlc2NyaXB0aW9uOiAnVG90YWwgZGUgZmlsYXMgZGUgdG9kbyBlbCBhcmNoaXZvJyB9KVxuICB0b3RhbDogbnVtYmVyO1xuICBAQXBpUHJvcGVydHkoeyBkZXNjcmlwdGlvbjogJ0ZpbGFzIHbDoWxpZGFzIGRlIHRvZG8gZWwgYXJjaGl2bycgfSlcbiAgdmFsaWQ6IG51bWJlcjtcbiAgQEFwaVByb3BlcnR5KHsgZGVzY3JpcHRpb246ICdGaWxhcyBpbnbDoWxpZGFzIGRlIHRvZG8gZWwgYXJjaGl2bycgfSlcbiAgaW52YWxpZDogbnVtYmVyO1xuICBAQXBpUHJvcGVydHkoeyB0eXBlOiBbVXNlckltcG9ydFByZXZpZXdSb3ddIH0pXG4gIGRhdGE6IFVzZXJJbXBvcnRQcmV2aWV3Um93W107XG4gIEBBcGlQcm9wZXJ0eSh7IHR5cGU6IFVzZXJJbXBvcnRQcmV2aWV3TWV0YSB9KVxuICBtZXRhOiBVc2VySW1wb3J0UHJldmlld01ldGE7XG59XG5cbmV4cG9ydCBjb25zdCB1c2VySW1wb3J0UHJldmlld1Jlc3BvbnNlOiBBcGlSZXNwb25zZU9wdGlvbnMgPSB7XG4gIGRlc2NyaXB0aW9uOiAnUmVzdW1lbiBnbG9iYWwgeSBww6FnaW5hIGRlIGZpbGFzIGRlbnRybyBkZWwgc29icmUgZXN0w6FuZGFyIGRlIGxhIEFQSScsXG4gIHNjaGVtYToge1xuICAgIHR5cGU6ICdvYmplY3QnLFxuICAgIHByb3BlcnRpZXM6IHtcbiAgICAgIHN0YXR1czogeyB0eXBlOiAnYm9vbGVhbicgfSxcbiAgICAgIHN0YXR1c0NvZGU6IHsgdHlwZTogJ2ludGVnZXInIH0sXG4gICAgICBkYXRhOiB7ICRyZWY6ICcjL2NvbXBvbmVudHMvc2NoZW1hcy9Vc2VySW1wb3J0UHJldmlldycgfSxcbiAgICB9LFxuICAgIHJlcXVpcmVkOiBbJ3N0YXR1cycsICdzdGF0dXNDb2RlJywgJ2RhdGEnXSxcbiAgfSxcbn07XG4iXSwidmVyc2lvbiI6M30=

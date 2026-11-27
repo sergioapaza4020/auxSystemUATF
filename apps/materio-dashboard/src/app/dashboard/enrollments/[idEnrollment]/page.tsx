@@ -41,14 +41,13 @@ export default function EnrollmentDetailPage() {
     return <Typography color='error'>No se encontró la matriculación.</Typography>;
   }
 
-  if (enrollment.role === UserRole.STUDENT && gradesError) {
-    return (
+  const gradesFeedback =
+    enrollment.role === UserRole.STUDENT && gradesError ? (
       <Stack spacing={2}>
         <Alert severity='error'>{gradesError}</Alert>
         <Button onClick={() => void reloadGrades()}>Reintentar</Button>
       </Stack>
-    );
-  }
+    ) : undefined;
 
   return (
     <EnrollmentDetail
@@ -56,6 +55,7 @@ export default function EnrollmentDetailPage() {
       grades={grades}
       students={[]}
       loadingGrades={loadingGrades}
+      gradesFeedback={gradesFeedback}
       loadingStudents={false}
       assistantGradeScheme={assistantGradeScheme}
       loadingAssistantGradeScheme={loadingAssistantGradeScheme}

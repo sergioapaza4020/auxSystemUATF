@@ -1,0 +1,43 @@
+ec340541df50af72244054ceb0676a57
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Permission = void 0;
+const typeorm_1 = require("typeorm");
+const roles_entity_1 = require("../roles/roles.entity");
+const base_entity_1 = require("@common/entities/base.entity");
+let Permission = class Permission extends base_entity_1.BaseEntity {
+    idPermission;
+    name;
+    description;
+    roles;
+};
+exports.Permission = Permission;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_permission' }),
+    __metadata("design:type", Number)
+], Permission.prototype, "idPermission", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ unique: true, name: 'name' }),
+    __metadata("design:type", String)
+], Permission.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, name: 'description' }),
+    __metadata("design:type", String)
+], Permission.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.ManyToMany)(() => roles_entity_1.Role, (role) => role.permissions),
+    __metadata("design:type", Array)
+], Permission.prototype, "roles", void 0);
+exports.Permission = Permission = __decorate([
+    (0, typeorm_1.Entity)('permissions')
+], Permission);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXHBlcm1pc3Npb25zXFxwZXJtaXNzaW9ucy5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7O0FBQUEscUNBQTZFO0FBQzdFLHdEQUE2QztBQUM3Qyw4REFBMEQ7QUFHbkQsSUFBTSxVQUFVLEdBQWhCLE1BQU0sVUFBVyxTQUFRLHdCQUFVO0lBRXhDLFlBQVksQ0FBUztJQUdyQixJQUFJLENBQVM7SUFHYixXQUFXLENBQVU7SUFHckIsS0FBSyxDQUFTO0NBQ2YsQ0FBQTtBQVpZLGdDQUFVO0FBRXJCO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxFQUFFLElBQUksRUFBRSxlQUFlLEVBQUUsQ0FBQzs7Z0RBQzdCO0FBR3JCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsTUFBTSxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLENBQUM7O3dDQUMxQjtBQUdiO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsYUFBYSxFQUFFLENBQUM7OytDQUMzQjtBQUdyQjtJQURDLElBQUEsb0JBQVUsRUFBQyxHQUFHLEVBQUUsQ0FBQyxtQkFBSSxFQUFFLENBQUMsSUFBSSxFQUFFLEVBQUUsQ0FBQyxJQUFJLENBQUMsV0FBVyxDQUFDOzt5Q0FDckM7cUJBWEgsVUFBVTtJQUR0QixJQUFBLGdCQUFNLEVBQUMsYUFBYSxDQUFDO0dBQ1QsVUFBVSxDQVl0QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxlbnRpdGllc1xccGVybWlzc2lvbnNcXHBlcm1pc3Npb25zLmVudGl0eS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBDb2x1bW4sIEVudGl0eSwgTWFueVRvTWFueSwgUHJpbWFyeUdlbmVyYXRlZENvbHVtbiB9IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgUm9sZSB9IGZyb20gJy4uL3JvbGVzL3JvbGVzLmVudGl0eSc7XG5pbXBvcnQgeyBCYXNlRW50aXR5IH0gZnJvbSAnQGNvbW1vbi9lbnRpdGllcy9iYXNlLmVudGl0eSc7XG5cbkBFbnRpdHkoJ3Blcm1pc3Npb25zJylcbmV4cG9ydCBjbGFzcyBQZXJtaXNzaW9uIGV4dGVuZHMgQmFzZUVudGl0eSB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKHsgbmFtZTogJ2lkX3Blcm1pc3Npb24nIH0pXG4gIGlkUGVybWlzc2lvbjogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyB1bmlxdWU6IHRydWUsIG5hbWU6ICduYW1lJyB9KVxuICBuYW1lOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IG51bGxhYmxlOiB0cnVlLCBuYW1lOiAnZGVzY3JpcHRpb24nIH0pXG4gIGRlc2NyaXB0aW9uPzogc3RyaW5nO1xuXG4gIEBNYW55VG9NYW55KCgpID0+IFJvbGUsIChyb2xlKSA9PiByb2xlLnBlcm1pc3Npb25zKVxuICByb2xlczogUm9sZVtdO1xufVxuIl0sInZlcnNpb24iOjN9

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { passwordPolicyError } from '@repo/password-policy';
+
 import {
   Alert,
   Autocomplete,
@@ -54,7 +56,7 @@ export function UserEditDialog({
 
   const valid =
     userFields.every((field) => (field === 'ru' && user && !user.ru ? true : !!form[field].trim())) &&
-    (!!user || !!form.password);
+    (form.password ? !passwordPolicyError(form.password) : Boolean(user));
 
   const update = user ? userUpdatePayload(form, user) : null;
 
@@ -117,9 +119,11 @@ export function UserEditDialog({
               disabled={busy}
               onChange={(event) => setForm((previous) => ({ ...previous, password: event.target.value }))}
               helperText={
-                user
-                  ? 'Déjala vacía para conservar la contraseña actual. Nunca se recupera ni muestra la anterior.'
-                  : 'Se enviará únicamente al crear la cuenta.'
+                form.password
+                  ? passwordPolicyError(form.password)
+                  : user
+                    ? 'Déjala vacía para conservar la contraseña actual. Nunca se recupera ni muestra la anterior.'
+                    : 'Usa 8 caracteres o más, con mayúscula, minúscula, número y símbolo.'
               }
             />
             {!user && (

@@ -174,7 +174,7 @@ export class AssistantGradeSchemesService {
         where: { idGradeScheme: scheme.idGradeScheme, isActive: true },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!locked) throw new NotFoundException('Configuraci�n del auxiliar no encontrada');
+      if (!locked) throw new NotFoundException('No encontramos la configuración del auxiliar.');
       const existing = await detailRepository
         .createQueryBuilder('detail')
         .leftJoinAndSelect('detail.gradeItem', 'item')
@@ -185,7 +185,7 @@ export class AssistantGradeSchemesService {
         new Set(existing.map((detail) => detail.gradeItem.idGradeItem)).size !== existing.length
       ) {
         throw new ConflictException(
-          'El esquema contiene �tems duplicados; requiere revisi�n antes de editarlo',
+          'El esquema tiene criterios duplicados. Revísalos antes de editarlo.',
         );
       }
       const kept = new Set(dto.details.map((detail) => detail.gradeItem.idGradeItem));
@@ -240,7 +240,10 @@ export class AssistantGradeSchemesService {
           const item = await manager
             .getRepository(GradeItem)
             .findOne({ where: { idGradeItem: input.gradeItem.idGradeItem, isActive: true } });
-          if (!item) throw new BadRequestException('�tem de calificaci�n inexistente o inactivo');
+          if (!item)
+            throw new BadRequestException(
+              'No encontramos un criterio de calificación activo con esos datos.',
+            );
           detail = detailRepository.create({ gradeScheme: scheme, gradeItem: item });
         }
         detail.percentage = input.percentage;
@@ -332,7 +335,7 @@ export class AssistantGradeSchemesService {
     });
     if (!matches.length) throw new ForbiddenException('No eres auxiliar de esta materia');
     if (matches.length > 1)
-      throw new ConflictException('Selecciona la matr�cula y el semestre del auxiliar');
+      throw new ConflictException('Selecciona la matrícula y el semestre del auxiliar.');
     return matches[0];
   }
 
@@ -340,7 +343,7 @@ export class AssistantGradeSchemesService {
     if (
       new Set(dto.details.map((detail) => detail.gradeItem.idGradeItem)).size !== dto.details.length
     ) {
-      throw new BadRequestException('No se puede repetir un �tem en el esquema');
+      throw new BadRequestException('Cada criterio puede aparecer una sola vez en el esquema.');
     }
     if (
       dto.details.some(

@@ -91,6 +91,9 @@ export class AttendanceSession extends BaseEntity {
   @JoinColumn({ name: 'id_assistant_enrollment' })
   assistantEnrollment: Enrollment;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  topic: string | null;
+
   @Column({ name: 'date', type: 'date' })
   date: Date;
 

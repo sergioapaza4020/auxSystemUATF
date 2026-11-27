@@ -14,10 +14,17 @@ function refreshOnce(): Promise<string> {
   if (!refreshPromise) {
     refreshPromise = refreshAccessToken()
       .catch((error: unknown) => {
-        clearTokens();
-        window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
-        window.location.href = '/login';
-        console.error('Refresh token failed');
+        const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+
+        if (status === 401 || status === 403) {
+          clearTokens();
+          window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+          window.location.href = '/login';
+        } else {
+          // Network/5xx/rotation conflicts are transient; retain the HttpOnly
+          // cookie so a later request can recover the session.
+          console.error('Refresh token temporarily unavailable');
+        }
 
         throw error;
       })
@@ -32,9 +39,18 @@ function refreshOnce(): Promise<string> {
 function isPublicAuthRequest(config: InternalAxiosRequestConfig): boolean {
   const path = new URL(config.url ?? '', 'http://axios.local').pathname.replace(/\/+$/, '');
 
-  return [AUTH_ROUTES.login, AUTH_ROUTES.refresh, AUTH_ROUTES.checkRegistration].some(
-    (route) => path === route || path === `/api${route}`,
-  );
+  return [
+    AUTH_ROUTES.login,
+    AUTH_ROUTES.refresh,
+    AUTH_ROUTES.checkRegistration,
+    '/api/auth/login',
+    '/api/auth/refresh',
+    '/api/auth/logout',
+    '/api/auth/password-recovery/request',
+    '/api/auth/password-recovery/resend',
+    '/api/auth/password-recovery/verify',
+    '/forgot-password/reset/submit',
+  ].some((route) => path === route || path === `/api${route}`);
 }
 
 export const instance = axios.create({

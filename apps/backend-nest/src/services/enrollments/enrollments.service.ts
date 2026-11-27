@@ -78,7 +78,7 @@ export class EnrollmentsService {
     if (!semester) throw new NotFoundException('Semestre no encontrado o inactivo');
 
     const course = await this.coursesService.getOneByCode(dto.courseCode);
-    if (!course) throw new NotFoundException('Materia no encontrada o inactivo');
+    if (!course) throw new NotFoundException('No encontramos una materia activa con esos datos.');
 
     const hasRequiredRole = user.roles.some((role) => (role.name as CourseRelations) === dto.role);
     if (!hasRequiredRole)
@@ -146,7 +146,7 @@ export class EnrollmentsService {
         where: { idEnrollment, isActive: true },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!locked) throw new NotFoundException('Matr�cula no encontrada');
+      if (!locked) throw new NotFoundException('No encontramos la matrícula solicitada.');
       const enrollment = await repository.findOneOrFail({
         where: { idEnrollment },
         relations: { user: true, course: true, semester: true },
@@ -234,6 +234,7 @@ export class EnrollmentsService {
           user: { idUser },
           isActive: true,
           role: In([CourseRelations.STUDENT, CourseRelations.ASSISTANT]),
+          course: { isActive: true },
           semester: { idSemester: semester.idSemester },
         },
         relations: { course: true, semester: true },
@@ -251,7 +252,7 @@ export class EnrollmentsService {
             isActive: true,
           },
         },
-        order: { course: { code: 'ASC' }, idEnrollment: 'ASC' },
+        order: { course: { name: 'ASC', code: 'ASC' }, idEnrollment: 'ASC' },
       });
     }
 

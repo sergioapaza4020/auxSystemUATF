@@ -1,0 +1,51 @@
+9c6e2b8524ec6b464fb8590cd5caffed
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.refreshDigest = void 0;
+exports.matchesRefresh = matchesRefresh;
+const node_crypto_1 = require("node:crypto");
+const bcrypt = __importStar(require("bcrypt"));
+const refreshDigest = (token) => `sha256:v1:${(0, node_crypto_1.createHash)('sha256').update(token).digest('hex')}`;
+exports.refreshDigest = refreshDigest;
+async function matchesRefresh(token, stored) {
+    if (stored.startsWith('sha256:v1:')) {
+        const actual = Buffer.from((0, exports.refreshDigest)(token));
+        const expected = Buffer.from(stored);
+        return actual.length === expected.length && (0, node_crypto_1.timingSafeEqual)(actual, expected);
+    }
+    return /^\$2[aby]\$/.test(stored) && bcrypt.compare(token, stored);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcY29tbW9uXFx1dGlsc1xccmVmcmVzaC1kaWdlc3QudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBTUEsd0NBT0M7QUFiRCw2Q0FBMEQ7QUFDMUQsK0NBQWlDO0FBRTFCLE1BQU0sYUFBYSxHQUFHLENBQUMsS0FBYSxFQUFFLEVBQUUsQ0FDN0MsYUFBYSxJQUFBLHdCQUFVLEVBQUMsUUFBUSxDQUFDLENBQUMsTUFBTSxDQUFDLEtBQUssQ0FBQyxDQUFDLE1BQU0sQ0FBQyxLQUFLLENBQUMsRUFBRSxDQUFDO0FBRHJELFFBQUEsYUFBYSxpQkFDd0M7QUFFM0QsS0FBSyxVQUFVLGNBQWMsQ0FBQyxLQUFhLEVBQUUsTUFBYztJQUNoRSxJQUFJLE1BQU0sQ0FBQyxVQUFVLENBQUMsWUFBWSxDQUFDLEVBQUUsQ0FBQztRQUNwQyxNQUFNLE1BQU0sR0FBRyxNQUFNLENBQUMsSUFBSSxDQUFDLElBQUEscUJBQWEsRUFBQyxLQUFLLENBQUMsQ0FBQyxDQUFDO1FBQ2pELE1BQU0sUUFBUSxHQUFHLE1BQU0sQ0FBQyxJQUFJLENBQUMsTUFBTSxDQUFDLENBQUM7UUFDckMsT0FBTyxNQUFNLENBQUMsTUFBTSxLQUFLLFFBQVEsQ0FBQyxNQUFNLElBQUksSUFBQSw2QkFBZSxFQUFDLE1BQU0sRUFBRSxRQUFRLENBQUMsQ0FBQztJQUNoRixDQUFDO0lBQ0QsT0FBTyxhQUFhLENBQUMsSUFBSSxDQUFDLE1BQU0sQ0FBQyxJQUFJLE1BQU0sQ0FBQyxPQUFPLENBQUMsS0FBSyxFQUFFLE1BQU0sQ0FBQyxDQUFDO0FBQ3JFLENBQUMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcY29tbW9uXFx1dGlsc1xccmVmcmVzaC1kaWdlc3QudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgY3JlYXRlSGFzaCwgdGltaW5nU2FmZUVxdWFsIH0gZnJvbSAnbm9kZTpjcnlwdG8nO1xuaW1wb3J0ICogYXMgYmNyeXB0IGZyb20gJ2JjcnlwdCc7XG5cbmV4cG9ydCBjb25zdCByZWZyZXNoRGlnZXN0ID0gKHRva2VuOiBzdHJpbmcpID0+XG4gIGBzaGEyNTY6djE6JHtjcmVhdGVIYXNoKCdzaGEyNTYnKS51cGRhdGUodG9rZW4pLmRpZ2VzdCgnaGV4Jyl9YDtcblxuZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIG1hdGNoZXNSZWZyZXNoKHRva2VuOiBzdHJpbmcsIHN0b3JlZDogc3RyaW5nKTogUHJvbWlzZTxib29sZWFuPiB7XG4gIGlmIChzdG9yZWQuc3RhcnRzV2l0aCgnc2hhMjU2OnYxOicpKSB7XG4gICAgY29uc3QgYWN0dWFsID0gQnVmZmVyLmZyb20ocmVmcmVzaERpZ2VzdCh0b2tlbikpO1xuICAgIGNvbnN0IGV4cGVjdGVkID0gQnVmZmVyLmZyb20oc3RvcmVkKTtcbiAgICByZXR1cm4gYWN0dWFsLmxlbmd0aCA9PT0gZXhwZWN0ZWQubGVuZ3RoICYmIHRpbWluZ1NhZmVFcXVhbChhY3R1YWwsIGV4cGVjdGVkKTtcbiAgfVxuICByZXR1cm4gL15cXCQyW2FieV1cXCQvLnRlc3Qoc3RvcmVkKSAmJiBiY3J5cHQuY29tcGFyZSh0b2tlbiwgc3RvcmVkKTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

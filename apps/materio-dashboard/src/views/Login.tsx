@@ -66,6 +66,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
 
     const username = String(data.get('username') ?? '').trim();
     const password = String(data.get('password') ?? '');
+    const rememberMe = data.get('remember') === 'on';
 
     if (!username || !password) {
       snackbar.error('Ingresa tu usuario y contraseña.');
@@ -81,6 +82,7 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
       await apiLogin({
         username,
         password,
+        rememberMe,
       });
 
       // Keep the form locked until navigation unmounts Login.
@@ -400,18 +402,6 @@ const Login = ({ mode: initialMode }: { mode: Mode }) => {
                     py: 1,
                   }}
                 >
-                  <Box
-                    sx={{
-                      flex: 1,
-                      height: '1px',
-                      bgcolor: 'divider',
-                    }}
-                  />
-
-                  <Typography variant='caption' color='text.disabled'>
-                    o
-                  </Typography>
-
                   <Box
                     sx={{
                       flex: 1,

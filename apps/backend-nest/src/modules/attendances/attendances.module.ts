@@ -1,4 +1,7 @@
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { BulkOperationsModule } from '../bulk-operations/bulk-operations.module';
+import { AttendanceImportController } from 'src/controllers/attendances/attendance-import.controller';
+import { AttendanceImportService } from 'src/services/attendances/attendance-import.service';
 import { UserImportQueueModule } from '../bulk-operations/user-import-queue.module';
 import { AttendanceRateLimitService } from 'src/services/attendances/attendance-rate-limit.service';
 import { AttendanceRateLimitInterceptor } from 'src/services/attendances/attendance-rate-limit.interceptor';
@@ -18,6 +21,7 @@ import { AttendanceQrTokenService } from 'src/services/attendances/attendance-qr
 
 @Module({
   imports: [
+    BulkOperationsModule,
     UserImportQueueModule,
     TypeOrmModule.forFeature([
       Attendance,
@@ -28,12 +32,13 @@ import { AttendanceQrTokenService } from 'src/services/attendances/attendance-qr
     ]),
   ],
   providers: [
+    AttendanceImportService,
     AttendancesService,
     AttendanceQrTokenService,
     AttendanceRateLimitService,
     { provide: APP_INTERCEPTOR, useClass: AttendanceRateLimitInterceptor },
   ],
-  controllers: [AttendancesController],
+  controllers: [AttendancesController, AttendanceImportController],
   exports: [AttendancesService],
 })
 export class AttendancesModule {}

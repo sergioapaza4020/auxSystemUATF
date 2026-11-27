@@ -40,10 +40,12 @@ import { useAttendanceRoster } from '@/hooks/attendances/useAttendanceRoster';
 
 import { AttendanceStatus } from '@/enums/attendanceStatus';
 import { AttendancePageHeader } from '@/views/attendance/AttendancePageHeader';
+import { AttendanceImportDialog } from '@/views/attendance/AttendanceImportDialog';
 import { AttendanceSessionToolbar } from '@/views/attendance/AttendanceSessionToolbar';
 import { AttendanceSheet } from '@/views/attendance/AttendanceSheet';
 import { AttendanceHistory } from '@/views/attendance/AttendanceHistory';
 import { DateField } from '@/components/DateField';
+import { AttendanceTopicDialog } from '@/views/attendance/AttendanceTopicDialog';
 import { AttendanceCreateDialog } from '@/views/attendance/AttendanceCreateDialog';
 import { AttendanceQrConfigDialog } from '@/views/attendance/AttendanceQrConfigDialog';
 import { attendanceQrError } from '@/utils/attendance-qr';
@@ -57,7 +59,7 @@ import type { AttendanceSessionMode } from '@/interfaces/attendances/attendance.
 import { attendanceLocalTime, canEditAttendance, getAttendanceGeoErrorMessage } from '@/utils/attendance-geolocation';
 
 type PendingAttendanceAction =
-  | { kind: 'create'; mode?: AttendanceSessionMode; date?: string }
+  | { kind: 'create'; mode?: AttendanceSessionMode; date?: string; topic?: string | null }
   | { kind: 'open'; idSession: number }
   | { kind: 'back' }
   | { kind: 'delete'; idSession: number }
@@ -74,6 +76,13 @@ export default function AttendancePage() {
   const canSave = hasPermission(user, 'attendance.save');
   const canCreate = hasPermission(user, 'attendance.session.create');
   const canOpen = hasPermission(user, 'attendance.session.get-one');
+
+  const canImport =
+    canSave &&
+    hasPermission(user, 'attendance.session.get-by-enrollment') &&
+    hasPermission(user, 'enrollment.get-students-by-enrollment');
+
+  const [importOpen, setImportOpen] = useState(false);
 
   const canEditConfig =
     hasPermission(user, 'assistant-grade-scheme.update') && hasPermission(user, 'assistant-grade-scheme.get-one');
@@ -119,6 +128,7 @@ export default function AttendancePage() {
   const [pendingAction, setPendingAction] = useState<PendingAttendanceAction | null>(null);
   const [openingSession, setOpeningSession] = useState(false);
   const [creatingSession, setCreatingSession] = useState(false);
+  const [editingTopic, setEditingTopic] = useState(false);
   const [geoDialog, setGeoDialog] = useState(false);
   const [qrDialog, setQrDialog] = useState(false);
   const [qrPresent, setQrPresent] = useState(false);
@@ -306,6 +316,7 @@ export default function AttendancePage() {
     setTab(0);
     setSelectedSessionId(idSession);
     setSelectedDate(loaded.date.slice(0, 10));
+    setEditingTopic(false);
     setGeoDialog(loaded.mode === 'GEOLOCATION' || loaded.mode === 'GEOLOCATION_QR');
     setContingency(null);
     setAuditOpen(false);
@@ -360,9 +371,11 @@ export default function AttendancePage() {
         }
 
         const created =
-          action.mode === 'GEOLOCATION' || action.mode === 'QR' || action.mode === 'GEOLOCATION_QR'
-            ? await createSession(date, action.mode)
-            : await createSession(date);
+          action.topic !== undefined
+            ? await createSession(date, action.mode, action.topic)
+            : action.mode === 'GEOLOCATION' || action.mode === 'QR' || action.mode === 'GEOLOCATION_QR'
+              ? await createSession(date, action.mode)
+              : await createSession(date);
 
         try {
           await openSession(created.idAttendanceSession);
@@ -479,6 +492,29 @@ export default function AttendancePage() {
         studentCount={roster.total}
         onBack={() => requestAction({ kind: 'back' })}
       />
+      {canImport && (
+        <Box>
+          <Button
+            variant='outlined'
+            disabled={saving || openingSession || hasChanges}
+            onClick={() => setImportOpen(true)}
+          >
+            Importar asistencia desde Excel
+          </Button>
+        </Box>
+      )}
+      {importOpen && (
+        <AttendanceImportDialog
+          enrollmentId={idEnrollment}
+          onClose={() => setImportOpen(false)}
+          onImported={() => {
+            roster.refresh();
+            void loadSessions().catch((error) => snackbar.error(getApiErrorMessage(error)));
+            if (selectedSessionId !== null)
+              void loadSession(selectedSessionId).catch((error) => snackbar.error(getApiErrorMessage(error)));
+          }}
+        />
+      )}
 
       <Paper variant='outlined' sx={{ borderRadius: 2 }}>
         <Tabs
@@ -504,6 +540,11 @@ export default function AttendancePage() {
                 saving={saving || openingSession}
                 canCreate={canCreate && canOpen}
                 hasChanges={hasChanges}
+                onEditTopic={
+                  selected && selected.state !== 'CANCELLED' && hasPermission(user, 'attendance.session.update')
+                    ? () => setEditingTopic(true)
+                    : undefined
+                }
                 onDateChange={setSelectedDate}
                 onCreateSession={() => setCreatingSession(true)}
                 onConfigureQr={
@@ -694,13 +735,28 @@ export default function AttendancePage() {
           disabled={saving || openingSession || !canOpen}
         />
       </Box>
+      {editingTopic &&
+        selected &&
+        hasPermission(user, 'attendance.session.update') &&
+        selected.state !== 'CANCELLED' && (
+          <AttendanceTopicDialog
+            key={selected.idAttendanceSession}
+            session={selected}
+            onClose={() => setEditingTopic(false)}
+            onSaved={async () => {
+              await loadSession(selected.idAttendanceSession);
+              roster.refresh?.();
+              await loadSessions();
+            }}
+          />
+        )}
       {creatingSession && (
         <AttendanceCreateDialog
           creating={openingSession}
           initialDate={selectedDate}
           onClose={() => setCreatingSession(false)}
-          onCreate={(mode, date) => {
-            requestAction({ kind: 'create', mode, date });
+          onCreate={(mode, date, topic) => {
+            requestAction({ kind: 'create', mode, date, ...(topic !== undefined ? { topic } : {}) });
           }}
         />
       )}

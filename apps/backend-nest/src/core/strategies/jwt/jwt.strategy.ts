@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       !Number.isSafeInteger(payload.idUser) ||
       payload.idUser <= 0
     ) {
-      throw new UnauthorizedException('Invalid access session identifier');
+      throw new UnauthorizedException('Tu sesión ya no es válida. Inicia sesión nuevamente.');
     }
     await this.sessions.assertActiveSession(payload.idSession, payload.idUser);
     return payload;

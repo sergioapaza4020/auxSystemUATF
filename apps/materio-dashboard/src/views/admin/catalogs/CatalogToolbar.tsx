@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { MenuItem, TextField } from '@mui/material';
+import { InputAdornment, MenuItem, TextField } from '@mui/material';
 
 import { TableToolbar } from '@/components/table';
 
@@ -36,6 +36,13 @@ export function CatalogToolbar({
         value={search}
         onChange={(event) => onSearch(event.target.value)}
         sx={{ flex: 1 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position='start'>
+              <i className='ri-search-line' />
+            </InputAdornment>
+          ),
+        }}
       />
       <TextField
         select

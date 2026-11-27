@@ -1,0 +1,32 @@
+368587b53f00f35ba1b980b30f9284b7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StatusQueryDto = exports.RecordStatus = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+var RecordStatus;
+(function (RecordStatus) {
+    RecordStatus["ACTIVE"] = "active";
+    RecordStatus["INACTIVE"] = "inactive";
+    RecordStatus["ALL"] = "all";
+})(RecordStatus || (exports.RecordStatus = RecordStatus = {}));
+class StatusQueryDto {
+    status = RecordStatus.ACTIVE;
+}
+exports.StatusQueryDto = StatusQueryDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: RecordStatus, default: RecordStatus.ACTIVE }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(RecordStatus),
+    __metadata("design:type", String)
+], StatusQueryDto.prototype, "status", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZHRvc1xcY29tbW9uXFxzdGF0dXMtcXVlcnkuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLDZDQUFzRDtBQUN0RCxxREFBcUQ7QUFFckQsSUFBWSxZQUlYO0FBSkQsV0FBWSxZQUFZO0lBQ3RCLGlDQUFpQixDQUFBO0lBQ2pCLHFDQUFxQixDQUFBO0lBQ3JCLDJCQUFXLENBQUE7QUFDYixDQUFDLEVBSlcsWUFBWSw0QkFBWixZQUFZLFFBSXZCO0FBRUQsTUFBYSxjQUFjO0lBSXpCLE1BQU0sR0FBa0IsWUFBWSxDQUFDLE1BQU0sQ0FBQztDQUM3QztBQUxELHdDQUtDO0FBREM7SUFIQyxJQUFBLDZCQUFtQixFQUFDLEVBQUUsSUFBSSxFQUFFLFlBQVksRUFBRSxPQUFPLEVBQUUsWUFBWSxDQUFDLE1BQU0sRUFBRSxDQUFDO0lBQ3pFLElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsd0JBQU0sRUFBQyxZQUFZLENBQUM7OzhDQUN1QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxkdG9zXFxjb21tb25cXHN0YXR1cy1xdWVyeS5kdG8udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBpUHJvcGVydHlPcHRpb25hbCB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBJc0VudW0sIElzT3B0aW9uYWwgfSBmcm9tICdjbGFzcy12YWxpZGF0b3InO1xuXG5leHBvcnQgZW51bSBSZWNvcmRTdGF0dXMge1xuICBBQ1RJVkUgPSAnYWN0aXZlJyxcbiAgSU5BQ1RJVkUgPSAnaW5hY3RpdmUnLFxuICBBTEwgPSAnYWxsJyxcbn1cblxuZXhwb3J0IGNsYXNzIFN0YXR1c1F1ZXJ5RHRvIHtcbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoeyBlbnVtOiBSZWNvcmRTdGF0dXMsIGRlZmF1bHQ6IFJlY29yZFN0YXR1cy5BQ1RJVkUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNFbnVtKFJlY29yZFN0YXR1cylcbiAgc3RhdHVzPzogUmVjb3JkU3RhdHVzID0gUmVjb3JkU3RhdHVzLkFDVElWRTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

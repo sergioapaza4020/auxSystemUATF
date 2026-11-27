@@ -1,0 +1,44 @@
+835d8051498bd619974e577675dc221c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Role = void 0;
+const typeorm_1 = require("typeorm");
+const permissions_entity_1 = require("../permissions/permissions.entity");
+const base_entity_1 = require("@common/entities/base.entity");
+let Role = class Role extends base_entity_1.BaseEntity {
+    idRole;
+    name;
+    description;
+    permissions;
+};
+exports.Role = Role;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)({ name: 'id_role' }),
+    __metadata("design:type", Number)
+], Role.prototype, "idRole", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ unique: true, name: 'name' }),
+    __metadata("design:type", String)
+], Role.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'varchar', name: 'description' }),
+    __metadata("design:type", Object)
+], Role.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.ManyToMany)(() => permissions_entity_1.Permission, (permission) => permission.roles),
+    (0, typeorm_1.JoinTable)({ name: 'role_permission' }),
+    __metadata("design:type", Array)
+], Role.prototype, "permissions", void 0);
+exports.Role = Role = __decorate([
+    (0, typeorm_1.Entity)('roles')
+], Role);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXHJvbGVzXFxyb2xlcy5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7O0FBQUEscUNBQXdGO0FBQ3hGLDBFQUErRDtBQUMvRCw4REFBMEQ7QUFHbkQsSUFBTSxJQUFJLEdBQVYsTUFBTSxJQUFLLFNBQVEsd0JBQVU7SUFFbEMsTUFBTSxDQUFTO0lBR2YsSUFBSSxDQUFTO0lBR2IsV0FBVyxDQUFnQjtJQUkzQixXQUFXLENBQWU7Q0FDM0IsQ0FBQTtBQWJZLG9CQUFJO0FBRWY7SUFEQyxJQUFBLGdDQUFzQixFQUFDLEVBQUUsSUFBSSxFQUFFLFNBQVMsRUFBRSxDQUFDOztvQ0FDN0I7QUFHZjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE1BQU0sRUFBRSxJQUFJLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxDQUFDOztrQ0FDMUI7QUFHYjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsSUFBSSxFQUFFLFNBQVMsRUFBRSxJQUFJLEVBQUUsYUFBYSxFQUFFLENBQUM7O3lDQUN0QztBQUkzQjtJQUZDLElBQUEsb0JBQVUsRUFBQyxHQUFHLEVBQUUsQ0FBQywrQkFBVSxFQUFFLENBQUMsVUFBVSxFQUFFLEVBQUUsQ0FBQyxVQUFVLENBQUMsS0FBSyxDQUFDO0lBQzlELElBQUEsbUJBQVMsRUFBQyxFQUFFLElBQUksRUFBRSxpQkFBaUIsRUFBRSxDQUFDOzt5Q0FDYjtlQVpmLElBQUk7SUFEaEIsSUFBQSxnQkFBTSxFQUFDLE9BQU8sQ0FBQztHQUNILElBQUksQ0FhaEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcZW50aXRpZXNcXHJvbGVzXFxyb2xlcy5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQ29sdW1uLCBFbnRpdHksIEpvaW5UYWJsZSwgTWFueVRvTWFueSwgUHJpbWFyeUdlbmVyYXRlZENvbHVtbiB9IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgUGVybWlzc2lvbiB9IGZyb20gJy4uL3Blcm1pc3Npb25zL3Blcm1pc3Npb25zLmVudGl0eSc7XG5pbXBvcnQgeyBCYXNlRW50aXR5IH0gZnJvbSAnQGNvbW1vbi9lbnRpdGllcy9iYXNlLmVudGl0eSc7XG5cbkBFbnRpdHkoJ3JvbGVzJylcbmV4cG9ydCBjbGFzcyBSb2xlIGV4dGVuZHMgQmFzZUVudGl0eSB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKHsgbmFtZTogJ2lkX3JvbGUnIH0pXG4gIGlkUm9sZTogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyB1bmlxdWU6IHRydWUsIG5hbWU6ICduYW1lJyB9KVxuICBuYW1lOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IG51bGxhYmxlOiB0cnVlLCB0eXBlOiAndmFyY2hhcicsIG5hbWU6ICdkZXNjcmlwdGlvbicgfSlcbiAgZGVzY3JpcHRpb246IHN0cmluZyB8IG51bGw7XG5cbiAgQE1hbnlUb01hbnkoKCkgPT4gUGVybWlzc2lvbiwgKHBlcm1pc3Npb24pID0+IHBlcm1pc3Npb24ucm9sZXMpXG4gIEBKb2luVGFibGUoeyBuYW1lOiAncm9sZV9wZXJtaXNzaW9uJyB9KVxuICBwZXJtaXNzaW9uczogUGVybWlzc2lvbltdO1xufVxuIl0sInZlcnNpb24iOjN9

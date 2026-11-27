@@ -97,7 +97,7 @@ describe('Concurrent logins with multiple sessions', () => {
 
       await sessions.revokeSession(first.userSession);
       await expect(sessions.validateRefreshToken(first.refreshToken)).rejects.toThrow(
-        'Invalid token refresh',
+        'No pudimos renovar tu sesión. Inicia sesión nuevamente.',
       );
       expect((await sessions.validateRefreshToken(second.refreshToken)).idSession).toBe(
         second.userSession.idSession,

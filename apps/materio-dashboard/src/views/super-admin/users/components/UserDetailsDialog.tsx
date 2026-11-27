@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 
 import { getUserById } from '@/api/users.service';
+import PrivateAvatar from '@/components/auth/PrivateAvatar';
 import { StatusChip } from '@/components/table';
 import { LoadingTable } from '@/components/skeletons/table/LoadingTable';
 import type { IUser } from '@/interfaces/users/user.interface';
@@ -72,9 +73,14 @@ export function UserDetailsDialog({ user, canFetch, onClose }: Props) {
             {(!canFetch || !user.isActive) && (
               <Alert severity='info'>Información de la última consulta del listado.</Alert>
             )}
-            <Typography variant='h6'>
-              {record.name} {record.lastname}
-            </Typography>
+            <Stack direction='row' alignItems='center' spacing={2}>
+              <PrivateAvatar idUser={canFetch && record.isActive ? record.idUser : undefined}>
+                {`${record.name.charAt(0)}${record.lastname.charAt(0)}`.toLocaleUpperCase('es-BO')}
+              </PrivateAvatar>
+              <Typography variant='h6'>
+                {record.name} {record.lastname}
+              </Typography>
+            </Stack>
             <Typography>Username: {record.username}</Typography>
             <Typography sx={{ overflowWrap: 'anywhere' }}>Email: {record.email}</Typography>
             <Typography>CI: {record.ci}</Typography>

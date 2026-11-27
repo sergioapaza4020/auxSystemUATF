@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   JoinTable,
   ManyToMany,
@@ -19,6 +20,7 @@ import { UserCourse } from '../user-courses/user-courses.entity';
 import { Enrollment } from '../enrollments/enrollments.entity';
 
 @Entity('users')
+@Index('users_email_normalized_unique', { synchronize: false })
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_user' })
   idUser: number;
@@ -37,8 +39,9 @@ export class User extends BaseEntity {
   @Column({ name: 'password', select: false })
   password: string;
 
-  @Column({ nullable: true, name: 'avatar' })
-  avatar: string;
+  @Exclude({ toPlainOnly: true })
+  @Column({ type: 'varchar', nullable: true, name: 'avatar' })
+  avatar: string | null;
 
   @Column({ unique: true, name: 'username' })
   username: string;

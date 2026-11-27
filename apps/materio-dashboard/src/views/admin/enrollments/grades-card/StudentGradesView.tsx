@@ -37,6 +37,8 @@ interface StudentGradesViewProps {
   studentEnrollmentId?: number;
   attendanceRevision?: number;
   schemeOverview?: ReactNode;
+  sectionIds?: { performance: string; grades: string };
+  gradesFeedback?: ReactNode;
 }
 
 export function StudentGradesView({
@@ -50,6 +52,8 @@ export function StudentGradesView({
   studentEnrollmentId,
   attendanceRevision = 0,
   schemeOverview,
+  sectionIds,
+  gradesFeedback,
 }: StudentGradesViewProps) {
   const [mode, setMode] = useState<GradeDisplayMode>(DEFAULT_GRADE_DISPLAY_MODE);
   const [ownAttendance, setOwnAttendance] = useState<IStudentAttendance | null>(null);
@@ -124,7 +128,9 @@ export function StudentGradesView({
     maximumScore: weightedScore(100, Number(detail.percentage), schemeMultiplier)!,
   }));
 
-  if (loading || attendanceLoading || loadingOwnAttendance)
+  const isLoading = loading || attendanceLoading || loadingOwnAttendance;
+
+  if (isLoading && !sectionIds)
     return (
       <Stack spacing={3}>
         {schemeOverview}
@@ -146,78 +152,106 @@ export function StudentGradesView({
         }}
       >
         {schemeOverview}
-        <Card component='section' aria-label='Mi rendimiento académico' sx={academicSurfaceStyles}>
-          <CardContent>
-            <Stack
-              sx={{ ...tableToolbarSx, px: 0 }}
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              justifyContent='space-between'
-              alignItems={{ sm: 'center' }}
-            >
-              <Typography variant='h5' fontWeight={600}>
-                Mi rendimiento académico
+        <Card
+          component='section'
+          id={sectionIds?.performance}
+          tabIndex={sectionIds ? -1 : undefined}
+          aria-label='Mi rendimiento académico'
+          sx={academicSurfaceStyles}
+        >
+          {gradesFeedback ? (
+            <CardContent>
+              <Alert severity='info'>El rendimiento estará disponible cuando se carguen tus calificaciones.</Alert>
+            </CardContent>
+          ) : isLoading ? (
+            <PageLoading />
+          ) : (
+            <CardContent>
+              <Stack
+                sx={{ ...tableToolbarSx, px: 0 }}
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                justifyContent='space-between'
+                alignItems={{ sm: 'center' }}
+              >
+                <Typography variant='h5' fontWeight={600}>
+                  Mi rendimiento académico
+                </Typography>
+                <GradeViewToggle
+                  value={mode}
+                  onChange={setMode}
+                  sx={{
+                    bgcolor: 'action.hover',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    p: 0.5,
+                    borderRadius: 2,
+                    '& .MuiToggleButton-root': {
+                      minHeight: 44,
+                      px: 2,
+                      border: 0,
+                      borderRadius: 'inherit',
+                      typography: 'body2',
+                      fontWeight: 600,
+                    },
+                    '& .MuiToggleButton-root.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: 'primary.contrastText',
+                      '&:hover': { bgcolor: 'primary.dark' },
+                    },
+                  }}
+                />
+              </Stack>
+              <Typography variant='body2' color='text.secondary' sx={{ mt: 3 }}>
+                {attendanceError ? 'Resultado parcial · Asistencia no disponible' : 'Resultado actual · Acumulado'}
               </Typography>
-              <GradeViewToggle
-                value={mode}
-                onChange={setMode}
-                sx={{
-                  bgcolor: 'action.hover',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  p: 0.5,
-                  borderRadius: 2,
-                  '& .MuiToggleButton-root': {
-                    minHeight: 44,
-                    px: 2,
-                    border: 0,
-                    borderRadius: 'inherit',
-                    typography: 'body2',
-                    fontWeight: 600,
-                  },
-                  '& .MuiToggleButton-root.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    '&:hover': { bgcolor: 'primary.dark' },
-                  },
-                }}
-              />
-            </Stack>
-            <Typography variant='body2' color='text.secondary' sx={{ mt: 3 }}>
-              {attendanceError ? 'Resultado parcial · Asistencia no disponible' : 'Resultado actual · Acumulado'}
-            </Typography>
-            <Box
-              sx={(theme) => ({
-                '& > .MuiTypography-root': { ...theme.typography.h3, fontWeight: 700, color: 'primary.main' },
-              })}
-            >
-              <StudentGradeCell score={currentScore} maximum={maximumScore} total />
-            </Box>
-            {currentScore !== null && (
-              <LinearProgress
-                aria-label='Resultado acumulado'
-                variant='determinate'
-                value={currentScore}
-                sx={{ mt: 2, borderRadius: 1 }}
-              />
-            )}
-            <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 2 }}>
-              Las actividades pendientes se muestran como --; su aporte se interpreta según las reglas de la materia.
-            </Typography>
-          </CardContent>
+              <Box
+                sx={(theme) => ({
+                  '& > .MuiTypography-root': { ...theme.typography.h3, fontWeight: 700, color: 'primary.main' },
+                })}
+              >
+                <StudentGradeCell score={currentScore} maximum={maximumScore} total />
+              </Box>
+              {currentScore !== null && (
+                <LinearProgress
+                  aria-label='Resultado acumulado'
+                  variant='determinate'
+                  value={currentScore}
+                  sx={{ mt: 2, borderRadius: 1 }}
+                />
+              )}
+              <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 2 }}>
+                Las actividades pendientes se muestran como --; su aporte se interpreta según las reglas de la materia.
+              </Typography>
+            </CardContent>
+          )}
         </Card>
       </Box>
-      <Typography variant='h5'>Mis calificaciones</Typography>
-      {!details.length && <Alert severity='info'>El esquema todavía no tiene criterios.</Alert>}
-      <AcademicCriteria
-        scheme={scheme}
-        results={results}
-        maxima={maxima}
-        grades={grades}
-        attendance={attendanceSummary ?? null}
-        attendanceError={attendanceError}
-        mode={mode}
-      />
+      <Typography
+        id={sectionIds?.grades}
+        tabIndex={sectionIds ? -1 : undefined}
+        variant='h5'
+        variantMapping={sectionIds ? { h5: 'h2' } : undefined}
+      >
+        Mis calificaciones
+      </Typography>
+      {gradesFeedback ??
+        (isLoading ? (
+          <LinearProgress aria-label='Cargando calificaciones' />
+        ) : (
+          <>
+            {!details.length && <Alert severity='info'>El esquema todavía no tiene criterios.</Alert>}
+            <AcademicCriteria
+              scheme={scheme}
+              results={results}
+              maxima={maxima}
+              grades={grades}
+              attendance={attendanceSummary ?? null}
+              attendanceError={attendanceError}
+              mode={mode}
+            />
+          </>
+        ))}
     </Stack>
   );
 }

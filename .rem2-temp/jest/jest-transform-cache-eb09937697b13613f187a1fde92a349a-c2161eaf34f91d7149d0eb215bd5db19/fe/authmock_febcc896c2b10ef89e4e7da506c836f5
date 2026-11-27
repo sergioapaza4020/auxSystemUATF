@@ -1,0 +1,12 @@
+e4c72160678b55e19414136ac4ff1161
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mockAuthService = void 0;
+exports.mockAuthService = {
+    login: jest.fn(),
+    validateUser: jest.fn(),
+    decodeToken: jest.fn(),
+    getSession: jest.fn(),
+    refreshToken: jest.fn(),
+};
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiRDpcXHVhdGZcXGludmVzdGlnYXRpb24yMDI2XFxhdXhTeXN0ZW1VQVRGXFxhcHBzXFxiYWNrZW5kLW5lc3RcXHNyY1xcY29tbW9uXFx0ZXN0LW1vY2tzXFxhdXRoLm1vY2sudHMiLCJtYXBwaW5ncyI6Ijs7O0FBQWEsUUFBQSxlQUFlLEdBQUc7SUFDN0IsS0FBSyxFQUFFLElBQUksQ0FBQyxFQUFFLEVBQUU7SUFDaEIsWUFBWSxFQUFFLElBQUksQ0FBQyxFQUFFLEVBQUU7SUFDdkIsV0FBVyxFQUFFLElBQUksQ0FBQyxFQUFFLEVBQUU7SUFDdEIsVUFBVSxFQUFFLElBQUksQ0FBQyxFQUFFLEVBQUU7SUFDckIsWUFBWSxFQUFFLElBQUksQ0FBQyxFQUFFLEVBQUU7Q0FDeEIsQ0FBQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJEOlxcdWF0ZlxcaW52ZXN0aWdhdGlvbjIwMjZcXGF1eFN5c3RlbVVBVEZcXGFwcHNcXGJhY2tlbmQtbmVzdFxcc3JjXFxjb21tb25cXHRlc3QtbW9ja3NcXGF1dGgubW9jay50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgbW9ja0F1dGhTZXJ2aWNlID0ge1xuICBsb2dpbjogamVzdC5mbigpLFxuICB2YWxpZGF0ZVVzZXI6IGplc3QuZm4oKSxcbiAgZGVjb2RlVG9rZW46IGplc3QuZm4oKSxcbiAgZ2V0U2Vzc2lvbjogamVzdC5mbigpLFxuICByZWZyZXNoVG9rZW46IGplc3QuZm4oKSxcbn07XG4iXSwidmVyc2lvbiI6M30=

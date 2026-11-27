@@ -44,7 +44,13 @@ describe.each(['STUDENT', 'ASSISTANT'])('%s access JWT permissions', (roleName) 
       })),
       getOneById: jest.fn().mockImplementation(() => Promise.resolve(user)),
     };
-    const session = { idSession: 7, user };
+    const session = {
+      idSession: 7,
+      user,
+      refreshToken: '$2b$04$legacy-refresh-hash',
+      expiresAt: new Date(Date.now() + 7 * 86400_000),
+      rememberMe: null,
+    };
     const sessions = {
       createSession: jest.fn((params: Parameters<SessionsService['createSession']>[0]) =>
         Promise.resolve({ ...params.issueTokens(session.idSession), userSession: session }),
