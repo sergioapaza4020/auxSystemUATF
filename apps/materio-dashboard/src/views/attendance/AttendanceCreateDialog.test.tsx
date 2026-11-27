@@ -1,7 +1,7 @@
 import type * as React from 'react';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Button, RadioGroup } from '@mui/material';
+import { Button, RadioGroup, TextField } from '@mui/material';
 
 import { AttendanceCreateDialog } from './AttendanceCreateDialog';
 import { DateField } from '@/components/DateField';
@@ -65,4 +65,21 @@ describe('attendance creation mode', () => {
       h.unmount();
     },
   );
+  it('offers an optional topic and sends its trimmed value', () => {
+    const onCreate = vi.fn();
+    const h = hookHarness(() => AttendanceCreateDialog({ initialDate: '2026-10-26', onCreate, onClose: vi.fn() }));
+
+    const field = elements<React.ComponentProps<typeof TextField>>(h.render(), TextField).find(
+      (f) => f.props.label === 'Tema de la clase',
+    )!.props;
+
+    expect(field.required).not.toBe(true);
+    expect(field.inputProps?.maxLength).toBe(255);
+    field.onChange?.({ target: { value: '  Introducción a Git  ' } } as React.ChangeEvent<HTMLInputElement>);
+    elements<React.ComponentProps<typeof Button>>(h.render(), Button)
+      .find((b) => b.props.variant === 'contained')!
+      .props.onClick?.({} as React.MouseEvent<HTMLButtonElement>);
+    expect(onCreate).toHaveBeenCalledWith('GEOLOCATION_QR', '2026-10-26', 'Introducción a Git');
+    h.unmount();
+  });
 });

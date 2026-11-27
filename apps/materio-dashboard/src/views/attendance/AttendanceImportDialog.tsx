@@ -41,6 +41,7 @@ import { validateImportFile } from '@/utils/importFile';
 import { PaginationTable, type HeadCell } from '@/components/table';
 import { useDataTable } from '@/hooks/table/useDataTable';
 import { AttendanceStatus } from '@/enums/attendanceStatus';
+import { attendanceLocalTime } from '@/utils/attendance-geolocation';
 
 const labels: Record<keyof AttendanceImportSummary, string> = {
   identified: 'Estudiantes identificados',
@@ -88,6 +89,77 @@ const displayDate = (date: string | null) => (date ? date.split('-').reverse().j
 type Cell = AttendanceImportPreview['cells'][number];
 
 const columns = [{ id: 'row', label: 'Fila', sortable: true }] as const satisfies readonly HeadCell<Cell>[];
+
+export function AttendanceImportSessionTarget({
+  column,
+  value,
+  disabled,
+  onChange,
+}: {
+  column: AttendanceImportPreview['columns'][number];
+  value?: AttendanceImportChoice['sessionId'];
+  disabled: boolean;
+  onChange: (id: number) => void;
+}) {
+  const selected = column.candidates.find((session) => session.id === (value ?? column.selected?.id));
+
+  const describe = (session: (typeof column.candidates)[number]) =>
+    `Sesión ${session.id} · ${sessionModes[session.mode] ?? session.mode} · ${sessionStates[session.state] ?? session.state}${session.startsAt ? ` · ${attendanceLocalTime(session.startsAt).replace('T', ' ')}${session.endsAt ? ` — ${attendanceLocalTime(session.endsAt).replace('T', ' ')}` : ''} (America/La_Paz)` : ''}${!session.editable ? ' · Protegida' : ''}`;
+
+  const multiple = column.candidates.length > 1 && column.candidates.some((session) => session.editable);
+
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant='body2'>
+        {column.column} · {displayDate(column.date)}
+      </Typography>
+      {multiple ? (
+        <TextField
+          fullWidth
+          select
+          size='small'
+          disabled={disabled}
+          label={`Sesión de destino · ${displayDate(column.date)}`}
+          value={value ?? column.selected?.id ?? 'unresolved'}
+          onChange={(event) => onChange(Number(event.target.value))}
+          sx={{ mt: 1 }}
+        >
+          <MenuItem value='unresolved' disabled>
+            Selecciona la sesión de destino
+          </MenuItem>
+          {column.candidates.map((session) => (
+            <MenuItem key={session.id} value={session.id} disabled={!session.editable}>
+              {describe(session)}
+            </MenuItem>
+          ))}
+        </TextField>
+      ) : column.candidates.length ? (
+        column.candidates.map((session) => (
+          <Typography key={session.id} variant='body2' sx={{ overflowWrap: 'anywhere' }}>
+            {describe(session)}
+          </Typography>
+        ))
+      ) : (
+        <Typography variant='body2'>
+          {column.create ? 'Se creará una sesión manual' : 'No se puede crear una sesión para esta fecha'}
+        </Typography>
+      )}
+      {column.candidates.length && !column.candidates.some((session) => session.editable) ? (
+        <Alert severity='error'>La sesión está protegida. No se creará otra sesión para eludir esta restricción.</Alert>
+      ) : null}
+      <Typography variant='body2' color='text.secondary' sx={{ overflowWrap: 'anywhere' }}>
+        Tema:{' '}
+        {selected
+          ? selected.topic?.trim() || 'Sin tema'
+          : column.candidates.length === 1
+            ? column.candidates[0].topic?.trim() || 'Sin tema'
+            : column.candidates.length
+              ? 'Selecciona una sesión para consultar su tema'
+              : 'Sin tema'}
+      </Typography>
+    </Box>
+  );
+}
 
 export function AttendanceImportDialog({
   enrollmentId,
@@ -231,35 +303,19 @@ export function AttendanceImportDialog({
                     <MenuItem value='update'>Actualizar registros existentes</MenuItem>
                   </TextField>
                   {preview.columns.map((column) => (
-                    <TextField
+                    <AttendanceImportSessionTarget
                       key={column.column}
-                      select
-                      size='small'
-                      disabled={busy || (!column.candidates.length && !column.allowCreate)}
-                      label={`${column.column} · ${displayDate(column.date)}`}
-                      value={choices[column.column] ?? column.selected?.id ?? 'unresolved'}
-                      onChange={(event) => {
-                        const value = event.target.value;
-
+                      column={column}
+                      disabled={busy}
+                      value={choices[column.column]}
+                      onChange={(sessionId) => {
                         setChoices((previous) => ({
                           ...previous,
-                          [column.column]: value === 'create' ? 'create' : Number(value),
+                          [column.column]: sessionId,
                         }));
                         setDirty(true);
                       }}
-                    >
-                      <MenuItem value='unresolved' disabled>
-                        Selecciona la sesión de destino
-                      </MenuItem>
-                      {column.candidates.map((session) => (
-                        <MenuItem key={session.id} value={session.id} disabled={!session.editable}>
-                          Sesión {session.id} · {sessionModes[session.mode] ?? session.mode} ·{' '}
-                          {sessionStates[session.state] ?? session.state}
-                          {!session.editable && ' · Protegida'}
-                        </MenuItem>
-                      ))}
-                      {column.allowCreate && <MenuItem value='create'>Crear sesión de asistencia manual</MenuItem>}
-                    </TextField>
+                    />
                   ))}
                   {dirty ? (
                     <Alert severity='info'>Vuelve a validar para aplicar tus decisiones.</Alert>

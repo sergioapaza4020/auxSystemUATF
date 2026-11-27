@@ -97,7 +97,7 @@ describe('Attendance compatibility and protected mutation boundary', () => {
     expect(dto).toEqual({ attendances: [{ enrollmentId: 5, status: 'PRESENT' }] });
   });
 
-  it('creates sessions using only the old explicitly mapped contract', async () => {
+  it('creates sessions using only explicitly mapped fields with an absent topic', async () => {
     const f = fixture();
     f.sessions.findOne.mockResolvedValueOnce(null);
     const date = attendanceAcademicDate(new Date());
@@ -105,6 +105,7 @@ describe('Attendance compatibility and protected mutation boundary', () => {
     expect(f.sessions.create).toHaveBeenCalledWith({
       assistantEnrollment: f.session.assistantEnrollment,
       date,
+      topic: null,
     });
   });
 

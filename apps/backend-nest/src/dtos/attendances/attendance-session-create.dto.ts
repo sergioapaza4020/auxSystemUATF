@@ -1,8 +1,9 @@
+import { AttendanceSessionTopicDto } from './attendance-session-topic.dto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsInt, Matches, Min, ValidateIf } from 'class-validator';
 import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
 
-export class AttendanceSessionCreateDto {
+export class AttendanceSessionCreateDto extends AttendanceSessionTopicDto {
   @ApiPropertyOptional({
     enum: AttendanceSessionMode,
     default: AttendanceSessionMode.MANUAL,

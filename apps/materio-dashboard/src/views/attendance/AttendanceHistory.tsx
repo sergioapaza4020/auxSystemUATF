@@ -155,6 +155,13 @@ export function AttendanceHistory({
                         <Typography variant='body2' fontWeight={selected ? 600 : 400}>
                           {formatDate(item.date)}
                         </Typography>
+                        <Typography
+                          variant='body2'
+                          color='text.secondary'
+                          sx={{ maxWidth: 240, overflowWrap: 'anywhere', whiteSpace: 'normal' }}
+                        >
+                          {item.topic?.trim() || 'Sin tema'}
+                        </Typography>
                         {selected && <Chip size='small' variant='outlined' label='En edición' sx={{ mt: 0.5 }} />}
                         <Typography variant='caption'>Sesión #{item.idAttendanceSession}</Typography>
                         <AttendanceSessionBadge session={item} />

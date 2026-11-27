@@ -24,6 +24,7 @@ export class AttendanceImportDto {
     if (
       !data ||
       typeof data !== 'object' ||
+      Object.keys(data).some((key) => !['choices', 'updateExisting'].includes(key)) ||
       !('choices' in data) ||
       !Array.isArray(data.choices) ||
       data.choices.length > 100 ||
@@ -36,6 +37,7 @@ export class AttendanceImportDto {
       if (
         !choice ||
         typeof choice !== 'object' ||
+        Object.keys(choice).some((key) => !['column', 'sessionId'].includes(key)) ||
         !('column' in choice) ||
         typeof choice.column !== 'string' ||
         !/^[A-Z]{1,2}$/.test(choice.column) ||

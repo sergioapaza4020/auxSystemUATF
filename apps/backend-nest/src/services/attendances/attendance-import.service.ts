@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CourseRelations } from '@common/enums/courseRelations';
+import { attendanceImportDateError } from '@common/utils/attendance-import-period';
 import { BulkOperationStatus, BulkOperationType } from '@common/enums/bulk-operation';
 import { AttendanceSessionMode } from '@common/enums/attendanceSessionMode';
 import { AttendanceStatus } from '@common/enums/attendanceStatus';
@@ -54,7 +55,14 @@ export class AttendanceImportService {
         'Se requieren permisos de registro de asistencia y consulta de sesiones y estudiantes',
       );
     }
-    return this.attendance.getAssistantEnrollment(user.idUser, enrollmentId, manager);
+    const assistant = await this.attendance.getAssistantEnrollment(
+      user.idUser,
+      enrollmentId,
+      manager,
+    );
+    if (!assistant.user?.isActive || !assistant.course?.isActive || !assistant.semester)
+      throw new ForbiddenException('Contexto académico no autorizado');
+    return assistant;
   }
 
   private students(manager: EntityManager, assistant: Enrollment) {
@@ -111,6 +119,9 @@ export class AttendanceImportService {
             .map((session) => ({
               id: session.idAttendanceSession,
               mode: session.mode,
+              topic: session.topic ?? null,
+              startsAt: session.startsAt?.toISOString() ?? null,
+              endsAt: session.endsAt?.toISOString() ?? null,
               state: getAttendanceSessionState(session, new Date()) ?? 'MANUAL',
               editable:
                 session.mode === AttendanceSessionMode.MANUAL &&
@@ -124,17 +135,19 @@ export class AttendanceImportService {
           : choice === undefined && candidates.length === 1
             ? candidates[0]
             : undefined;
-      const allowCreate = Boolean(date && date >= today && !candidates.length && canCreate);
-      const create = choice === 'create' && allowCreate;
+      const periodError = date ? attendanceImportDateError(date, assistant.semester) : null;
+      const allowCreate = Boolean(date && !periodError && !candidates.length && canCreate);
+      // Missing sessions always use the administrative MANUAL path; no mode decision is needed.
+      const create = (choice === undefined || choice === 'create') && allowCreate;
       const fail = (message: string) => errors.push({ row: 1, column: column.column, message });
       if (!date) fail('Ingresa una fecha válida en formato dd/mm/aaaa');
+      else if (periodError) fail(periodError);
       else if (dates.filter((value) => value === date).length > 1)
         fail('Fecha duplicada. Conserva una sola columna por fecha');
       else if (selected && !selected.editable)
         fail('La sesión está protegida. Usa una sesión manual editable');
       else if (!selected && !create) {
         if (candidates.length) fail('Selecciona una sesión manual de esta fecha');
-        else if (date < today) fail('No se pueden crear sesiones con fecha pasada');
         else if (!canCreate) fail('Falta el permiso para crear sesiones');
         else fail('Confirma la creación de una sesión manual');
       }
@@ -256,6 +269,10 @@ export class AttendanceImportService {
     if (emptyOverwrites)
       warnings.push(
         `${emptyOverwrites} celdas vacías sustituirán marcas presentes o con permiso por ausencias`,
+      );
+    if (columns.some((column) => column.create && column.date && column.date < today))
+      warnings.push(
+        'Se crearán sesiones de asistencia correspondientes a fechas anteriores. Los registros conservarán sus fechas académicas originales y quedará registrada la fecha real de importación.',
       );
     const summary = {
       identified,
@@ -382,6 +399,7 @@ export class AttendanceImportService {
                   enrollmentId,
                   column.date,
                   manager,
+                  operation,
                 )
               ).idAttendanceSession;
             availability.push({ date: column.date, sessionId, created: column.create });

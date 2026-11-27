@@ -45,6 +45,7 @@ import { AttendanceSessionToolbar } from '@/views/attendance/AttendanceSessionTo
 import { AttendanceSheet } from '@/views/attendance/AttendanceSheet';
 import { AttendanceHistory } from '@/views/attendance/AttendanceHistory';
 import { DateField } from '@/components/DateField';
+import { AttendanceTopicDialog } from '@/views/attendance/AttendanceTopicDialog';
 import { AttendanceCreateDialog } from '@/views/attendance/AttendanceCreateDialog';
 import { AttendanceQrConfigDialog } from '@/views/attendance/AttendanceQrConfigDialog';
 import { attendanceQrError } from '@/utils/attendance-qr';
@@ -58,7 +59,7 @@ import type { AttendanceSessionMode } from '@/interfaces/attendances/attendance.
 import { attendanceLocalTime, canEditAttendance, getAttendanceGeoErrorMessage } from '@/utils/attendance-geolocation';
 
 type PendingAttendanceAction =
-  | { kind: 'create'; mode?: AttendanceSessionMode; date?: string }
+  | { kind: 'create'; mode?: AttendanceSessionMode; date?: string; topic?: string | null }
   | { kind: 'open'; idSession: number }
   | { kind: 'back' }
   | { kind: 'delete'; idSession: number }
@@ -127,6 +128,7 @@ export default function AttendancePage() {
   const [pendingAction, setPendingAction] = useState<PendingAttendanceAction | null>(null);
   const [openingSession, setOpeningSession] = useState(false);
   const [creatingSession, setCreatingSession] = useState(false);
+  const [editingTopic, setEditingTopic] = useState(false);
   const [geoDialog, setGeoDialog] = useState(false);
   const [qrDialog, setQrDialog] = useState(false);
   const [qrPresent, setQrPresent] = useState(false);
@@ -314,6 +316,7 @@ export default function AttendancePage() {
     setTab(0);
     setSelectedSessionId(idSession);
     setSelectedDate(loaded.date.slice(0, 10));
+    setEditingTopic(false);
     setGeoDialog(loaded.mode === 'GEOLOCATION' || loaded.mode === 'GEOLOCATION_QR');
     setContingency(null);
     setAuditOpen(false);
@@ -368,9 +371,11 @@ export default function AttendancePage() {
         }
 
         const created =
-          action.mode === 'GEOLOCATION' || action.mode === 'QR' || action.mode === 'GEOLOCATION_QR'
-            ? await createSession(date, action.mode)
-            : await createSession(date);
+          action.topic !== undefined
+            ? await createSession(date, action.mode, action.topic)
+            : action.mode === 'GEOLOCATION' || action.mode === 'QR' || action.mode === 'GEOLOCATION_QR'
+              ? await createSession(date, action.mode)
+              : await createSession(date);
 
         try {
           await openSession(created.idAttendanceSession);
@@ -535,6 +540,11 @@ export default function AttendancePage() {
                 saving={saving || openingSession}
                 canCreate={canCreate && canOpen}
                 hasChanges={hasChanges}
+                onEditTopic={
+                  selected && selected.state !== 'CANCELLED' && hasPermission(user, 'attendance.session.update')
+                    ? () => setEditingTopic(true)
+                    : undefined
+                }
                 onDateChange={setSelectedDate}
                 onCreateSession={() => setCreatingSession(true)}
                 onConfigureQr={
@@ -725,13 +735,28 @@ export default function AttendancePage() {
           disabled={saving || openingSession || !canOpen}
         />
       </Box>
+      {editingTopic &&
+        selected &&
+        hasPermission(user, 'attendance.session.update') &&
+        selected.state !== 'CANCELLED' && (
+          <AttendanceTopicDialog
+            key={selected.idAttendanceSession}
+            session={selected}
+            onClose={() => setEditingTopic(false)}
+            onSaved={async () => {
+              await loadSession(selected.idAttendanceSession);
+              roster.refresh?.();
+              await loadSessions();
+            }}
+          />
+        )}
       {creatingSession && (
         <AttendanceCreateDialog
           creating={openingSession}
           initialDate={selectedDate}
           onClose={() => setCreatingSession(false)}
-          onCreate={(mode, date) => {
-            requestAction({ kind: 'create', mode, date });
+          onCreate={(mode, date, topic) => {
+            requestAction({ kind: 'create', mode, date, ...(topic !== undefined ? { topic } : {}) });
           }}
         />
       )}

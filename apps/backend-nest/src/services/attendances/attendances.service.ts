@@ -1,3 +1,7 @@
+import { AttendanceSessionTopicDto } from 'src/dtos/attendances/attendance-session-topic.dto';
+import { attendanceImportDateError } from '@common/utils/attendance-import-period';
+import { BulkOperation } from 'src/entities/bulk-operations/bulk-operation.entity';
+import { BulkOperationStatus, BulkOperationType } from '@common/enums/bulk-operation';
 import { AttendanceOpenNowDto } from 'src/dtos/attendances/attendance-open-now.dto';
 import { createHash, randomBytes } from 'node:crypto';
 import { AttendanceCombinedAuthorization } from 'src/entities/attendance/attendance-combined-authorization.entity';
@@ -959,11 +963,13 @@ export class AttendancesService {
     enrollmentId: number,
     date: string,
     manager: EntityManager,
+    operation: BulkOperation,
   ) {
     return this.createSessionRecord(
       idUser,
       { enrollmentId, date, mode: AttendanceSessionMode.MANUAL },
       manager,
+      operation,
     );
   }
 
@@ -971,6 +977,7 @@ export class AttendancesService {
     idUser: number,
     dto: AttendanceSessionCreateDto,
     manager?: EntityManager,
+    importOperation?: BulkOperation,
   ): Promise<AttendanceSession> {
     if (
       dto.mode !== undefined &&
@@ -996,11 +1003,36 @@ export class AttendancesService {
       attendanceAcademicDate(new Date(`${dto.date}T00:00:00-04:00`)) !== dto.date
     )
       throw new BadRequestException('SESSION_DATE_INVALID');
-    if (dto.date < today) throw new BadRequestException('SESSION_DATE_PAST');
+    if (importOperation) {
+      if (
+        !manager?.queryRunner?.isTransactionActive ||
+        importOperation.type !== BulkOperationType.ATTENDANCE_IMPORT ||
+        importOperation.status !== BulkOperationStatus.IMPORTING ||
+        importOperation.metadata?.enrollmentId !== dto.enrollmentId ||
+        importOperation.metadata?.courseId !== assistantEnrollment.course?.idCourse ||
+        importOperation.metadata?.semesterId !== assistantEnrollment.semester?.idSemester ||
+        dto.mode !== AttendanceSessionMode.MANUAL
+      )
+        throw new ForbiddenException(
+          'La creación histórica requiere una importación autorizada en curso',
+        );
+      if (
+        !(await manager.getRepository(BulkOperation).existsBy({
+          idBulkOperation: importOperation.idBulkOperation,
+          createdBy: { idUser },
+          type: BulkOperationType.ATTENDANCE_IMPORT,
+          status: BulkOperationStatus.IMPORTING,
+        }))
+      )
+        throw new ForbiddenException('Operación de importación no autorizada');
+      const error = attendanceImportDateError(dto.date, assistantEnrollment.semester);
+      if (error) throw new BadRequestException(error);
+    } else if (dto.date < today) throw new BadRequestException('SESSION_DATE_PAST');
     const repository =
       manager?.getRepository(AttendanceSession) ?? this.attendanceSessionRepository;
 
     const session = repository.create({
+      topic: this.sessionTopic(dto.topic) ?? null,
       assistantEnrollment,
       date: dto.date as unknown as Date,
       ...(dto.mode !== undefined && isSelfRegistrationMode(dto.mode)
@@ -1716,6 +1748,39 @@ export class AttendancesService {
       absentSessions: summary.absent,
       percentage: summary.percentage,
     };
+  }
+
+  private sessionTopic(value: unknown): string | null | undefined {
+    const dto = plainToInstance(AttendanceSessionTopicDto, { topic: value });
+    if (validateSync(dto).length)
+      throw new BadRequestException('El tema debe ser texto de hasta 255 caracteres.');
+    return dto.topic;
+  }
+
+  async updateSessionTopic(idUser: number, idSession: number, dto: AttendanceSessionTopicDto) {
+    const topic = this.sessionTopic(dto.topic);
+    await this.getSession(idUser, idSession, false, true);
+    return this.attendanceSessionRepository.manager.transaction(async (manager) => {
+      const repository = manager.getRepository(AttendanceSession);
+      const locked = await repository.findOne({
+        where: { idAttendanceSession: idSession },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked) throw new NotFoundException('Sesión de asistencia no encontrada');
+      const session = await this.getSession(idUser, idSession, false, true, manager);
+      const owner = session.assistantEnrollment;
+      // Metadata correction may prepare historical reports; it does not reopen an inactive semester.
+      if (!owner.user.isActive || !owner.course?.isActive || !owner.semester)
+        throw new ForbiddenException('Contexto académico no autorizado');
+      const now = new Date();
+      if (getAttendanceSessionState(session, now) === State.CANCELLED)
+        throw new ConflictException('SESSION_CANCELLED');
+      if (topic !== undefined) {
+        await repository.update({ idAttendanceSession: idSession }, { topic });
+        session.topic = topic;
+      }
+      return attendanceSessionResponse(session, now);
+    });
   }
 
   async updateSession(idUser: number, idSession: number, dto: AttendanceSessionUpdateDto) {

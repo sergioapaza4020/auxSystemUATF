@@ -38,6 +38,7 @@ export class AttendanceRateLimitInterceptor implements NestInterceptor {
         : undefined;
     const lifecycle: Record<string, string> = {
       createSession: 'session_create',
+      updateSessionTopic: 'session_topic_update',
       activate: 'session_activate',
       openNow: 'session_open_now',
       close: 'session_close',
@@ -59,6 +60,13 @@ export class AttendanceRateLimitInterceptor implements NestInterceptor {
     const record = (status: number) =>
       this.logger.log({
         event: 'attendance_operation',
+        ...(event === 'session_topic_update'
+          ? {
+              actorId: user,
+              sessionId: Number(request.params?.idSession),
+              occurredAt: new Date().toISOString(),
+            }
+          : {}),
         operation: event,
         status,
         latencyMs: Math.round(performance.now() - started),

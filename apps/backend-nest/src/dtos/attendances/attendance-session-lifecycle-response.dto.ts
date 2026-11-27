@@ -10,6 +10,8 @@ import type { AttendanceSession } from 'src/entities/attendance/attendance-sessi
 export class AttendanceSessionLifecycleResponseDto {
   @ApiProperty()
   idAttendanceSession: number;
+  @ApiProperty({ type: String, nullable: true, maxLength: 255 })
+  topic: string | null;
   @ApiProperty()
   date: Date;
   @ApiProperty({ enum: AttendanceSessionMode })
@@ -47,6 +49,7 @@ export function attendanceSessionResponse(
   return {
     idAttendanceSession: session.idAttendanceSession,
     date: session.date,
+    topic: session.topic ?? null,
     mode: session.mode,
     latitude: session.latitude == null ? null : Number(session.latitude),
     longitude: session.longitude == null ? null : Number(session.longitude),

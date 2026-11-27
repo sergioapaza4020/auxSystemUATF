@@ -17,7 +17,15 @@ export type AttendanceImportSummary = {
   warnings: number;
 };
 
-type Session = { id: number; mode: string; state: string; editable: boolean };
+type Session = {
+  id: number;
+  mode: string;
+  state: string;
+  editable: boolean;
+  topic?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+};
 
 export type AttendanceImportPreview = {
   operationId: string | null;

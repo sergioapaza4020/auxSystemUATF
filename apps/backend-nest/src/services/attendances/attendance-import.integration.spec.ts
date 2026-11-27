@@ -6,6 +6,7 @@ import type { NextFunction, Request, Response } from 'express';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { AttendanceImportController } from 'src/controllers/attendances/attendance-import.controller';
+import { AttendancesController } from 'src/controllers/attendances/attendances.controller';
 import { PermissionsGuard } from '@core/guards/permissions/permissions.guard';
 import { ResponseInterceptor } from '@core/interceptors/response/response.interceptor';
 import { createValidationPipe } from '@core/pipes/validation.pipe';
@@ -82,8 +83,11 @@ const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
       ),
     );
     const fixture = await Test.createTestingModule({
-      controllers: [AttendanceImportController],
-      providers: [{ provide: AttendanceImportService, useValue: service }],
+      controllers: [AttendanceImportController, AttendancesController],
+      providers: [
+        { provide: AttendanceImportService, useValue: service },
+        { provide: AttendancesService, useValue: attendance },
+      ],
     }).compile();
     app = fixture.createNestApplication();
     app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -152,8 +156,9 @@ const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
         ['0003', 2],
       ],
     );
-    expect((await service.preview(actor, 1, input, empty)).operationId).toBeNull();
-    const prepared = await service.preview(actor, 1, input, newSession);
+    const prepared = await service.preview(actor, 1, input, empty);
+    expect(prepared.operationId).not.toBeNull();
+    expect(prepared.columns[0]).toMatchObject({ create: true, allowCreate: true });
     expect(await database.source.getRepository(AttendanceSession).count()).toBe(0);
     await expect(service.confirm(actor, 1, prepared.operationId!)).resolves.toMatchObject({
       created: 2,
@@ -161,6 +166,13 @@ const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
     });
     await expect(service.confirm(actor, 1, prepared.operationId!)).resolves.toMatchObject({
       created: 2,
+    });
+    const createdSession = await database.source
+      .getRepository(AttendanceSession)
+      .findOneByOrFail({ date: date as unknown as Date });
+    expect(createdSession.topic).toBeNull();
+    await attendance.updateSessionTopic(1, createdSession.idAttendanceSession, {
+      topic: 'Control de versiones',
     });
     const blanks = await file([date], [['0002'], ['0003']]);
     const skip = await service.preview(actor, 1, blanks, empty);
@@ -180,6 +192,7 @@ const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
       .findOneByOrFail({ idAttendanceSession: update.columns[0].selected!.id });
     const detail = await attendance.getSessionDetail(1, session.idAttendanceSession);
     expect(detail.attendances.map((mark) => mark.status)).toEqual([Status.ABSENT, Status.ABSENT]);
+    expect(detail.topic).toBe('Control de versiones');
   });
 
   it('bloquea historial QR y combinado, y resuelve varias sesiones manuales por fecha', async () => {
@@ -256,11 +269,123 @@ const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
     expect((await service.preview(actor, 1, input, empty)).columns[0].candidates).toHaveLength(1);
   });
 
-  it('bloquea la creación retroactiva según las reglas ordinarias', async () => {
-    const input = await file([day(-1)]);
-    const preview = await service.preview(actor, 1, input, newSession);
+  it('importa varias fechas históricas, conserva tema, audita la hora real y reutiliza sin duplicar', async () => {
+    const dates = [day(-10), day(-11)];
+    const input = await file(dates, [
+      ['0002', 1, 0],
+      ['0003', 2, null],
+    ]);
+    const options = empty;
+    const before = Date.now();
+    const preview = await service.preview(actor, 1, input, options);
+    expect(preview.errors).toEqual([]);
+    expect(preview.warnings.join(' ')).toMatch(/fechas anteriores/);
+    await expect(service.confirm(actor, 1, preview.operationId!)).resolves.toMatchObject({
+      newSessions: 2,
+      created: 4,
+      present: 1,
+      absent: 2,
+      excused: 1,
+      empty: 1,
+    });
+    const operation = await database.source.getRepository(BulkOperation).findOneOrFail({
+      where: { idBulkOperation: preview.operationId! },
+      relations: { createdBy: true },
+    });
+    expect(operation.createdBy.idUser).toBe(actor.idUser);
+    expect(operation.createdAt.getTime()).toBeGreaterThanOrEqual(before - 1000);
+    expect(operation.completedAt!.getTime()).toBeGreaterThanOrEqual(before - 1000);
+    const sessions = operation.metadata!.sessions as {
+      date: string;
+      sessionId: number;
+      created: boolean;
+    }[];
+    expect(sessions.map((item) => item.date)).toEqual(dates);
+    for (const { sessionId, date } of sessions) {
+      const detail = await attendance.getSessionDetail(1, sessionId);
+      expect(detail.mode).toBe(Mode.MANUAL);
+      expect(detail.date).toBe(date);
+      expect(detail.topic).toBeNull();
+      expect(detail.attendances.every((mark) => mark.markedAt!.getTime() >= before - 1000)).toBe(
+        true,
+      );
+    }
+    await attendance.updateSessionTopic(1, sessions[0].sessionId, { topic: 'Tema histórico' });
+    const count = await database.source.getRepository(AttendanceSession).count();
+    const reused = await service.preview(actor, 1, input, empty);
+    expect(reused.summary).toMatchObject({ newSessions: 0, reused: 2, skipped: 4 });
+    expect(reused.columns[0].selected).toMatchObject({
+      mode: Mode.MANUAL,
+      topic: 'Tema histórico',
+    });
+    await service.confirm(actor, 1, reused.operationId!);
+    await service.confirm(actor, 1, preview.operationId!);
+    expect(await database.source.getRepository(AttendanceSession).count()).toBe(count);
+    expect((await attendance.getSessionDetail(1, sessions[0].sessionId)).topic).toBe(
+      'Tema histórico',
+    );
+  });
+
+  it('rechaza fechas fuera del semestre incluso si ya existe una sesión y revalida al confirmar', async () => {
+    const date = day(-12);
+    const input = await file([date]);
+    const ready = await service.preview(actor, 1, input, newSession);
+    const [original]: { start_date: Date; end_date: Date }[] = await database.source.query(
+      'SELECT start_date,end_date FROM semesters WHERE id_semester=1',
+    );
+    await database.source.query('UPDATE semesters SET start_date=$1 WHERE id_semester=1', [
+      `${day(-5)}T04:00:00Z`,
+    ]);
+    try {
+      const invalid = await service.preview(actor, 1, input, newSession);
+      expect(invalid.operationId).toBeNull();
+      expect(invalid.columns[0].allowCreate).toBe(false);
+      expect(invalid.errors[0].message).toMatch(/fuera del período/);
+      const reused = await service.preview(actor, 1, await file([day(-10)]), empty);
+      expect(reused.operationId).toBeNull();
+      await expect(service.confirm(actor, 1, ready.operationId!)).rejects.toThrow(
+        /datos cambiaron/,
+      );
+    } finally {
+      await database.source.query(
+        'UPDATE semesters SET start_date=$1,end_date=$2 WHERE id_semester=1',
+        [original.start_date, original.end_date],
+      );
+    }
+  });
+
+  it.each([Mode.MANUAL, Mode.GEOLOCATION, Mode.QR, Mode.GEOLOCATION_QR])(
+    'mantiene el rechazo ordinario de fechas pasadas en %s aunque el cliente pida omitir validación',
+    async (mode) => {
+      await request(app.getHttpServer() as Server)
+        .post('/api/attendances/sessions')
+        .send({
+          enrollmentId: 1,
+          date: day(-20),
+          mode,
+          ignoreDateValidation: true,
+        })
+        .expect(400);
+      await expect(
+        attendance.createSession(1, { enrollmentId: 1, date: day(-20), mode }),
+      ).rejects.toThrow('SESSION_DATE_PAST');
+    },
+  );
+
+  it('exige permisos de importación y creación también para fechas históricas', async () => {
+    const input = await file([day(-15)]);
+    await expect(
+      service.preview({ ...actor, permissions: [] }, 1, input, newSession),
+    ).rejects.toThrow();
+    await expect(service.preview({ ...actor, idUser: 2 }, 1, input, newSession)).rejects.toThrow();
+    const preview = await service.preview(
+      { ...actor, permissions: actor.permissions.filter((p) => p !== 'attendance.session.create') },
+      1,
+      input,
+      newSession,
+    );
     expect(preview.operationId).toBeNull();
-    expect(preview.errors[0].message).toMatch(/pasada/);
+    expect(preview.errors[0].message).toMatch(/permiso/);
   });
 
   it('muestra una sesión QR cerrada y conserva su estado', async () => {
@@ -302,7 +427,7 @@ const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
     const before = await academicAttendanceCounts(repository, 1, [2, 3], new Date());
     const preview = await client
       .post(`${path}/preview`)
-      .field('options', JSON.stringify(newSession))
+      .field('options', JSON.stringify(empty))
       .attach('file', input.buffer, input.originalname)
       .expect(200);
     const { operationId } = (preview.body as { data: { operationId: string } }).data;
@@ -335,4 +460,23 @@ const pgBin = process.env.ATTENDANCE_TEST_PG_BIN;
       expect(row.excused).toBe(old.excused + (row.enrollmentId === 3 ? 1 : 0));
     }
   });
+
+  it.each(['QR', 'GEOLOCATION', 'GEOLOCATION_QR', 'MANUAL'])(
+    'rechaza una selección pública de modalidad %s fuera del contrato de importación',
+    async (mode) => {
+      const input = await file([day(-30)]);
+      const client = request(app.getHttpServer() as Server);
+      const path = '/api/attendances/import/1/preview';
+      for (const options of [
+        { ...empty, mode },
+        { ...empty, choices: [{ column: 'B', sessionId: 'create', mode }] },
+      ]) {
+        await client
+          .post(path)
+          .field('options', JSON.stringify(options))
+          .attach('file', input.buffer, input.originalname)
+          .expect(400);
+      }
+    },
+  );
 });

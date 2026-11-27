@@ -15,6 +15,7 @@ export type AttendanceSessionState = 'DRAFT' | 'SCHEDULED' | 'OPEN' | 'CLOSED' |
 
 // Optional for compatibility with cached/manual responses predating lifecycle support.
 export interface IAttendanceLifecycle {
+  topic?: string | null;
   mode?: AttendanceSessionMode;
   state?: AttendanceSessionState | null;
   isComputable?: boolean;

@@ -10,6 +10,7 @@ import {
   Radio,
   RadioGroup,
   Typography,
+  TextField,
 } from '@mui/material';
 
 import type { AttendanceSessionMode } from '@/interfaces/attendances/attendance.interface';
@@ -23,12 +24,13 @@ export function AttendanceCreateDialog({
   creating = false,
 }: {
   onClose: () => void;
-  onCreate: (mode: AttendanceSessionMode, date?: string) => void;
+  onCreate: (mode: AttendanceSessionMode, date?: string, topic?: string | null) => void;
   initialDate: string;
   creating?: boolean;
 }) {
   const [mode, setMode] = useState<AttendanceSessionMode>('GEOLOCATION_QR');
   const [date, setDate] = useState(initialDate);
+  const [topic, setTopic] = useState('');
 
   const today = attendanceToday();
   const past = !!date && date < today;
@@ -92,6 +94,18 @@ export function AttendanceCreateDialog({
                 : undefined
           }
         />
+        <TextField
+          fullWidth
+          label='Tema de la clase'
+          placeholder='Ej.: Introducción a Git'
+          helperText='Opcional. Se utilizará en los informes académicos.'
+          value={topic}
+          disabled={creating}
+          inputProps={{ maxLength: 255 }}
+          error={[...topic.trim()].length > 255}
+          onChange={(event) => setTopic(event.target.value)}
+          sx={{ mt: 2 }}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={creating}>
@@ -99,9 +113,12 @@ export function AttendanceCreateDialog({
         </Button>
         <Button
           variant='contained'
-          disabled={!date || past || creating}
+          disabled={!date || past || creating || [...topic.trim()].length > 255}
           onClick={() => {
-            if (date && date >= attendanceToday()) onCreate(mode, date);
+            if (date && date >= attendanceToday() && [...topic.trim()].length <= 255) {
+              if (topic.trim()) onCreate(mode, date, topic.trim());
+              else onCreate(mode, date);
+            }
           }}
         >
           {creating ? 'Creando sesión…' : 'Crear sesión'}
