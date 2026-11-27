@@ -320,14 +320,14 @@ describe('CRUD service behavior', () => {
         }
       return target;
     });
-    const result = await users.update(1, { password: 'new-secret' });
+    const result = await users.update(1, { password: 'New-secret1!' });
     const saved = repo(User).save.mock.calls[0][0] as User;
     const updateCalls = repo(UserSession).update.mock.calls as unknown as Array<
       [unknown, Partial<UserSession>]
     >;
     const revocationCriteria = updateCalls[0]?.[0];
     const revoked = updateCalls[0]?.[1];
-    expect(await bcrypt.compare('new-secret', saved.password)).toBe(true);
+    expect(await bcrypt.compare('New-secret1!', saved.password)).toBe(true);
     expect(revocationCriteria).toEqual({ user: { idUser: 1 }, isActive: true });
     expect(revoked).toMatchObject({
       isActive: false,
@@ -354,7 +354,7 @@ describe('CRUD service behavior', () => {
       lastname: 'Doe',
       ci: '1',
       ru: '1',
-      password: 'secret',
+      password: 'Valid-secret1!',
       roleNames: ['student'],
     });
     expect(repo(User).save).toHaveBeenCalledWith(
