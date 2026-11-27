@@ -1,3 +1,15 @@
+## [1.5.0](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.4.0...v1.5.0) (2026-11-27)
+
+### Features
+
+* add changes ([aaba3f3](https://github.com/sergioapaza4020/auxSystemUATF/commit/aaba3f35aea817b861954764e0b3efdb7741a965))
+* add fixed tabs and massive import califications and attendance ([22a645a](https://github.com/sergioapaza4020/auxSystemUATF/commit/22a645ab50f7d93b73082d7992dfe5f56d0a65b4))
+* add tabs and massive import califications and attendance ([0924503](https://github.com/sergioapaza4020/auxSystemUATF/commit/0924503857b75a20bcca584f24641956390f4da7))
+
+### Bug Fixes
+
+* test file ([eaad487](https://github.com/sergioapaza4020/auxSystemUATF/commit/eaad487aacdedfb0f30e8bf6d20b969a45a473cb))
+
 ## [1.4.0](https://github.com/sergioapaza4020/auxSystemUATF/compare/v1.3.1...v1.4.0) (2026-11-24)
 
 ### Features
